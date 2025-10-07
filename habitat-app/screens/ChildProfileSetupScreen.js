@@ -12,7 +12,7 @@ export default function ChildProfileSetupScreen({ navigation }) {
     }
     // placeholder: save data to state / backend
     Alert.alert("Saved", "Child profile saved.");
-    navigation.navigate("SignUp");
+    navigation.navigate("SelectAvatars");
   };
 
   return (
