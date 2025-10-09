@@ -5,7 +5,7 @@ import { registerRootComponent } from "expo";
 
 import SignUpScreen from "./screens/SignUpScreen";
 import ChildProfileSetupScreen from "./screens/ChildProfileSetupScreen";
-
+import ChildTaskViewScreen from "./screens/ChildTaskViewScreen";
 const Stack = createNativeStackNavigator();
 
 function App() {
@@ -14,9 +14,11 @@ function App() {
       <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+        <Stack.Screen name="ChildTaskView" component={ChildTaskViewScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
+
 }
 
 // Register the main component
