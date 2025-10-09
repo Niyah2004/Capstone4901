@@ -5,35 +5,33 @@ export default function SelectAvatarsScreen({ navigation }) {
   const [selected, setSelected] = useState(null);
 
   const avatars = [
-    { id: "fox", label: "Fox" },
-    { id: "owl", label: "Owl" },
-    { id: "turtle", label: "Turtle" },
+    //{ id: "fox", label: "Fox" },
+    //{ id: "owl", label: "Owl" },
+    //{ id: "turtle", label: "Turtle" },
   ];
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Choose an Avatar</Text>
-      <Text style={styles.subtitle}>Pick one animal to represent your child.</Text>
-
-      <View style={styles.avatarRow}>
-        {avatars.map((a) => (
-          <TouchableOpacity
-            key={a.id}
-            style={[styles.avatarWrap, selected === a.id && styles.avatarSelected]}
-            onPress={() => setSelected(a.id)}
-          >
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarLetter}>{a.label.charAt(0)}</Text>
-            </View>
-            <Text style={styles.avatarLabel}>{a.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.avatarRow}>
+            {avatars.map((a) => (
+            <TouchableOpacity
+                key={a.id}
+                style={[styles.avatarWrap, selected === a.id && styles.avatarSelected]}
+                onPress={() => setSelected(a.id)}
+            >
+                <View style={styles.avatarCircle}>
+                <Text style={styles.avatarLetter}>{a.label.charAt(0)}</Text>
+                </View>
+                <Text style={styles.avatarLabel}>{a.label}</Text>
+            </TouchableOpacity>
+            ))}
+        </View>
 
       <TouchableOpacity
         style={[styles.button, !selected && styles.buttonDisabled]}
         disabled={!selected}
-        onPress={() => navigation.navigate("SignUp")}
+        onPress={() => navigation.navigate("Home")}
       >
         <Text style={styles.buttonText}>Get Started</Text>
       </TouchableOpacity>

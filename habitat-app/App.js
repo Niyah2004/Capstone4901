@@ -16,6 +16,7 @@ function App() {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
         <Stack.Screen name="SelectAvatars" component={SelectAvatarsScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
