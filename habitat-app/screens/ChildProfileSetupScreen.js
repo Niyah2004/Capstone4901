@@ -32,6 +32,9 @@ export default function ChildProfileSetupScreen({ navigation }) {
         <TouchableOpacity style={styles.button} onPress={save}>
           <Text style={styles.buttonText}>Save Details</Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -40,6 +43,16 @@ export default function ChildProfileSetupScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
   form: { marginVertical: 20 },
+  backButton: {
+    alignSelf: "center",
+    marginTop: 10,
+  },
+  backText: {
+    fontSize: 18,
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#2d2d2d", textAlign: "center" },
   input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, marginBottom: 12 },
   button: { backgroundColor: "#4CAF50", padding: 15, borderRadius: 8, alignItems: "center", marginVertical: 15 },
