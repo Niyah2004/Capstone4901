@@ -8,14 +8,21 @@ export default function ParentSignupScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSignUp = () => {
-    // For now, just log info — Firebase hookup will come later
-    console.log('Parent Info:', { name, email, password, confirmPassword });
-    alert('Parent account created (mock)!');
+    if (!email || !password) {
+      alert("Please fill out all fields.");
+      return;
+    }
+    console.log("Parent Info:", { name, email, password, confirmPassword });
+    alert("Parent account created (mock)!");
+    navigation.navigate("ChildProfileSetup");
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Parent Sign-Up</Text>
+<ScrollView
+  contentContainerStyle={styles.container}
+  keyboardShouldPersistTaps="handled"
+>
+        <Text style={styles.header}>Parent Sign-Up</Text>
 
       <TextInput
         placeholder="Full Name"
@@ -52,6 +59,15 @@ export default function ParentSignupScreen({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.link}>Already have an account? Log in</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+  style={{ marginTop: 20 }}
+  onPress={() => navigation.navigate("RewardCreation")}
+>
+  <Text style={{ color: "#4CAF50", fontWeight: "bold", textAlign: "center" }}>
+    Go to Reward Creation
+  </Text>
+</TouchableOpacity>
+<View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -60,7 +76,6 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
     backgroundColor: '#fff',
   },
