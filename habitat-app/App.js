@@ -6,6 +6,7 @@ import { registerRootComponent } from "expo";
 import SignUpScreen from "./screens/SignUpScreen";
 import ChildProfileSetupScreen from "./screens/ChildProfileSetupScreen";
 import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
+import HomeScreen from "./screens/HomeScreen";
 
 const Stack = createNativeStackNavigator();
 

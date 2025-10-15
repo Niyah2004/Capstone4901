@@ -27,12 +27,7 @@ export default function SelectAvatarsScreen({ navigation }) {
             </TouchableOpacity>
             ))}
         </View>
-
-      <TouchableOpacity
-        style={[styles.button, !selected && styles.buttonDisabled]}
-        disabled={!selected}
-        onPress={() => navigation.navigate("Home")}
-      >
+      <TouchableOpacity style={[styles.button]} onPress={() => navigation.navigate("Home")}>
         <Text style={styles.buttonText}>Get Started</Text>
       </TouchableOpacity>
     </ScrollView>
