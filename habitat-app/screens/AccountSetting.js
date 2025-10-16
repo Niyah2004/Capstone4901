@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons"; // for icons
 import { useNavigation } from "@react-navigation/native";
 
 
-export default function AccountSetting() {
+export default function AccountSetting({navigation}) {
   const[Pname, setName] = useState("parent name");
   const [childName, setChildName] = useState("child name");
   const [preferredName, ChildPreferredName] = useState("child preferred name");
@@ -30,6 +30,10 @@ export default function AccountSetting() {
 
     return (        
 <ScrollView style={styles.container}>
+  <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+       <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity> 
+
       <View style={styles.header}>
         <Text style={styles.title}>Our profile</Text>
         <TouchableOpacity onPress={() => console.log("Logged out")}>

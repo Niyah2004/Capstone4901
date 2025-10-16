@@ -76,7 +76,7 @@ export default function ParentDashBoard({ navigation }) {
         <Text style={styles.sectionTitle}>Tasks Awaiting Approval</Text>
         <Text style={styles.pendingCount}>3</Text>
         <Text style={styles.pendingText}>pending tasks</Text>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("parentReviewTask")}>
           <Text style={styles.buttonText}>Review Tasks →</Text>
         </TouchableOpacity>
       </View>
