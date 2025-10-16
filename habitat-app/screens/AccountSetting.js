@@ -36,7 +36,7 @@ export default function AccountSetting({navigation}) {
 
       <View style={styles.header}>
         <Text style={styles.title}>Our profile</Text>
-        <TouchableOpacity onPress={() => console.log("Logged out")}>
+        <TouchableOpacity onPress={() => navigation.navigate("SignUpScreen")}>
           <Text style={styles.logout}>Log out</Text>
         </TouchableOpacity>
       </View>
