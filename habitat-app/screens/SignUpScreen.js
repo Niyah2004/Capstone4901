@@ -52,7 +52,7 @@ export default function SignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
   form: { marginVertical: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#2d2d2d", textAlign: "center" },
+  title: { fontFamily: "", fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#2d2d2d", textAlign: "center" },
   subtitle: { fontSize: 16, color: "#666", marginBottom: 20, textAlign: "center" },
   input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, marginBottom: 12 },
   requirements: { fontSize: 12, color: "#555", marginLeft: 8 },

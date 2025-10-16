@@ -1,3 +1,4 @@
+// different from parent review task page this is where parents create task
 import react from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 

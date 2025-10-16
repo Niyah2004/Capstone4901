@@ -85,19 +85,29 @@ export default function ParentDashBoard({ navigation }) {
       <View style={styles.manageContainer}>
         <Text style={styles.sectionTitle}>Manage Habitat</Text>
         <View style={styles.manageGrid}>
-          <TouchableOpacity style={styles.manageBox}>
+          <TouchableOpacity style={styles.manageBox}
+           // onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentTaskPage" })}
+          onPress={() => navigation.navigate("parentTaskPage")}
+          >
             <Ionicons name="list-outline" size={24} color="#000" />
             <Text>Task Management</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.manageBox}>
+          <TouchableOpacity style={styles.manageBox}
+          //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
+             onPress={() => navigation.navigate("parentReward")}
+             >
             <Ionicons name="gift-outline" size={24} color="#000" />
             <Text>Create Reward</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.manageBox}>
+          <TouchableOpacity style={styles.manageBox}
+          onPress={() => navigation.navigate("parentReviewTask")}
+          >
             <Ionicons name="checkmark-circle-outline" size={24} color="#000" />
             <Text>Review Task</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.manageBox}>
+          <TouchableOpacity style={styles.manageBox}
+          onPress={() => navigation.navigate("AccountSetting")}
+          >
             <Ionicons name="settings-outline" size={24} color="#000" />
             <Text>Settings</Text>
           </TouchableOpacity>

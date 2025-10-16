@@ -4,11 +4,11 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "reac
 const ParentPinScreen = ({ navigation }) => {
   const [pin, setPin] = useState("");
 
-  const correctPin = "1234"; // 🔒 placeholder — later, we can fetch this from Firebase
+  const correctPin = "1234"; // placeholder — later, we can fetch this from Firebase
 
   const handleSubmit = () => {
     if (pin === correctPin) {
-      navigation.replace("ParentDashBoard"); // go to dashboard
+      navigation.replace("parentDashBoard"); // go to dashboard
     } else {
       Alert.alert("Incorrect PIN", "Please try again.");
     }
