@@ -67,6 +67,14 @@ export default function ParentSignupScreen({ navigation }) {
     Go to Reward Creation
   </Text>
 </TouchableOpacity>
+<TouchableOpacity
+  style={{ marginTop: 10 }}
+  onPress={() => navigation.navigate("ReviewTasks")}
+>
+  <Text style={{ color: "#4CAF50", fontWeight: "bold", textAlign: "center" }}>
+    Go to Review Tasks
+  </Text>
+</TouchableOpacity>
 <View style={{ height: 40 }} />
     </ScrollView>
   );
