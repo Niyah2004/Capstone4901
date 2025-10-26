@@ -1,6 +1,7 @@
-  import React, { useState } from "react";
+/*import React, { useState } from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+
 
 export default function ParentReviewTask({navigation}) {
     const [tasks, setTasks] = useState([
@@ -198,4 +199,88 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 6,
   },
+}); */
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { db } from "../firebaseConfig";
+import { collection, onSnapshot, orderBy, query, deleteDoc, doc } from "firebase/firestore";
+
+export default function ParentReviewTask({ navigation }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const taskList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTasks(taskList);
+      setLoading(false);
+    });
+
+    return unsubscribe; // cleanup listener
+  }, []);
+
+  const handleDelete = async (id) => {
+    await deleteDoc(doc(db, "tasks", id));
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#5CB85C" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>Parent Review Tasks</Text>
+
+      {tasks.length === 0 ? (
+        <Text style={styles.empty}>No tasks yet. Create one from the dashboard!</Text>
+      ) : (
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.taskCard}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.subtitle}>{item.description}</Text>
+                <Text style={styles.date}>
+                  📅 {item.scheduleDate} at ⏰ {item.time}
+                </Text>
+              </View>
+
+              <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                <Ionicons name="trash" size={22} color="red" />
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  header: { fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 20 },
+  taskCard: {
+    backgroundColor: "#f8f8f8",
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  title: { fontSize: 18, fontWeight: "600" },
+  subtitle: { fontSize: 14, color: "#555", marginVertical: 5 },
+  date: { fontSize: 13, color: "#777" },
+  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  empty: { textAlign: "center", color: "#555", marginTop: 40 },
 });

@@ -1,6 +1,11 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth } from "./firebaseConfig";
-
+import {initializeAuth, getReactNativePersistence} from 'firebase/auth/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { app } from "./firebaseConfig"; // Import app instead of auth
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
 export const signUp = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
