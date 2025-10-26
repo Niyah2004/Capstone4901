@@ -63,6 +63,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
 
+
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";
 import ChildProfileSetupScreen from "./screens/ChildProfileSetupScreen";
