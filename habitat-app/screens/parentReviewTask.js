@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 6,
   },
-}); */
+}); 
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -268,12 +268,14 @@ export default function ParentReviewTask({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  header: { fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 20 },
+  container: { flex: 1, padding: 20, backgroundColor: "#f7f7f7", paddingTop: 50 },
+  header: { fontSize: 24, fontWeight: "bold", textAlign: "center", marginBottom: 20, textAlign: "center", color: "#222" },
+  
   taskCard: {
     backgroundColor: "#f8f8f8",
     borderRadius: 10,
     padding: 15,
+  
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
@@ -283,4 +285,186 @@ const styles = StyleSheet.create({
   date: { fontSize: 13, color: "#777" },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   empty: { textAlign: "center", color: "#555", marginTop: 40 },
+});*/
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Animated } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { db } from "../firebaseConfig";
+import { collection, onSnapshot, orderBy, query, deleteDoc, doc, updateDoc } from "firebase/firestore";
+
+export default function ParentReviewTask() {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const taskList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTasks(taskList);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const handleVerify = async (id) => {
+    try {
+      await updateDoc(doc(db, "tasks", id), {
+        verified: true,
+      });
+    } catch (error) {
+      console.error("Error verifying task:", error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    await deleteDoc(doc(db, "tasks", id));
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#5CB85C" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>Review Tasks</Text>
+
+      {tasks.length === 0 ? (
+        <Text style={styles.empty}>No tasks yet. Create one from the dashboard!</Text>
+      ) : (
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.taskCard}>
+              {/* Icon and Title Row */}
+              <View style={styles.row}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="book-outline" size={24} color="#C8A94B" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  <Text style={styles.subtitle}>{item.description}</Text>
+                </View>
+                <View style={styles.pointsBadge}>
+                  <Text style={styles.pointsText}>{item.points || "10"} Pts</Text>
+                </View>
+              </View>
+
+              {/* Progress Bar */}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <Animated.View style={[styles.progressFill, { width: "100%" }]} />
+                </View>
+                <Text style={styles.stepsText}>1/1 Steps</Text>
+              </View>
+
+              {/* Completion & Verify Row */}
+              <View style={styles.statusRow}>
+                <Ionicons name="checkmark-done-circle-outline" size={20} color="#4CAF50" />
+                <Text style={styles.completeText}>Marked as Complete</Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.verifyButton, item.verified && { backgroundColor: "#A5D6A7" }]}
+                onPress={() => handleVerify(item.id)}
+                disabled={item.verified}
+              >
+                <Text style={styles.verifyText}>
+                  {item.verified ? "Verified" : "Verify Completed"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Optional Delete Icon */}
+              <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
+                <Ionicons name="trash-outline" size={20} color="gray" />
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F6F7FB",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  taskCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  row: { flexDirection: "row", alignItems: "center" },
+  iconContainer: {
+    backgroundColor: "#FFF8E1",
+    padding: 8,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  title: { fontSize: 17, fontWeight: "600", color: "#222" },
+  subtitle: { fontSize: 13, color: "#555", marginTop: 2 },
+  pointsBadge: {
+    backgroundColor: "#E9F5E9",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  pointsText: { color: "#388E3C", fontWeight: "600" },
+  progressContainer: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  progressBar: {
+    flex: 1,
+    height: 6,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  progressFill: {
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: "#5CB85C",
+  },
+  stepsText: { fontSize: 12, color: "#777" },
+  statusRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  completeText: { marginLeft: 5, color: "#4CAF50", fontSize: 14 },
+  verifyButton: {
+    marginTop: 10,
+    backgroundColor: "#5CB85C",
+    borderRadius: 25,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  verifyText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  deleteBtn: { position: "absolute", top: 10, right: 10 },
+  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  empty: { textAlign: "center", color: "#777", marginTop: 40 },
 });
+
