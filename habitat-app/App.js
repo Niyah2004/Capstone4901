@@ -67,13 +67,14 @@ import { Ionicons } from "@expo/vector-icons";
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";
 import ChildProfileSetupScreen from "./screens/ChildProfileSetupScreen";
+import LoginScreen from "./screens/LoginScreen";
 import AvatarSelection from "./screens/AvatarSelection";  
 import ChildHome from "./screens/ChildHome";
 import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
 import parentPinScreen from "./screens/parentPinScreen";
 import parentDashBoard from "./screens/ParentDashBoard";
-import parentTaskPage from "./screens/parentTaskPage";
+import parentTaskPage from "./screens/ParentTaskPage";
 import parentReviewTask from "./screens/parentReviewTask";
 import parentReward from "./screens/parentReward";
 import AccountSetting from "./screens/AccountSetting";
@@ -149,6 +150,7 @@ function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
         <Stack.Screen name="AvatarSelection" component={AvatarSelection} />

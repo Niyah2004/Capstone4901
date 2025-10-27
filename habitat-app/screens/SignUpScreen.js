@@ -113,7 +113,7 @@ export default function SignUpScreen({ navigation }) {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => alert("Log In flow placeholder")}>
+        <TouchableOpacity onPress={() => navigation.navigate("LoginScreen")}>
           <Text style={styles.loginText}>Already have an account? Log In</Text>
         </TouchableOpacity>
       </View>

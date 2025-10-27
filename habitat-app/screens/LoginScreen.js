@@ -27,7 +27,7 @@ export default function LoginScreen({ navigation }) {
       const user = await signIn(email.trim(), password);
       if (user) {
         Alert.alert("Welcome Back!", "You have successfully logged in.");
-        navigation.navigate("ParentDashboard"); // change if needed
+        navigation.navigate("ChildTabs"); // change if needed
       }
     } catch (error) {
       console.error("Login error:", error.message);
