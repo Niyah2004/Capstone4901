@@ -10,8 +10,8 @@ const firebaseConfig = {
   projectId: "habitat-71bbc",
   storageBucket: "habitat-71bbc.firebasestorage.app",
   messagingSenderId: "294477577859",
-  appId: "1:294477577859:web:9ecf1ae48890d4abbe65b6",
-  measurementId: "G-TJN4LZBWWF"
+  appId: "1:294477577859:web:78bc9d107482fbc2be65b6",
+  measurementId: "G-1QP4QXLTNB"
 };
 
 
