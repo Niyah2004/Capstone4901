@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animat
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, {useState} from "react";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 
 export default function AvatarSelection({navigation}) {
