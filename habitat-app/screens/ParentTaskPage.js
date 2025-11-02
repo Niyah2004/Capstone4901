@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ParentTaskPage({ navigation }) {
   const [title, setTitle] = useState("");
@@ -55,7 +56,9 @@ export default function ParentTaskPage({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+        <SafeAreaProvider>
+            <SafeAreaView style={styles.container}>
+               <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
       <Text style={styles.header}>Task Management</Text>
 
       {/* Task Title */}
@@ -139,6 +142,8 @@ export default function ParentTaskPage({ navigation }) {
         <Text style={styles.saveButtonText}>Save Task</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

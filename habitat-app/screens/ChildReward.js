@@ -5,6 +5,7 @@ import { db } from "../firebaseConfig";
 import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)

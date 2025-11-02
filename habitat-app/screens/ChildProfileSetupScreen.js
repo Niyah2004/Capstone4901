@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ChildProfileSetupScreen({ navigation }) {
   const [pin, setPin] = useState("");

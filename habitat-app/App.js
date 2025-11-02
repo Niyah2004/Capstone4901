@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
-
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";

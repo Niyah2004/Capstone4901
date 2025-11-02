@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, Image} from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ChildHome({navigation}) {
     const [progress] = useState(new Animated.Value(0));

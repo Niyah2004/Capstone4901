@@ -1,6 +1,7 @@
  import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // 👈 ADD THIS IMPORT
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ChildTask({route, navigation}) {
     // temporarily disable these props to avoid undefined errors during demo

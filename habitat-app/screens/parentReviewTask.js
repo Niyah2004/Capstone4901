@@ -289,6 +289,7 @@ const styles = StyleSheet.create({
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, orderBy, query, deleteDoc, doc, updateDoc } from "firebase/firestore";
 

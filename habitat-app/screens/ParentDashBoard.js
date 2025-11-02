@@ -32,6 +32,8 @@ const styles = StyleSheet.create({
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // for icons
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+
 
 
 export default function ParentDashBoard({ navigation }) {
@@ -87,7 +89,7 @@ export default function ParentDashBoard({ navigation }) {
         <View style={styles.manageGrid}>
           <TouchableOpacity style={styles.manageBox}
            // onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentTaskPage" })}
-          onPress={() => navigation.navigate("parentTaskPage")}
+          onPress={() => navigation.navigate("ParentTaskPage")}
           >
             <Ionicons name="list-outline" size={24} color="#000" />
             <Text>Task Management</Text>
