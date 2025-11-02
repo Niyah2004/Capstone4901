@@ -1,14 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+import { Alert } from "react-native";
+import { Modal, Image } from "react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
+
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
-    const [rewards, setRewards] = useState([
-        { id: 1, title: "Reward 1", cost: 100 },
-        { id: 2, title: "Reward 2", cost: 250 },
-        { id: 3, title: "Reward 3", cost: 150 },
-        { id: 4, title: "Reward 4", cost: 80 },
-    ]);
+    const [rewards, setRewards] = useState([]);
+    const [selectedReward, setSelectedReward] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const confettiRef = useRef(null);
+
+    useEffect(() => {
+        const fetchRewards = async () => {
+          try {
+            const querySnapshot = await getDocs(collection(db, "rewards"));
+            const rewardList = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              title: doc.data().name || "Unnamed Reward",
+              cost: doc.data().points || 0,
+              description: doc.data().description || "",
+            }));
+            setRewards(rewardList);
+          } catch (error) {
+            console.error("Error fetching rewards: ", error);
+          }
+        };
+      
+        fetchRewards();
+      }, []);
 
     return (
         <View style={styles.container}>
@@ -44,9 +67,7 @@ export default function ChildReward() {
                 </View>
             </ScrollView>
 
-            <TouchableOpacity style={styles.switchButton}>
-                <Text style={styles.switchButtonText}>Get Different Character →</Text>
-            </TouchableOpacity>
+    
 
 
             <Text style={styles.sectionTitle}>Available Rewards</Text>
@@ -59,18 +80,88 @@ export default function ChildReward() {
                         <View style={styles.rewardIconPlaceholder}>
                             <Text style={styles.placeholderText}>Icon</Text>
                         </View>
+                        <Modal
+                             animationType="slide"
+                             transparent={true}
+                             visible={modalVisible}
+                             onShow={() => confettiRef.current?.start()} // 💥 fire confetti when modal appears
+                              onRequestClose={() => setModalVisible(false)}
+                        >
+                             <View style={styles.modalOverlay}>
+                                 <View style={styles.modalContainer}>
+                
+                                    <ConfettiCannon
+                                        ref={confettiRef}
+                                        count={60}
+                                        origin={{ x: 200, y: -20 }}
+                                        autoStart={false}
+                                        fadeOut={true}
+                                        />
+                                
+                                     <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
 
+                                    <View style={styles.modalImagePlaceholder}>
+                                     <Text style={styles.modalImageText}>🎁</Text>
+                                 </View>
+
+                                    <Text style={styles.modalDesc}>
+                                         {selectedReward?.description || "No description provided."}
+                                    </Text>
+                                     <Text style={styles.modalPoints}>
+                                        ⭐ {selectedReward?.cost} Points
+                                     </Text>
+    
+
+                                     <TouchableOpacity
+                                        style={styles.modalCloseButton}
+                                        onPress={() => setModalVisible(false)}
+                                     >
+                                        <Text style={styles.modalCloseText}>Close</Text>
+                                     </TouchableOpacity>
+                                 </View>
+                             </View>
+                     </Modal>
 
                         <Text style={styles.rewardTitle}>{reward.title}</Text>
                         <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
 
 
-                        <TouchableOpacity style={styles.rewardAction}>
-                            <Text style={styles.rewardActionText}>View</Text>
-                        </TouchableOpacity>
-                    </View>
-                ))}
+                        <TouchableOpacity
+                            style={styles.rewardAction}
+                            onPress={() => {
+                                setSelectedReward(reward);
+                                setModalVisible(true);
+                             }}
+                        >
+         <Text style={styles.rewardActionText}>View</Text>
+        </TouchableOpacity>
+    </View>
+))}
             </ScrollView>
+            <Modal
+  animationType="slide"
+  transparent={true}
+  visible={modalVisible}
+  onRequestClose={() => setModalVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContainer}>
+      <View style={styles.sparkleCircle}>
+        <Text style={styles.sparkleEmoji}>🎉</Text>
+      </View>
+      <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
+      <Text style={styles.modalDesc}>{selectedReward?.description}</Text>
+      <Text style={styles.modalPoints}>⭐ {selectedReward?.cost} Points</Text>
+
+      <TouchableOpacity
+        style={styles.claimButton}
+        onPress={() => setModalVisible(false)}
+      >
+        <Text style={styles.claimText}>Awesome!</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
         </View>
     );
 }
@@ -177,5 +268,118 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 10,
-    }
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.4)",
+      },
+      modalContainer: {
+        width: "80%",
+        backgroundColor: "#fff",
+        borderRadius: 20,
+        padding: 20,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 6,
+        elevation: 5,
+      },
+      modalTitle: {
+        fontSize: 22,
+        fontWeight: "700",
+        marginBottom: 10,
+        textAlign: "center",
+        color: "#4CAF50",
+      },
+      modalImagePlaceholder: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: "#E8F5E9",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 15,
+      },
+      modalImageText: { fontSize: 40 },
+      modalDesc: {
+        fontSize: 16,
+        textAlign: "center",
+        color: "#555",
+        marginBottom: 10,
+      },
+      modalPoints: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: "#FF9800",
+        marginBottom: 20,
+      },
+      modalCloseButton: {
+        backgroundColor: "#4CAF50",
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 30,
+      },
+      modalCloseText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
+      },
+      sparkleCircle: {
+        backgroundColor: "#E8F5E9",
+        borderRadius: 60,
+        width: 120,
+        height: 120,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 15,
+      },
+      sparkleEmoji: {
+        fontSize: 50,
+      },
+      modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+      },
+      modalContainer: {
+        width: "85%",
+        backgroundColor: "#fff",
+        borderRadius: 25,
+        padding: 25,
+        alignItems: "center",
+        elevation: 10,
+      },
+      modalTitle: {
+        fontSize: 24,
+        fontWeight: "700",
+        color: "#4CAF50",
+        marginBottom: 8,
+      },
+      modalDesc: {
+        fontSize: 16,
+        color: "#555",
+        textAlign: "center",
+        marginBottom: 12,
+      },
+      modalPoints: {
+        fontSize: 18,
+        color: "#FF9800",
+        fontWeight: "600",
+        marginBottom: 25,
+      },
+      claimButton: {
+        backgroundColor: "#4CAF50",
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 35,
+      },
+      claimText: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "700",
+      },
 });

@@ -1,4 +1,6 @@
 // Comfort page for parents to create and manage rewards for their children
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 import React, { useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
 
@@ -8,15 +10,30 @@ export default function ParentReward({navigation}) {
   const [points, setPoints] = useState("");
   const [frequency, setFrequency] = useState("One-Time");
 
-  const saveReward = () => {
+  
+  const saveReward = async () => {
     if (!rewardName || !points) {
-      Alert.alert("Missing info", "Please fill in the Reward Name and Points Required.");
+      Alert.alert("Missing info", "Please fill in both Reward Name and Points.");
       return;
     }
-    Alert.alert("Saved", `Reward "${rewardName}" created!`);
-    navigation.goBack();
+  
+    try {
+      await addDoc(collection(db, "rewards"), {
+        name: rewardName,
+        description: description,
+        points: parseInt(points),
+        frequency: frequency,
+        createdAt: new Date(),
+      });
+  
+      Alert.alert("Success!", "Reward has been added.");
+      navigation.goBack(); // sends you back after saving
+    } catch (error) {
+      console.error("Error saving reward:", error);
+      Alert.alert("Error", "Could not save reward, try again later.");
+    }
   };
-
+  
   return (
     <ScrollView
   contentContainerStyle={styles.container}
