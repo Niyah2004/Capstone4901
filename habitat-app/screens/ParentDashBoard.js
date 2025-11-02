@@ -87,7 +87,7 @@ export default function ParentDashBoard({ navigation }) {
         <View style={styles.manageGrid}>
           <TouchableOpacity style={styles.manageBox}
            // onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentTaskPage" })}
-          onPress={() => navigation.navigate("parentTaskPage")}
+          onPress={() => navigation.navigate("ParentTaskPage")}
           >
             <Ionicons name="list-outline" size={24} color="#000" />
             <Text>Task Management</Text>
