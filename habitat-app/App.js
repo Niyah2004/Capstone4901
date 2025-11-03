@@ -76,7 +76,7 @@ import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
 import parentPinScreen from "./screens/parentPinScreen";
 import parentDashBoard from "./screens/ParentDashBoard";
-import parentTaskPage from "./screens/ParentTaskPage";
+import ParentTaskPage from "./screens/ParentTaskPage";
 import parentReviewTask from "./screens/parentReviewTask";
 import parentReward from "./screens/parentReward";
 import AccountSetting from "./screens/AccountSetting";
@@ -94,7 +94,7 @@ function ParentStackScreen() {
     <ParentStack.Navigator screenOptions={{ headerShown: false }}>
       <ParentStack.Screen name="parentPinScreen" component={parentPinScreen} />
       <ParentStack.Screen name="parentDashBoard" component={parentDashBoard} />
-      <ParentStack.Screen name="parentTaskPage" component={parentTaskPage} />
+      <ParentStack.Screen name="ParentTaskPage" component={ParentTaskPage} />
       <ParentStack.Screen name="parentReviewTask" component={parentReviewTask} />
       <ParentStack.Screen name="parentReward" component={parentReward} />
       <ParentStack.Screen name="AccountSetting" component={AccountSetting} />
