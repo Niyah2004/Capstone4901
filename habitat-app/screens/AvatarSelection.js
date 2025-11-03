@@ -25,7 +25,7 @@ export default function AvatarSelection({navigation, route}) {
     await updateDoc(docRef, {
       avatar: selectedAvatar
     });
-      navigation.navigate("ChildHome");
+      navigation.navigate("ChildTabs");
     }
   };
 
