@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
@@ -16,10 +18,19 @@ export default function ChildReward() {
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
 
+                <View style={styles.avatarContainer}>
+                    {/* Avatar Image */}
+                    <Image
+                        source={require("../assets/panda.png")} //Avatar image path
+                        style={styles.avatar}
+                    />
+                </View>
+
+                {/*
                 <View style={styles.avatarPlaceholder}>
                     <Text style={styles.placeholderText}>Image</Text>
                 </View>
-
+                    */}
 
                 <View style={styles.pointsRow}>
                     <Text style={styles.pointsNumber}>{totalStars}</Text>
@@ -88,8 +99,9 @@ const styles = StyleSheet.create({
     RewardCard: {
         backgroundColor: "#fff",
         borderRadius: 20,
-        padding: 60,
-        flexDirection: "row",
+        padding: 20,
+        /* stack contents vertically so avatar sits at the top center */
+        flexDirection: "column",
         alignItems: "center",
         marginBottom: 14,
         shadowColor: "#000",
@@ -114,11 +126,11 @@ const styles = StyleSheet.create({
         color: "#999",
     },
 
-    pointsRow: { alignItems: "center", marginRight: 12, marginTop: 40, marginLeft: -40 },
+    pointsRow: { alignItems: "center", marginTop: 12, marginBottom: 6 },
     pointsNumber: { fontSize: 28, fontWeight: "700" },
     pointsLabel: { fontSize: 12, color: "#777" },
-    greetingRow: { flex: 1, alignItems: "center", marginLeft: -160, marginTop: 140 },
-    greetingTitle: { fontSize: 16, fontWeight: "600" },
+    greetingRow: { alignItems: "center", marginTop: 8 },
+    greetingTitle: { fontSize: 16, fontWeight: "600", textAlign: "center" },
 
     switchButton: {
         backgroundColor: "#4CAF50",
@@ -177,5 +189,17 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 10,
-    }
+    },
+    avatar: {
+        width: 150,
+        height: 150,
+        borderRadius: 10
+    },
+    avatarContainer: {
+        alignItems: "center",
+        /* center horizontally and keep at the top of the card */
+        alignSelf: "center",
+        marginTop: 6,
+        marginBottom: 6,
+    },
 });

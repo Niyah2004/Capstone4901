@@ -1,8 +1,9 @@
- import React, { useState } from "react";
+import React, { useState } from "react";
+import WeekCalendar from "./WeekCalendar";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // 👈 ADD THIS IMPORT
 
-export default function ChildTask({route, navigation}) {
+export default function ChildTask({ route, navigation }) {
     // temporarily disable these props to avoid undefined errors during demo
     const task = route?.params?.task || { title: "", description: "", isCompleted: false };
 
@@ -15,9 +16,19 @@ export default function ChildTask({route, navigation}) {
         <View style={styles.container}>
             <Text style={styles.title}>Today's Tasks</Text>
 
+            <View style={styles.calendarContainer}>
+                <View style={{ flex: 10 }}>
+                    <WeekCalendar
+                        date={new Date()}
+                        onChange={(newdate) => console.log(newdate)}
+                    />
+                </View>
+            </View>
+
+
             {/* Week days bar */}
-            <View style={styles.weeksContainer}>
-                {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+            {/* <View style={styles.weeksContainer}>
+               {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
                     <View
                         key={index}
                         style={[styles.dayCircle, index === 4 && styles.presentDay]} // highlight "Friday"
@@ -30,7 +41,7 @@ export default function ChildTask({route, navigation}) {
                     </View>
                 ))}
             </View>
-
+        */}
             {/* Task list */}
             <ScrollView style={{ marginTop: 10 }}>
                 {demoTasks.map((_, index) => (
@@ -70,6 +81,11 @@ const styles = StyleSheet.create({
     weeksContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
+        marginBottom: 20,
+    },
+    calendarContainer: {
+        flexDirection: "row",
+        alignItems: "center",
         marginBottom: 20,
     },
     dayCircle: {
