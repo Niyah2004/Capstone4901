@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
-import Icon from 'react-native-vector-icons/FontAwesome';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
@@ -42,18 +40,6 @@ export default function ChildReward() {
                     <Text style={styles.greetingTitle}>Amazing job, Lea! keep building those Habits</Text>
                 </View>
             </View>
-            <Text style={styles.sectionTitle}>Unlock more items:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.itemsScrollContainer}>
-                <View style={styles.itemsIconPlaceholder}>
-                    <Text style={styles.placeholderText}>Item 1</Text>
-                </View>
-                <View style={styles.itemsIconPlaceholder}>
-                    <Text style={styles.placeholderText}>Item 2</Text>
-                </View>
-                <View style={styles.itemsIconPlaceholder}>
-                    <Text style={styles.placeholderText}>Item 3</Text>
-                </View>
-            </ScrollView>
 
             <TouchableOpacity style={styles.switchButton}>
                 <Text style={styles.switchButtonText}>Get Different Character →</Text>
@@ -63,7 +49,7 @@ export default function ChildReward() {
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
 
-            <ScrollView contentContainerStyle={styles.rewardsGrid}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
                 {rewards.map((reward) => (
                     <View key={reward.id} style={styles.rewardCard}>
 
@@ -82,6 +68,20 @@ export default function ChildReward() {
                     </View>
                 ))}
             </ScrollView>
+
+            <Text style={styles.sectionTitle}>Unlock more items:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.itemsScrollContainer}>
+                <View style={styles.itemsIconPlaceholder}>
+                    <Text style={styles.placeholderText}>Item 1</Text>
+                </View>
+                <View style={styles.itemsIconPlaceholder}>
+                    <Text style={styles.placeholderText}>Item 2</Text>
+                </View>
+                <View style={styles.itemsIconPlaceholder}>
+                    <Text style={styles.placeholderText}>Item 3</Text>
+                </View>
+            </ScrollView>
+
         </View>
     );
 }
@@ -143,19 +143,24 @@ const styles = StyleSheet.create({
 
     sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
 
-    rewardsGrid: {
+    rewardsScrollContainer: {
         flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-        paddingBottom: 40,
+        paddingBottom: 20,
+        paddingHorizontal: 4,
+    },
+    itemsScrollContainer: {
+        flexDirection: "row",
+        paddingBottom: 12,
+        paddingHorizontal: 4,
     },
     rewardCard: {
         backgroundColor: "#fff",
-        width: "48%",
-        borderRadius: 16,
+        width: 160,
+        borderRadius: 18,
         padding: 14,
         marginBottom: 12,
         alignItems: "center",
+        marginRight: 12,
         shadowColor: "#000",
         shadowOpacity: 0.04,
         shadowOffset: { width: 0, height: 3 },
@@ -163,15 +168,15 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     rewardIconPlaceholder: {
-        width: 48,
-        height: 48,
+        width: 30,
+        height: 30,
         borderRadius: 10,
         backgroundColor: "#EDEDED",
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 10,
     },
-    rewardTitle: { fontWeight: "600", textAlign: "center", marginBottom: 6 },
+    rewardTitle: { fontWeight: "500", textAlign: "center", marginBottom: 6 },
     rewardCost: { fontSize: 12, color: "#777", marginBottom: 8 },
     rewardAction: {
         borderWidth: 1,
@@ -189,6 +194,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 10,
+        marginRight: 12,
     },
     avatar: {
         width: 150,

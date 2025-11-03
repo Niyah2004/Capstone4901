@@ -63,7 +63,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react"
-import * as ScreenOrientation from "expo-screen-orientation"
+//import * as ScreenOrientation from "expo-screen-orientation"
 
 
 // --- Screen Imports ---
@@ -172,4 +172,4 @@ export default function App() {
 }
 
 registerRootComponent(App);
-export default App;
+
