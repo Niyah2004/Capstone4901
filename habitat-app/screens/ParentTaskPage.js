@@ -5,6 +5,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import {getAuth} from "firebase/auth";
 
 export default function ParentTaskPage({ navigation }) {
   const [title, setTitle] = useState("");
@@ -37,8 +38,11 @@ export default function ParentTaskPage({ navigation }) {
     }
 
     try {
-      // you can change this collection path later if you want to store per-child
-      await addDoc(collection(db, "tasks"), {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const parentTasksRef = collection(db, "parents", user.uid, "tasks");
+      
+      await addDoc(parentTasksRef, {
         title,
         description,
         scheduleDate: date.toISOString().split("T")[0],
@@ -47,7 +51,7 @@ export default function ParentTaskPage({ navigation }) {
         createdAt: serverTimestamp(),
       });
 
-      Alert.alert("✅ Success", "Task saved successfully!");
+      Alert.alert("Success", "Task saved successfully!");
       navigation.goBack();
     } catch (error) {
       console.error("Error saving task:", error);

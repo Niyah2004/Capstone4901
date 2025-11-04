@@ -35,7 +35,7 @@ function ParentStackScreen() {
   return (
     <ParentStack.Navigator screenOptions={{ headerShown: false }}>
       <ParentStack.Screen name="parentPinScreen" component={parentPinScreen} />
-      <ParentStack.Screen name="parentDashBoard" component={parentDashBoard} />
+      <ParentStack.Screen name="ParentDashBoard" component={parentDashBoard} />
       <ParentStack.Screen name="ParentTaskPage" component={ParentTaskPage} />
       <ParentStack.Screen name="parentReviewTask" component={parentReviewTask} />
       <ParentStack.Screen name="parentReward" component={parentReward} />
