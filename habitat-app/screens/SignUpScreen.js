@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import {signUp} from "../auth";
 import { Ionicons } from "@expo/vector-icons";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState("");

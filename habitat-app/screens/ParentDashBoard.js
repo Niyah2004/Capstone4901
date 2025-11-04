@@ -32,6 +32,8 @@ const styles = StyleSheet.create({
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // for icons
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+
 
 
 export default function ParentDashBoard({ navigation }) {
