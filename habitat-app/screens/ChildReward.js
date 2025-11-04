@@ -1,11 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebaseConfig";
-import { Alert } from "react-native";
-import { Modal, Image } from "react-native";
-import ConfettiCannon from "react-native-confetti-cannon";
-
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Modal } from "react-native";
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
@@ -16,22 +10,22 @@ export default function ChildReward() {
 
     useEffect(() => {
         const fetchRewards = async () => {
-          try {
-            const querySnapshot = await getDocs(collection(db, "rewards"));
-            const rewardList = querySnapshot.docs.map(doc => ({
-              id: doc.id,
-              title: doc.data().name || "Unnamed Reward",
-              cost: doc.data().points || 0,
-              description: doc.data().description || "",
-            }));
-            setRewards(rewardList);
-          } catch (error) {
-            console.error("Error fetching rewards: ", error);
-          }
+            try {
+                const querySnapshot = await getDocs(collection(db, "rewards"));
+                const rewardList = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    title: doc.data().name || "Unnamed Reward",
+                    cost: doc.data().points || 0,
+                    description: doc.data().description || "",
+                }));
+                setRewards(rewardList);
+            } catch (error) {
+                console.error("Error fetching rewards: ", error);
+            }
         };
-      
+
         fetchRewards();
-      }, []);
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -39,10 +33,19 @@ export default function ChildReward() {
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
 
+                <View style={styles.avatarContainer}>
+                    {/* Avatar Image */}
+                    <Image
+                        source={require("../assets/panda.png")} //Avatar image path
+                        style={styles.avatar}
+                    />
+                </View>
+
+                {/*
                 <View style={styles.avatarPlaceholder}>
                     <Text style={styles.placeholderText}>Image</Text>
                 </View>
-
+                    */}
 
                 <View style={styles.pointsRow}>
                     <Text style={styles.pointsNumber}>{totalStars}</Text>
@@ -54,26 +57,14 @@ export default function ChildReward() {
                     <Text style={styles.greetingTitle}>Amazing job, Lea! keep building those Habits</Text>
                 </View>
             </View>
-            <Text style={styles.sectionTitle}>Unlock more items:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.itemsScrollContainer}>
-                <View style={styles.itemsIconPlaceholder}>
-                    <Text style={styles.placeholderText}>Item 1</Text>
-                </View>
-                <View style={styles.itemsIconPlaceholder}>
-                    <Text style={styles.placeholderText}>Item 2</Text>
-                </View>
-                <View style={styles.itemsIconPlaceholder}>
-                    <Text style={styles.placeholderText}>Item 3</Text>
-                </View>
-            </ScrollView>
 
-    
+
 
 
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
 
-            <ScrollView contentContainerStyle={styles.rewardsGrid}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
                 {rewards.map((reward) => (
                     <View key={reward.id} style={styles.rewardCard}>
 
@@ -81,46 +72,46 @@ export default function ChildReward() {
                             <Text style={styles.placeholderText}>Icon</Text>
                         </View>
                         <Modal
-                             animationType="slide"
-                             transparent={true}
-                             visible={modalVisible}
-                             onShow={() => confettiRef.current?.start()} // 💥 fire confetti when modal appears
-                              onRequestClose={() => setModalVisible(false)}
+                            animationType="slide"
+                            transparent={true}
+                            visible={modalVisible}
+                            onShow={() => confettiRef.current?.start()} // 💥 fire confetti when modal appears
+                            onRequestClose={() => setModalVisible(false)}
                         >
-                             <View style={styles.modalOverlay}>
-                                 <View style={styles.modalContainer}>
-                
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.modalContainer}>
+
                                     <ConfettiCannon
                                         ref={confettiRef}
                                         count={60}
                                         origin={{ x: 200, y: -20 }}
                                         autoStart={false}
                                         fadeOut={true}
-                                        />
-                                
-                                     <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
+                                    />
+
+                                    <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
 
                                     <View style={styles.modalImagePlaceholder}>
-                                     <Text style={styles.modalImageText}>🎁</Text>
-                                 </View>
+                                        <Text style={styles.modalImageText}>🎁</Text>
+                                    </View>
 
                                     <Text style={styles.modalDesc}>
-                                         {selectedReward?.description || "No description provided."}
+                                        {selectedReward?.description || "No description provided."}
                                     </Text>
-                                     <Text style={styles.modalPoints}>
+                                    <Text style={styles.modalPoints}>
                                         ⭐ {selectedReward?.cost} Points
-                                     </Text>
-    
+                                    </Text>
 
-                                     <TouchableOpacity
+
+                                    <TouchableOpacity
                                         style={styles.modalCloseButton}
                                         onPress={() => setModalVisible(false)}
-                                     >
+                                    >
                                         <Text style={styles.modalCloseText}>Close</Text>
-                                     </TouchableOpacity>
-                                 </View>
-                             </View>
-                     </Modal>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </Modal>
 
                         <Text style={styles.rewardTitle}>{reward.title}</Text>
                         <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
@@ -131,37 +122,13 @@ export default function ChildReward() {
                             onPress={() => {
                                 setSelectedReward(reward);
                                 setModalVisible(true);
-                             }}
+                            }}
                         >
-         <Text style={styles.rewardActionText}>View</Text>
-        </TouchableOpacity>
-    </View>
-))}
+                            <Text style={styles.rewardActionText}>View</Text>
+                        </TouchableOpacity>
+                    </View>
+                ))}
             </ScrollView>
-            <Modal
-  animationType="slide"
-  transparent={true}
-  visible={modalVisible}
-  onRequestClose={() => setModalVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContainer}>
-      <View style={styles.sparkleCircle}>
-        <Text style={styles.sparkleEmoji}>🎉</Text>
-      </View>
-      <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
-      <Text style={styles.modalDesc}>{selectedReward?.description}</Text>
-      <Text style={styles.modalPoints}>⭐ {selectedReward?.cost} Points</Text>
-
-      <TouchableOpacity
-        style={styles.claimButton}
-        onPress={() => setModalVisible(false)}
-      >
-        <Text style={styles.claimText}>Awesome!</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
         </View>
     );
 }
@@ -179,8 +146,9 @@ const styles = StyleSheet.create({
     RewardCard: {
         backgroundColor: "#fff",
         borderRadius: 20,
-        padding: 60,
-        flexDirection: "row",
+        padding: 20,
+        /* stack contents vertically so avatar sits at the top center */
+        flexDirection: "column",
         alignItems: "center",
         marginBottom: 14,
         shadowColor: "#000",
@@ -205,11 +173,11 @@ const styles = StyleSheet.create({
         color: "#999",
     },
 
-    pointsRow: { alignItems: "center", marginRight: 12, marginTop: 40, marginLeft: -40 },
+    pointsRow: { alignItems: "center", marginTop: 12, marginBottom: 6 },
     pointsNumber: { fontSize: 28, fontWeight: "700" },
     pointsLabel: { fontSize: 12, color: "#777" },
-    greetingRow: { flex: 1, alignItems: "center", marginLeft: -160, marginTop: 140 },
-    greetingTitle: { fontSize: 16, fontWeight: "600" },
+    greetingRow: { alignItems: "center", marginTop: 8 },
+    greetingTitle: { fontSize: 16, fontWeight: "600", textAlign: "center" },
 
     switchButton: {
         backgroundColor: "#4CAF50",
@@ -222,19 +190,24 @@ const styles = StyleSheet.create({
 
     sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
 
-    rewardsGrid: {
+    rewardsScrollContainer: {
         flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-        paddingBottom: 40,
+        paddingBottom: 20,
+        paddingHorizontal: 4,
+    },
+    itemsScrollContainer: {
+        flexDirection: "row",
+        paddingBottom: 12,
+        paddingHorizontal: 4,
     },
     rewardCard: {
         backgroundColor: "#fff",
-        width: "48%",
-        borderRadius: 16,
+        width: 160,
+        borderRadius: 18,
         padding: 14,
         marginBottom: 12,
         alignItems: "center",
+        marginRight: 12,
         shadowColor: "#000",
         shadowOpacity: 0.04,
         shadowOffset: { width: 0, height: 3 },
@@ -242,15 +215,15 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     rewardIconPlaceholder: {
-        width: 48,
-        height: 48,
+        width: 30,
+        height: 30,
         borderRadius: 10,
         backgroundColor: "#EDEDED",
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 10,
     },
-    rewardTitle: { fontWeight: "600", textAlign: "center", marginBottom: 6 },
+    rewardTitle: { fontWeight: "500", textAlign: "center", marginBottom: 6 },
     rewardCost: { fontSize: 12, color: "#777", marginBottom: 8 },
     rewardAction: {
         borderWidth: 1,
@@ -269,117 +242,16 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 10,
     },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.4)",
-      },
-      modalContainer: {
-        width: "80%",
-        backgroundColor: "#fff",
-        borderRadius: 20,
-        padding: 20,
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 3 },
-        shadowRadius: 6,
-        elevation: 5,
-      },
-      modalTitle: {
-        fontSize: 22,
-        fontWeight: "700",
-        marginBottom: 10,
-        textAlign: "center",
-        color: "#4CAF50",
-      },
-      modalImagePlaceholder: {
+    avatar: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: "#E8F5E9",
-        justifyContent: "center",
+    },
+    avatarContainer: {
         alignItems: "center",
-        marginBottom: 15,
-      },
-      modalImageText: { fontSize: 40 },
-      modalDesc: {
-        fontSize: 16,
-        textAlign: "center",
-        color: "#555",
-        marginBottom: 10,
-      },
-      modalPoints: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#FF9800",
-        marginBottom: 20,
-      },
-      modalCloseButton: {
-        backgroundColor: "#4CAF50",
-        borderRadius: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 30,
-      },
-      modalCloseText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
-      },
-      sparkleCircle: {
-        backgroundColor: "#E8F5E9",
-        borderRadius: 60,
-        width: 120,
-        height: 120,
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 15,
-      },
-      sparkleEmoji: {
-        fontSize: 50,
-      },
-      modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center",
-      },
-      modalContainer: {
-        width: "85%",
-        backgroundColor: "#fff",
-        borderRadius: 25,
-        padding: 25,
-        alignItems: "center",
-        elevation: 10,
-      },
-      modalTitle: {
-        fontSize: 24,
-        fontWeight: "700",
-        color: "#4CAF50",
-        marginBottom: 8,
-      },
-      modalDesc: {
-        fontSize: 16,
-        color: "#555",
-        textAlign: "center",
-        marginBottom: 12,
-      },
-      modalPoints: {
-        fontSize: 18,
-        color: "#FF9800",
-        fontWeight: "600",
-        marginBottom: 25,
-      },
-      claimButton: {
-        backgroundColor: "#4CAF50",
-        borderRadius: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 35,
-      },
-      claimText: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "700",
-      },
+        /* center horizontally and keep at the top of the card */
+        alignSelf: "center",
+        marginTop: 6,
+        marginBottom: 6,
+    },
 });

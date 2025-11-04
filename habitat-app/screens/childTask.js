@@ -1,23 +1,51 @@
- import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import WeekCalendar from "./WeekCalendar";
+import { isSameDay, addDays } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // 👈 ADD THIS IMPORT
 
-export default function ChildTask({route, navigation}) {
+export default function ChildTask({ route, navigation }) {
     // temporarily disable these props to avoid undefined errors during demo
     const task = route?.params?.task || { title: "", description: "", isCompleted: false };
 
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description);
     const [isCompleted, setIsCompleted] = useState(task.isCompleted);
-    const demoTasks = new Array(10).fill(null);
+
+    // selected date from WeekCalendar
+    const [selectedDate, setSelectedDate] = useState(new Date());
+
+    // sample tasks with dates — replace with your real data source (Firestore etc.)
+    const tasks = [
+        { id: 1, title: "Brush Teeth", points: 5, date: new Date() },
+        { id: 2, title: "Do Homework", points: 10, date: addDays(new Date(), 0) },
+        { id: 3, title: "Read a Book", points: 8, date: addDays(new Date(), 1) },
+        { id: 4, title: "Feed the Fish", points: 3, date: addDays(new Date(), -1) },
+    ];
+
+    // tasks for the currently selected date
+    const tasksForDate = useMemo(
+        () => tasks.filter((t) => isSameDay(t.date, selectedDate)),
+        [tasks, selectedDate]
+    );
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Today's Tasks</Text>
 
+            <View style={styles.calendarContainer}>
+                <View style={{ flex: 10 }}>
+                    <WeekCalendar
+                        date={selectedDate}
+                        onChange={(newdate) => setSelectedDate(newdate)}
+                    />
+                </View>
+            </View>
+
+
             {/* Week days bar */}
-            <View style={styles.weeksContainer}>
-                {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+            {/* <View style={styles.weeksContainer}>
+               {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
                     <View
                         key={index}
                         style={[styles.dayCircle, index === 4 && styles.presentDay]} // highlight "Friday"
@@ -30,26 +58,35 @@ export default function ChildTask({route, navigation}) {
                     </View>
                 ))}
             </View>
-
+        */}
             {/* Task list */}
+            <Text style={{ marginTop: 6, marginBottom: 6, fontWeight: '600' }}>
+                Tasks for {selectedDate.toDateString()}
+            </Text>
             <ScrollView style={{ marginTop: 10 }}>
-                {demoTasks.map((_, index) => (
-                    <View key={index} style={styles.taskBox}>
-                        <View style={styles.taskHeader}>
-                            <Text style={styles.taskTitle}>Task {index + 1}</Text>
-                            <Text style={styles.points}>10 pts</Text>
-                        </View>
-
-                        <View style={styles.Progress}>
-                            <View style={[styles.progressFill, { width: "50%" }]} />
-                        </View>
-
-                        <TouchableOpacity style={styles.completeButton}>
-                            <Ionicons name="checkbox-outline" size={16} color="#4CAF50" />
-                            <Text style={styles.complete}> Mark as complete</Text>
-                        </TouchableOpacity>
+                {tasksForDate.length === 0 ? (
+                    <View style={styles.taskBox}>
+                        <Text style={{ textAlign: 'center', color: '#777' }}>No tasks for this date.</Text>
                     </View>
-                ))}
+                ) : (
+                    tasksForDate.map((task) => (
+                        <View key={task.id} style={styles.taskBox}>
+                            <View style={styles.taskHeader}>
+                                <Text style={styles.taskTitle}>{task.title}</Text>
+                                <Text style={styles.points}>{task.points} pts</Text>
+                            </View>
+
+                            <View style={styles.Progress}>
+                                <View style={[styles.progressFill, { width: "50%" }]} />
+                            </View>
+
+                            <TouchableOpacity style={styles.completeButton}>
+                                <Ionicons name="checkbox-outline" size={16} color="#4CAF50" />
+                                <Text style={styles.complete}> Mark as complete</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ))
+                )}
             </ScrollView>
         </View>
     );
@@ -70,6 +107,11 @@ const styles = StyleSheet.create({
     weeksContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
+        marginBottom: 20,
+    },
+    calendarContainer: {
+        flexDirection: "row",
+        alignItems: "center",
         marginBottom: 20,
     },
     dayCircle: {

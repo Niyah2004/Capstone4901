@@ -1,18 +1,16 @@
-
- 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
-
+import * as ScreenOrientation from "expo-screen-orientation";
 
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";
 import ChildProfileSetupScreen from "./screens/ChildProfileSetupScreen";
 import LoginScreen from "./screens/LoginScreen";
-import AvatarSelection from "./screens/AvatarSelection";  
+import AvatarSelection from "./screens/AvatarSelection";
 import ChildHome from "./screens/ChildHome";
 import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
@@ -78,11 +76,7 @@ function ChildTabs() {
       <Tab.Screen name="Home" component={ChildHome} />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen
-        name="Parent"
-        component={ParentStackScreen}
-        
-      />
+      <Tab.Screen name="Parent" component={ParentStackScreen} />
     </Tab.Navigator>
   );
 }
@@ -90,10 +84,23 @@ function ChildTabs() {
 /**
  * Main app navigation stack
  */
-function App() {
+export default function App() {
+  const [orientation, setOrientation] = useState();
+
+  useEffect(() => {
+    const getOrientation = async () => {
+      const current = await ScreenOrientation.getOrientationAsync();
+      setOrientation(current);
+    };
+    getOrientation();
+  }, []);
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        initialRouteName="ChildTabs"
+        screenOptions={{ headerShown: false }}
+      >
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
@@ -106,4 +113,3 @@ function App() {
 }
 
 registerRootComponent(App);
-export default App;
