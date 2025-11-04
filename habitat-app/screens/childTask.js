@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import WeekCalendar from "./WeekCalendar";
-import { isSameDay, addDays } from "date-fns";
+import { addDays, startOfDay } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // 👈 ADD THIS IMPORT
+import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 export default function ChildTask({ route, navigation }) {
     // temporarily disable these props to avoid undefined errors during demo
@@ -15,19 +17,40 @@ export default function ChildTask({ route, navigation }) {
     // selected date from WeekCalendar
     const [selectedDate, setSelectedDate] = useState(new Date());
 
-    // sample tasks with dates — replace with your real data source (Firestore etc.)
-    const tasks = [
-        { id: 1, title: "Brush Teeth", points: 5, date: new Date() },
-        { id: 2, title: "Do Homework", points: 10, date: addDays(new Date(), 0) },
-        { id: 3, title: "Read a Book", points: 8, date: addDays(new Date(), 1) },
-        { id: 4, title: "Feed the Fish", points: 3, date: addDays(new Date(), -1) },
-    ];
+    // real tasks loaded for the selected date (from Firestore)
+    const [tasksForDate, setTasksForDate] = useState([]);
+    const [loadingTasks, setLoadingTasks] = useState(true);
 
-    // tasks for the currently selected date
-    const tasksForDate = useMemo(
-        () => tasks.filter((t) => isSameDay(t.date, selectedDate)),
-        [tasks, selectedDate]
-    );
+    // If you support multiple children, set this to the current child's id (e.g. from auth/profile)
+    const currentChildId = null; // replace with real child id when available
+
+    useEffect(() => {
+        if (!selectedDate) return;
+        setLoadingTasks(true);
+
+        const start = startOfDay(selectedDate);
+        const end = addDays(start, 1);
+
+        // Build query constraints
+        const constraints = [
+            where("dateTimestamp", ">=", Timestamp.fromDate(start)),
+            where("dateTimestamp", "<", Timestamp.fromDate(end)),
+        ];
+        if (currentChildId) constraints.unshift(where("childId", "==", currentChildId));
+
+        const q = query(collection(db, "tasks"), ...constraints);
+
+        const unsub = onSnapshot(q, snapshot => {
+            const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            setTasksForDate(list);
+            setLoadingTasks(false);
+        }, err => {
+            console.error("tasks onSnapshot error", err);
+            setLoadingTasks(false);
+        });
+
+        return () => unsub();
+    }, [selectedDate]);
 
     return (
         <View style={styles.container}>

@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { startOfDay } from "date-fns";
 
 export default function ParentTaskPage({ navigation }) {
   const [title, setTitle] = useState("");
@@ -36,13 +37,17 @@ export default function ParentTaskPage({ navigation }) {
     }
 
     try {
+      // compute start of the selected day and save a Timestamp for robust queries
+      const start = startOfDay(date);
       // you can change this collection path later if you want to store per-child
       await addDoc(collection(db, "tasks"), {
         title,
         description,
-        scheduleDate: date.toISOString().split("T")[0],
+        scheduleDate: date.toISOString().split("T")[0], // optional readable form
+        dateTimestamp: Timestamp.fromDate(start), // used for robust day-range queries
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
+        // childId: currentChildId, // add this if you support multiple children
         createdAt: serverTimestamp(),
       });
 
@@ -53,6 +58,17 @@ export default function ParentTaskPage({ navigation }) {
       Alert.alert("Error", "Could not save task. Please try again.");
     }
   };
+
+  async function childTasksSave({ title, description, date, childId }) {
+    const start = startOfDay(date);
+    await addDoc(collection(db, "tasks"), {
+      title,
+      description,
+      dateTimestamp: Timestamp.fromDate(start),
+      childId,
+      createdAt: serverTimestamp(),
+    });
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
