@@ -3,7 +3,7 @@ import react, {use, useState} from "react"
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // for icons
 import { useNavigation } from "@react-navigation/native";
-
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function AccountSetting({navigation}) {
   const[Pname, setName] = useState("parent name");
@@ -28,11 +28,14 @@ export default function AccountSetting({navigation}) {
     });
   };
 
-    return (        
-<ScrollView style={styles.container}>
-  <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-       <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity> 
+    return ( 
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}
+        edges ={['top']}>
+          <ScrollView style={styles.ScrollView}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
 
       <View style={styles.header}>
         <Text style={styles.title}>Our profile</Text>
@@ -104,6 +107,8 @@ export default function AccountSetting({navigation}) {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
