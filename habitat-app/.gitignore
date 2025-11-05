@@ -1,1 +1,3 @@
 backup-root/
+.expo/
+node_modules/
