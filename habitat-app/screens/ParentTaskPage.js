@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
 import { collection, addDoc, serverTimestamp,Timestamp } from "firebase/firestore";
+import {startOfDay} from 'date-fns';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import {getAuth} from "firebase/auth";
 
@@ -38,6 +39,7 @@ export default function ParentTaskPage({ navigation }) {
     }
 
     try {
+      const start = startOfDay(date);
       const auth = getAuth();
       const user = auth.currentUser;
       const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
@@ -62,6 +64,17 @@ export default function ParentTaskPage({ navigation }) {
       Alert.alert("Error", "Could not save task. Please try again.");
     }
   };
+
+  async function childTasksSave({ title, description, date, childId }) {
+    const start = startOfDay(date);
+    await addDoc(collection(db, "tasks"), {
+      title,
+      description,
+      dateTimestamp: Timestamp.fromDate(start),
+      childId,
+      createdAt: serverTimestamp(),
+    });
+  }
 
   return (
         <SafeAreaProvider>

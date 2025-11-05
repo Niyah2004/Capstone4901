@@ -17,7 +17,7 @@ export default function ParentReviewTask() {
     // Filter to only tasks created by this parent
     const q = query(
       collection(db, "tasks"),
-      where("ownerId", "==", uid),       // <-- your field: ownerId/parentId/userId
+      where("ownerId", "==", uid),       
       orderBy("createdAt", "desc")
     );
 
