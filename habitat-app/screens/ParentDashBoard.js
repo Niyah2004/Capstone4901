@@ -1,33 +1,4 @@
-/*import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 
-export default function ParentDashBoard({ navigation }) {
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.dashboard}>
-        <Text style={styles.title}>Parent Dashboard</Text>
-        <Text style={styles.subtitle}>Manage your child's tasks and monitor progress.</Text>
-
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("ParentTaskPage")}>
-          <Text style={styles.buttonText}>Go to Task Management</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={() => alert("View Progress flow placeholder")}>
-          <Text style={styles.buttonText}>View Child's Progress</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
-  dashboard: { marginVertical: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#2d2d2d", textAlign: "center" },
-  subtitle: { fontSize: 16, color: "#666", marginBottom: 20, textAlign: "center" },
-  button: { backgroundColor: "#2196F3", padding: 15, borderRadius: 8, alignItems: "center", marginVertical: 10 },
-  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-}); */ 
 
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
@@ -38,9 +9,11 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ParentDashBoard({ navigation }) {
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <Text style={styles.header}>Parent Dashboard</Text>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.ScrollView}>
+          {/* Header */}
+          <Text style={styles.header}>Parent Dashboard</Text>
 
       {/* Current Balance Card */}
       <View style={styles.card}>
@@ -115,7 +88,9 @@ export default function ParentDashBoard({ navigation }) {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
