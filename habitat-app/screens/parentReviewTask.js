@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Animated } from "react-native";
+import { View, Text, FlatList, StyleSheet,ScrollView, TouchableOpacity, ActivityIndicator, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { db } from "../firebaseConfig";
@@ -17,7 +17,7 @@ export default function ParentReviewTask() {
     // Filter to only tasks created by this parent
     const q = query(
       collection(db, "tasks"),
-      where("ownerId", "==", uid),       // <-- your field: ownerId/parentId/userId
+      where("ownerId", "==", uid),       
       orderBy("createdAt", "desc")
     );
 
@@ -53,8 +53,10 @@ export default function ParentReviewTask() {
 
   return (
     
-    <View style={styles.container}>
-      <Text style={styles.header}>Review Tasks</Text>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.ScrollView}>
+          <Text style={styles.header}>Review Tasks</Text>
 
       {tasks.length === 0 ? (
         <Text style={styles.empty}>No tasks yet. Create one from the dashboard!</Text>
@@ -110,7 +112,9 @@ export default function ParentReviewTask() {
           )}
         />
       )}
-    </View>
+    </ScrollView>
+  </SafeAreaView>
+</SafeAreaProvider>
   );
 }
 
