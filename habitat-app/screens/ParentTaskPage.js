@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp,Timestamp } from "firebase/firestore";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import {getAuth} from "firebase/auth";
 
@@ -40,14 +40,18 @@ export default function ParentTaskPage({ navigation }) {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
-      const parentTasksRef = collection(db, "parents", user.uid, "tasks");
-      
-      await addDoc(parentTasksRef, {
+      const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+      //const userId = user ? user.uid : null;
+      await addDoc(collection(db, "tasks"), {
         title,
         description,
-        scheduleDate: date.toISOString().split("T")[0],
+        scheduleDate: date.toISOString().split("T")[0], // YYYY-MM-DD
+        //dateTimestamp: Timestamp.fromDate(start), // used for robust day-range queries
+        dateTimestamp: Timestamp.fromDate(dateStart), 
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
+         ownerId: user.uid,   
+        // childId: currentChildId, // add this for  multiple children
         createdAt: serverTimestamp(),
       });
 
