@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Modal } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Modal, Platform } from "react-native";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+import Confetti from "react-native-confetti";
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
@@ -30,6 +33,13 @@ export default function ChildReward() {
     return (
         <View style={styles.container}>
 
+      <Confetti
+        ref={confettiRef}
+        confettiCount={200}
+        timeout={2000}
+        untilStopped={false}
+      />
+    
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
 
@@ -71,47 +81,53 @@ export default function ChildReward() {
                         <View style={styles.rewardIconPlaceholder}>
                             <Text style={styles.placeholderText}>Icon</Text>
                         </View>
-                        <Modal
-                            animationType="slide"
-                            transparent={true}
-                            visible={modalVisible}
-                            onShow={() => confettiRef.current?.start()} // 💥 fire confetti when modal appears
-                            onRequestClose={() => setModalVisible(false)}
-                        >
-                            <View style={styles.modalOverlay}>
-                                <View style={styles.modalContainer}>
+ <Modal
+  animationType="fade"
+  transparent={true}
+  visible={modalVisible}
+  onRequestClose={() => setModalVisible(false)}
+>
+  {/* tap outside to close */}
+  <TouchableOpacity
+    style={styles.modalOverlay}
+    activeOpacity={1}
+    onPressOut={() => setModalVisible(false)}
+  >
+    <View style={styles.modalContainer}>
+     {/* Confetti component */}
+     
+      {/* reward title at top */}
+      <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
 
-                                    <ConfettiCannon
-                                        ref={confettiRef}
-                                        count={60}
-                                        origin={{ x: 200, y: -20 }}
-                                        autoStart={false}
-                                        fadeOut={true}
-                                    />
+      {/* motivational text below title */}
+      <Text style={styles.motivationText}>
+      CONGRATS! 🎉
+      </Text>
 
-                                    <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
+      {/* large centered icon */}
+      <View style={styles.modalIconWrapper}>
+        <Text style={styles.modalIcon}>🎁</Text>
+      </View>
 
-                                    <View style={styles.modalImagePlaceholder}>
-                                        <Text style={styles.modalImageText}>🎁</Text>
-                                    </View>
-
-                                    <Text style={styles.modalDesc}>
-                                        {selectedReward?.description || "No description provided."}
-                                    </Text>
-                                    <Text style={styles.modalPoints}>
-                                        ⭐ {selectedReward?.cost} Points
-                                    </Text>
-
-
-                                    <TouchableOpacity
-                                        style={styles.modalCloseButton}
-                                        onPress={() => setModalVisible(false)}
-                                    >
-                                        <Text style={styles.modalCloseText}>Close</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </Modal>
+      {/* claim button */}
+      <TouchableOpacity
+        style={styles.modalClaimButton}
+        onPress={() => {
+            console.log("Confetti start!");
+            if (confettiRef.current) {
+              confettiRef.current.startConfetti();
+            }
+            setTimeout(() => {
+              confettiRef.current?.stopConfetti();
+              setModalVisible(false);
+            }, 2500);
+          }}
+      >
+        <Text style={styles.modalClaimText}>Claim Reward</Text>
+      </TouchableOpacity>
+    </View>
+  </TouchableOpacity>
+</Modal>
 
                         <Text style={styles.rewardTitle}>{reward.title}</Text>
                         <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
@@ -254,4 +270,76 @@ const styles = StyleSheet.create({
         marginTop: 6,
         marginBottom: 6,
     },
+        modalOverlay: {
+            flex: 1,
+            justifyContent: "center",   // centers vertically
+            alignItems: "center",        // centers horizontally
+            backgroundColor: "rgba(0, 0, 0, 0.35)", // dimmed background
+        },
+
+ modalContainer: {
+    width: "85%",
+    backgroundColor: "rgba(255, 182, 193, 0.9)", // soft transparent pink
+    borderRadius: 24,
+    paddingVertical: 36,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  
+  modalTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#4CAF50", //  bright green
+    textAlign: "center",
+    marginBottom: 18,
+  },
+
+  motivationText: {
+    fontSize: 20,
+    color: "#FF6F61",
+    textAlign: "center",
+    marginBottom: 28,
+    fontFamily: Platform.select({
+        ios: "Chalkboard SE",      // cute & playful on iPhones
+        android: "sans-serif-medium", // clean & readable on Android
+      }),
+    },
+    
+  modalIconWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 28,
+  },
+  
+  modalIcon: {
+    fontSize: 100, // nice and big!
+  },
+
+
+  
+  // 💚 Claim button (main action)
+  modalClaimButton: {
+    backgroundColor: "#4CAF50", // green button
+    borderRadius: 20,
+    paddingVertical: 14,
+    width: 150, // roughly matches icon size
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    },
+
+  modalClaimText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 18,
+  },
+  
+
 });
