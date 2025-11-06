@@ -294,4 +294,9 @@ const styles = StyleSheet.create({
         marginTop: 6,
         marginBottom: 6,
     },
+
+    modalClaimButton: {
+        alignItems: "center",
+        alignSelf: "center"
+    },
 });
