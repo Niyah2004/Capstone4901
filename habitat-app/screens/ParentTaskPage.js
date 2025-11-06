@@ -39,132 +39,131 @@ export default function ParentTaskPage({ navigation }) {
     }
 
     try {
+      const start = startOfDay(date);
       const auth = getAuth();
       const user = auth.currentUser;
-      
-      if (!user) {
-        Alert.alert("Error", "No authenticated user found.");
-        return;
-      }
-
       const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
       
       await addDoc(collection(db, "tasks"), {
         title,
         description,
-        scheduleDate: date.toISOString().split("T")[0],
-        dateTimestamp: Timestamp.fromDate(dateStart),
+        scheduleDate: date.toISOString().split("T")[0], // YYYY-MM-DD
+        //dateTimestamp: Timestamp.fromDate(start), // used for robust day-range queries
+        dateTimestamp: Timestamp.fromDate(dateStart), 
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        steps: steps.filter(step => step.trim() !== ""), // Only save non-empty steps
-        ownerId: user.uid,
-        status: "pending",
+        steps,
+         ownerId: user.uid,   
+        // childId: currentChildId, // add this for  multiple children
         createdAt: serverTimestamp(),
       });
 
       Alert.alert("Success", "Task saved successfully!");
-      
-      // Clear form
-      setTitle("");
-      setDescription("");
-      setDate(new Date());
-      setTime(new Date());
-      setSteps([""]);
-      
       navigation.goBack();
     } catch (error) {
       console.error("Error saving task:", error);
-      Alert.alert("Error", `Could not save task: ${error.message}`);
+      Alert.alert("Error", "Could not save task. Please try again.");
     }
   };
 
+  async function childTasksSave({ title, description, date, childId }) {
+    const start = startOfDay(date);
+    await addDoc(collection(db, "tasks"), {
+      title,
+      description,
+      dateTimestamp: Timestamp.fromDate(start),
+      childId,
+      createdAt: serverTimestamp(),
+    });
+  }
+
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
-          <Text style={styles.header}>Task Management</Text>
+        <SafeAreaProvider>
+            <SafeAreaView style={styles.container}>
+               <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+      <Text style={styles.header}>Task Management</Text>
 
-          {/* Task Title */}
-          <Text style={styles.label}>Task Title</Text>
+      {/* Task Title */}
+      <Text style={styles.label}>Task Title</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="e.g., Clean my room"
+        value={title}
+        onChangeText={setTitle}
+      />
+
+      {/* Description */}
+      <Text style={styles.label}>Description</Text>
+      <TextInput
+        style={[styles.input, { height: 100 }]}
+        multiline
+        placeholder="e.g., Put away clothes, make the bed, vacuum..."
+        value={description}
+        onChangeText={setDescription}
+      />
+
+      {/* Schedule */}
+      <Text style={styles.label}>Schedule</Text>
+      <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+        <Text>{date.toISOString().split("T")[0]}</Text>
+      </TouchableOpacity>
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={(e, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) setDate(selectedDate);
+          }}
+        />
+      )}
+
+      {/* Time */}
+      <Text style={styles.label}>Time</Text>
+      <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
+        <Text>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
+      </TouchableOpacity>
+      {showTimePicker && (
+        <DateTimePicker
+          value={time}
+          mode="time"
+          display="default"
+          onChange={(e, selectedTime) => {
+            setShowTimePicker(false);
+            if (selectedTime) setTime(selectedTime);
+          }}
+        />
+      )}
+
+      {/* Steps */}
+      <Text style={styles.label}>Steps</Text>
+      {steps.map((step, index) => (
+        <View key={index} style={styles.stepRow}>
           <TextInput
-            style={styles.input}
-            placeholder="e.g., Clean my room"
-            value={title}
-            onChangeText={setTitle}
+            style={[styles.input, { flex: 1 }]}
+            placeholder={`Step ${index + 1} description`}
+            value={step}
+            onChangeText={(text) => handleStepChange(text, index)}
           />
-
-          {/* Description */}
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, { height: 100 }]}
-            multiline
-            placeholder="e.g., Put away clothes, make the bed, vacuum..."
-            value={description}
-            onChangeText={setDescription}
-          />
-
-          {/* Schedule */}
-          <Text style={styles.label}>Schedule</Text>
-          <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
-            <Text>{date.toLocaleDateString()}</Text>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="default"
-              onChange={(e, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) setDate(selectedDate);
-              }}
-            />
+          {steps.length > 1 && (
+            <TouchableOpacity onPress={() => handleRemoveStep(index)}>
+              <Ionicons name="close" size={20} color="gray" />
+            </TouchableOpacity>
           )}
+        </View>
+      ))}
 
-          {/* Time */}
-          <Text style={styles.label}>Time</Text>
-          <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
-            <Text>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
-          </TouchableOpacity>
-          {showTimePicker && (
-            <DateTimePicker
-              value={time}
-              mode="time"
-              display="default"
-              onChange={(e, selectedTime) => {
-                setShowTimePicker(false);
-                if (selectedTime) setTime(selectedTime);
-              }}
-            />
-          )}
+      <TouchableOpacity style={styles.addStep} onPress={handleAddStep}>
+        <Ionicons name="add" size={20} color="black" />
+        <Text style={styles.addStepText}>Add Step</Text>
+      </TouchableOpacity>
 
-          {/* Steps */}
-          <Text style={styles.label}>Steps</Text>
-          {steps.map((step, index) => (
-            <View key={index} style={styles.stepRow}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder={`Step ${index + 1} description`}
-                value={step}
-                onChangeText={(text) => handleStepChange(text, index)}
-              />
-              {steps.length > 1 && (
-                <TouchableOpacity onPress={() => handleRemoveStep(index)}>
-                  <Ionicons name="close-circle" size={24} color="#ff4444" />
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
-
-          <TouchableOpacity style={styles.addStep} onPress={handleAddStep}>
-            <Ionicons name="add-circle-outline" size={24} color="#4CAF50" />
-            <Text style={styles.addStepText}>Add Step</Text>
-          </TouchableOpacity>
-
-          {/* Save Task */}
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
-            <Text style={styles.saveButtonText}>Save Task</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
+      {/* Save Task */}
+      <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
+        <Text style={styles.saveButtonText}>Save Task</Text>
+      </TouchableOpacity>
+    </ScrollView>
+    </SafeAreaView>
     </SafeAreaProvider>
   );
 }
@@ -180,7 +179,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 5,
   },
-  stepRow: { flexDirection: "row", alignItems: "center", marginTop: 5, gap: 10 },
+  stepRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
   addStep: {
     flexDirection: "row",
     alignItems: "center",
