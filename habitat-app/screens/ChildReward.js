@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Modal } from "react-native";
+import {Alert} from "react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
+import {db} from "../firebaseConfig";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
@@ -7,7 +11,7 @@ export default function ChildReward() {
     const [selectedReward, setSelectedReward] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const confettiRef = useRef(null);
-
+    
     useEffect(() => {
         const fetchRewards = async () => {
             try {
@@ -26,6 +30,31 @@ export default function ChildReward() {
 
         fetchRewards();
     }, []);
+
+    const handleClaimReward = async () => {
+        //fetch points from backend to add them to the already earned points
+        //points are currently a placeholder
+        if (!selectedReward) return;
+
+       try{
+        const userRef = doc(db, "users", "childUserId");
+        await updateDoc(userRef, {
+            stars: totalStars - selectedReward.cost,
+        });
+
+        setTotalStars((prev) => prev - selectedReward.cost);
+
+        Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
+         console.log("Reward claimed: ", selectedReward.title);
+       } 
+       catch(error){
+        console.error("Error claiming reward: ", error);
+        Alert.alert("Error", "Something went wrong while claiming the reward.");
+       }
+       finally {
+        setModalVisible(false);
+       }
+    };
 
     return (
         <View style={styles.container}>
@@ -71,7 +100,7 @@ export default function ChildReward() {
                         <View style={styles.rewardIconPlaceholder}>
                             <Text style={styles.placeholderText}>Icon</Text>
                         </View>
-                        <Modal
+            <Modal
                             animationType="slide"
                             transparent={true}
                             visible={modalVisible}
@@ -109,9 +138,20 @@ export default function ChildReward() {
                                     >
                                         <Text style={styles.modalCloseText}>Close</Text>
                                     </TouchableOpacity>
+
+                                {/*claim button */}
+                                    <TouchableOpacity
+                                    style={styles.modalClaimButton}
+                                    
+                                    onPress={handleClaimReward}
+                                        //setModalVisible(false)}
+                                        //make it update the firebase
+                                    >
+                                        <Text style ={styles.modalClaimText}>Claim</Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
-                        </Modal>
+            </Modal>
 
                         <Text style={styles.rewardTitle}>{reward.title}</Text>
                         <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
