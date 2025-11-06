@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Modal, Pla
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import Confetti from "react-native-confetti";
+
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
