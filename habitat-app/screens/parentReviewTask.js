@@ -55,7 +55,7 @@ export default function ParentReviewTask() {
     
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <ScrollView style={styles.ScrollView}>
+        <View style={styles.view}>
           <Text style={styles.header}>Review Tasks</Text>
 
       {tasks.length === 0 ? (
@@ -112,7 +112,7 @@ export default function ParentReviewTask() {
           )}
         />
       )}
-    </ScrollView>
+    </View>
   </SafeAreaView>
 </SafeAreaProvider>
   );
