@@ -4,7 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
 import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
-import { startOfDay } from "date-fns";
+import { startOfDay } from 'date-fns';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { getAuth } from "firebase/auth";
 
 export default function ParentTaskPage({ navigation }) {
   const [title, setTitle] = useState("");
@@ -37,21 +39,25 @@ export default function ParentTaskPage({ navigation }) {
     }
 
     try {
-      // compute start of the selected day and save a Timestamp for robust queries
       const start = startOfDay(date);
-      // you can change this collection path later if you want to store per-child
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+      
       await addDoc(collection(db, "tasks"), {
         title,
         description,
-        scheduleDate: date.toISOString().split("T")[0], // optional readable form
-        dateTimestamp: Timestamp.fromDate(start), // used for robust day-range queries
+        scheduleDate: date.toISOString().split("T")[0], // YYYY-MM-DD
+        //dateTimestamp: Timestamp.fromDate(start), // used for robust day-range queries
+        dateTimestamp: Timestamp.fromDate(dateStart), 
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
-        // childId: currentChildId, // add this if you support multiple children
+         ownerId: user.uid,   
+        // childId: currentChildId, // add this for  multiple children
         createdAt: serverTimestamp(),
       });
 
-      Alert.alert("✅ Success", "Task saved successfully!");
+      Alert.alert("Success", "Task saved successfully!");
       navigation.goBack();
     } catch (error) {
       console.error("Error saving task:", error);
@@ -71,7 +77,9 @@ export default function ParentTaskPage({ navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+        <SafeAreaProvider>
+            <SafeAreaView style={styles.container}>
+               <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
       <Text style={styles.header}>Task Management</Text>
 
       {/* Task Title */}
@@ -155,6 +163,8 @@ export default function ParentTaskPage({ navigation }) {
         <Text style={styles.saveButtonText}>Save Task</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

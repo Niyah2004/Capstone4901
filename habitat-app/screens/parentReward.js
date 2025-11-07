@@ -3,6 +3,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import React, { useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ParentReward({navigation}) {
   const [rewardName, setRewardName] = useState("");

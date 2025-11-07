@@ -1,3 +1,12 @@
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView} from "react-native";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+import { Alert } from "react-native";
+import { Modal, Image } from "react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Modal } from "react-native";
 import {Alert} from "react-native";

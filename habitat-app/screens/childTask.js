@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import WeekCalendar from "./WeekCalendar";
 import { addDays, startOfDay } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; // 👈 ADD THIS IMPORT
+import { Ionicons } from "@expo/vector-icons"; // for icons
 import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
