@@ -311,37 +311,38 @@ const styles = StyleSheet.create({
         shadowRadious: ,
         elevation: ,
     },
+*/
 
     modalOverlay: {
-        flex: ,
-        backgroundColor: ,
-        justifyContent: ,
-        alignItems: ,
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5",
+        justifyContent: "center",
+        alignItems: "center",
     },
 
     modalContainer: {
-        width: ,
-        backgroundColor: ,
-        borderRadius: ,
-        padding: ,
-        alignItems: ,
-        shadowColor: ,
-        shadowOpacity: ,
-        shadowOffset: ,
-        shadowRadius: ,
-        elevation: ,
+        width: "80%",
+        backgroundColor: "#fff",
+        borderRadius: 20,
+        padding: 20,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.25,
+        shadowOffset: {width: 0, height: 2},
+        shadowRadius: 4,
+        elevation: 5,
     },
 
     modalTitle: {
-        fontSize: ,
-        fontWeight: ,
-        marginBottom: ,
-        textAlign: ,
+        fontSize: 20,
+        fontWeight: "600",
+        marginBottom: 10,
+        textAlign: "center",
     },
 
-    modalImagePlaceholder:{
-        marginVertical: ,
-        alignItems: ,
+    modalImagePlaceholder: {
+        marginVertical: 10,
+        alignItems: "center",
     },
 
     modalImageText: {
@@ -349,34 +350,34 @@ const styles = StyleSheet.create({
     },
 
     modalDesc: {
-        fontSize: ,
-        textAlign: ,
-        marginVertical: ,
-        color: ,
+        fontSize: 14,
+        textAlign: "center",
+        marginVertical: 8,
+        color: "#555",
     },
 
     modalPoints: {
-        fontSize: ,
-        fontWeight: ,
-        marginBottom: ,
+        fontSize: 16,
+        fontWeight: "500",
+        marginBottom: 12,
     },
 
     modalCloseButton: {
-        backgroundColor: ,
-        paddingVertical: ,
-        paddingHorizontal: ,
-        borderRadious: ,
-        marginTop: ,
+        backgroundColor: "#ccc",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadious: 10,
+        marginTop: 8,
     },
 
     modalCloseText: {
-        color: ,
-        fontWeight: ,
+        color: "#000",
+        fontWeight: "600",
     },
 
     modalClaimText: {
-        color: ,
-        fontWeight: ,
+        color: "#ffffffff",
+        fontWeight: "600",
     },
-*/
+
 });
