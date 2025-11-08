@@ -33,7 +33,7 @@ function ParentStackScreen() {
   return (
     <ParentStack.Navigator screenOptions={{ headerShown: false }}>
       <ParentStack.Screen name="parentPinScreen" component={parentPinScreen} />
-      <ParentStack.Screen name="parentDashBoard" component={parentDashBoard} />
+      <ParentStack.Screen name="ParentDashBoard" component={parentDashBoard} />
       <ParentStack.Screen name="ParentTaskPage" component={ParentTaskPage} />
       <ParentStack.Screen name="parentReviewTask" component={parentReviewTask} />
       <ParentStack.Screen name="parentReward" component={parentReward} />
@@ -97,10 +97,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="ChildTabs"
-        screenOptions={{ headerShown: false }}
-      >
+     <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />

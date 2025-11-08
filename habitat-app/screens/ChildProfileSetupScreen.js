@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import {doc, setDoc} from "firebase/firestore";
+import { auth } from "../auth";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
 
 export default function ChildProfileSetupScreen({ navigation, route }) {
@@ -26,6 +29,14 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       const auth = getAuth();
       const user = auth.currentUser;
       const userId = user ? user.uid : null;
+      const parentRef = await setDoc(doc(db, "parents", userId), {
+        parentPin: pin,
+        userId,
+        createdAt: new Date().toISOString(),
+      });
+      console.log("Parent pin saved with Parent Id:", userId);
+      
+    
       const docRef = await addDoc(collection(db, "children"), {
         fullName,
         preferredName,
@@ -35,6 +46,7 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
         userId,
       });
       Alert.alert("Saved", "Child profile saved.");
+     // console.log("Parent pin saved with Parent Id:", parentRef.id);
       console.log("Navigating to AvatarSelection with childId:", docRef.id);
       navigation.navigate("AvatarSelection", { childId: docRef.id });
     } catch (e) {

@@ -1,9 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Modal } from "react-native";
-import {Alert} from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView} from "react-native";
+import { db } from "../firebaseConfig";
+import { Alert } from "react-native";
+import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
-import {db} from "../firebaseConfig";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+
 export default function ChildReward() {
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
