@@ -297,9 +297,86 @@ const styles = StyleSheet.create({
         marginTop: 6,
         marginBottom: 6,
     },
-//add shadow for claim button
+//missing modal styles that control the reward popup layout
+/*
     modalClaimButton: {
-        alignItems: "center",
-        alignSelf: "center"
+        backgroundColor: ,
+        paddingVertical: ,
+        paddingHorizontal: ,
+        borderRadious: ,
+        marginTop: ,
+        shadowColor: ,
+        shadowOpacity: ,
+        shadowOffset: ,
+        shadowRadious: ,
+        elevation: ,
     },
+
+    modalOverlay: {
+        flex: ,
+        backgroundColor: ,
+        justifyContent: ,
+        alignItems: ,
+    },
+
+    modalContainer: {
+        width: ,
+        backgroundColor: ,
+        borderRadius: ,
+        padding: ,
+        alignItems: ,
+        shadowColor: ,
+        shadowOpacity: ,
+        shadowOffset: ,
+        shadowRadius: ,
+        elevation: ,
+    },
+
+    modalTitle: {
+        fontSize: ,
+        fontWeight: ,
+        marginBottom: ,
+        textAlign: ,
+    },
+
+    modalImagePlaceholder:{
+        marginVertical: ,
+        alignItems: ,
+    },
+
+    modalImageText: {
+        fontsize: 40,
+    },
+
+    modalDesc: {
+        fontSize: ,
+        textAlign: ,
+        marginVertical: ,
+        color: ,
+    },
+
+    modalPoints: {
+        fontSize: ,
+        fontWeight: ,
+        marginBottom: ,
+    },
+
+    modalCloseButton: {
+        backgroundColor: ,
+        paddingVertical: ,
+        paddingHorizontal: ,
+        borderRadious: ,
+        marginTop: ,
+    },
+
+    modalCloseText: {
+        color: ,
+        fontWeight: ,
+    },
+
+    modalClaimText: {
+        color: ,
+        fontWeight: ,
+    },
+*/
 });
