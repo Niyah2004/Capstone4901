@@ -298,20 +298,20 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
 //missing modal styles that control the reward popup layout
-/*
+
     modalClaimButton: {
-        backgroundColor: ,
-        paddingVertical: ,
-        paddingHorizontal: ,
-        borderRadious: ,
-        marginTop: ,
-        shadowColor: ,
-        shadowOpacity: ,
-        shadowOffset: ,
-        shadowRadious: ,
-        elevation: ,
+        backgroundColor: "#4CAF50",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadious: 10,
+        marginTop: 10,
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowOffset: {width: 0, height: 2},
+        shadowRadious: 4,
+        elevation: 3,
     },
-*/
+
 
     modalOverlay: {
         flex: 1,
@@ -368,6 +368,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadious: 10,
         marginTop: 8,
+        color: "#4CAF50",
     },
 
     modalCloseText: {
