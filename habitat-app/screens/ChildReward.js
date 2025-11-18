@@ -6,8 +6,11 @@ import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ChildReward() {
+    const auth = getAuth();
     // Temporary placeholder state (can be replaced with fetched data later)
     const [totalStars, setTotalStars] = useState(257);
     const [rewards, setRewards] = useState([]);
@@ -19,11 +22,21 @@ export default function ChildReward() {
         const fetchRewards = async () => {
             try {
                 const querySnapshot = await getDocs(collection(db, "rewards"));
-                const rewardList = querySnapshot.docs.map(doc => ({
+                const gradientPresets = [
+                    ["#FF9A9E", "#FAD0C4"],
+                    ["#A1C4FD", "#C2E9FB"],
+                    ["#FBC2EB", "#A6C1EE"],
+                    ["#FFDEE9", "#B5FFFC"],
+                    ["#FBD786", "#f7797d"],
+                    ["#84FAB0", "#8FD3F4"],
+                ];
+
+                const rewardList = querySnapshot.docs.map((doc, index) => ({
                     id: doc.id,
                     title: doc.data().name || "Unnamed Reward",
                     cost: doc.data().points || 0,
                     description: doc.data().description || "",
+                    gradient: gradientPresets[index % gradientPresets.length],
                 }));
                 setRewards(rewardList);
             } catch (error) {
@@ -40,12 +53,14 @@ export default function ChildReward() {
         if (!selectedReward) return;
 
        try{
-        const userRef = doc(db, "users", "childUserId");
+        const userRef = doc(db, "users", auth.currentUser.uid);
         await updateDoc(userRef, {
             stars: totalStars - selectedReward.cost,
         });
 
         setTotalStars((prev) => prev - selectedReward.cost);
+
+        confettiRef.current?.start();
 
         Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
          console.log("Reward claimed: ", selectedReward.title);
@@ -61,6 +76,58 @@ export default function ChildReward() {
 
     return (
         <View style={styles.container}>
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+
+                        <ConfettiCannon
+                            ref={confettiRef}
+                            count={60}
+                            origin={{ x: 200, y: -20 }}
+                            autoStart={false}
+                            fadeOut={true}
+                        />
+
+                        <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
+
+                        <View style={styles.modalImagePlaceholder}>
+                            <Text style={styles.modalImageText}>🎁</Text>
+                        </View>
+
+                        <Text style={styles.modalDesc}>
+                            {selectedReward?.description || "No description provided."}
+                        </Text>
+                        <Text style={styles.modalPoints}>
+                            ⭐ {selectedReward?.cost} Points
+                        </Text>
+
+
+                        <TouchableOpacity
+                            style={styles.modalCloseButton}
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <Text style={styles.modalCloseText}>Close</Text>
+                        </TouchableOpacity>
+
+                    {/*claim button */}
+                        <TouchableOpacity
+                        style={styles.modalClaimButton}
+                        
+                        onPress={handleClaimReward}
+                            //setModalVisible(false)}
+                            //make it update the firebase
+                        >
+                            <Text style ={styles.modalClaimText}>Claim</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
@@ -80,6 +147,7 @@ export default function ChildReward() {
                     */}
 
                 <View style={styles.pointsRow}>
+                    <Text style={styles.starIcon}>⭐</Text>
                     <Text style={styles.pointsNumber}>{totalStars}</Text>
                     <Text style={styles.pointsLabel}>Star Points</Text>
                 </View>
@@ -93,83 +161,56 @@ export default function ChildReward() {
 
 
 
+            <Text style={styles.unlockTitle}>Unlock More Items :</Text>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.unlockItemsRow}>
+                <View style={[styles.unlockCircle, { backgroundColor: "#FFB6C1" }]}><Text style={styles.unlockItemIcon}>📱</Text></View>
+                <View style={[styles.unlockCircle, { backgroundColor: "#A1C4FD" }]}><Text style={styles.unlockItemIcon}>👟</Text></View>
+                <View style={[styles.unlockCircle, { backgroundColor: "#FAD0C4" }]}><Text style={styles.unlockItemIcon}>💄</Text></View>
+                <View style={[styles.unlockCircle, { backgroundColor: "#84FAB0" }]}><Text style={styles.unlockItemIcon}>🥑</Text></View>
+            </ScrollView>
+
+            <View style={styles.heartsRow}>
+                <Text style={styles.heartsText}>❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</Text>
+            </View>
+
+            <TouchableOpacity style={styles.characterButton}>
+                <Text style={styles.characterButtonText}>Get different Character →</Text>
+            </TouchableOpacity>
+
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
                 {rewards.map((reward) => (
-                    <View key={reward.id} style={styles.rewardCard}>
+                    <LinearGradient
+                        key={reward.id}
+                        colors={reward.gradient || ["#FF9966", "#FF5E62"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.rewardCard}
+                    >
+                        <View>
 
-                        <View style={styles.rewardIconPlaceholder}>
-                            <Text style={styles.placeholderText}>Icon</Text>
-                        </View>
-            <Modal
-                            animationType="slide"
-                            transparent={true}
-                            visible={modalVisible}
-                            onShow={() => confettiRef.current?.start()} // 💥 fire confetti when modal appears
-                            onRequestClose={() => setModalVisible(false)}
-                        >
-                            <View style={styles.modalOverlay}>
-                                <View style={styles.modalContainer}>
-
-                                    <ConfettiCannon
-                                        ref={confettiRef}
-                                        count={60}
-                                        origin={{ x: 200, y: -20 }}
-                                        autoStart={false}
-                                        fadeOut={true}
-                                    />
-
-                                    <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
-
-                                    <View style={styles.modalImagePlaceholder}>
-                                        <Text style={styles.modalImageText}>🎁</Text>
-                                    </View>
-
-                                    <Text style={styles.modalDesc}>
-                                        {selectedReward?.description || "No description provided."}
-                                    </Text>
-                                    <Text style={styles.modalPoints}>
-                                        ⭐ {selectedReward?.cost} Points
-                                    </Text>
-
-
-                                    <TouchableOpacity
-                                        style={styles.modalCloseButton}
-                                        onPress={() => setModalVisible(false)}
-                                    >
-                                        <Text style={styles.modalCloseText}>Close</Text>
-                                    </TouchableOpacity>
-
-                                {/*claim button */}
-                                    <TouchableOpacity
-                                    style={styles.modalClaimButton}
-                                    
-                                    onPress={handleClaimReward}
-                                        //setModalVisible(false)}
-                                        //make it update the firebase
-                                    >
-                                        <Text style ={styles.modalClaimText}>Claim</Text>
-                                    </TouchableOpacity>
-                                </View>
+                            <View style={styles.rewardIconPlaceholder}>
+                                <Text style={styles.placeholderText}>Icon</Text>
                             </View>
-            </Modal>
 
-                        <Text style={styles.rewardTitle}>{reward.title}</Text>
-                        <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
+                            <Text style={styles.rewardTitle}>{reward.title}</Text>
+                            <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
 
 
-                        <TouchableOpacity
-                            style={styles.rewardAction}
-                            onPress={() => {
-                                setSelectedReward(reward);
-                                setModalVisible(true);
-                            }}
-                        >
-                            <Text style={styles.rewardActionText}>View</Text>
-                        </TouchableOpacity>
-                    </View>
+                            <TouchableOpacity
+                                style={styles.rewardAction}
+                                onPress={() => {
+                                    setSelectedReward(reward);
+                                    setModalVisible(true);
+                                }}
+                            >
+                                <Text style={styles.rewardActionText}>View</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </LinearGradient>
                 ))}
             </ScrollView>
         </View>
@@ -189,16 +230,16 @@ const styles = StyleSheet.create({
     RewardCard: {
         backgroundColor: "#fff",
         borderRadius: 20,
-        padding: 20,
-        /* stack contents vertically so avatar sits at the top center */
+        paddingVertical: 6,
+        paddingHorizontal: 20,
         flexDirection: "column",
         alignItems: "center",
-        marginBottom: 14,
+        marginBottom: 4,
         shadowColor: "#000",
-        shadowOpacity: 0.06,
-        shadowOffset: { width: 10, height: 10 },
-        shadowRadius: 6,
-        elevation: 3,
+        shadowOpacity: 0.04,
+        shadowOffset: { width: 4, height: 4 },
+        shadowRadius: 3,
+        elevation: 1,
     },
 
     avatarPlaceholder: {
@@ -216,7 +257,11 @@ const styles = StyleSheet.create({
         color: "#999",
     },
 
-    pointsRow: { alignItems: "center", marginTop: 12, marginBottom: 6 },
+    pointsRow: { alignItems: "center", marginTop: 12, marginBottom: 6, flexDirection: "row", justifyContent: "center" },
+    starIcon: {
+        fontSize: 24,
+        marginRight: 6,
+    },
     pointsNumber: { fontSize: 28, fontWeight: "700" },
     pointsLabel: { fontSize: 12, color: "#777" },
     greetingRow: { alignItems: "center", marginTop: 8 },
@@ -235,8 +280,9 @@ const styles = StyleSheet.create({
 
     rewardsScrollContainer: {
         flexDirection: "row",
-        paddingBottom: 20,
+        paddingBottom: 10,
         paddingHorizontal: 4,
+        gap: 16
     },
     itemsScrollContainer: {
         flexDirection: "row",
@@ -244,38 +290,62 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     rewardCard: {
-        backgroundColor: "#fff",
-        width: 160,
-        borderRadius: 18,
-        padding: 14,
-        marginBottom: 12,
+        width: 150,
+        height: 185,
+        borderRadius: 16,
+        padding: 10,
+        marginBottom: 10,
         alignItems: "center",
-        marginRight: 12,
+        justifyContent: "flex-start",
         shadowColor: "#000",
-        shadowOpacity: 0.04,
-        shadowOffset: { width: 0, height: 3 },
-        shadowRadius: 4,
+        shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 3,
         elevation: 2,
     },
     rewardIconPlaceholder: {
-        width: 30,
-        height: 30,
-        borderRadius: 10,
-        backgroundColor: "#EDEDED",
+        width: 120,
+        height: 70,
+        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.35)",
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 10,
     },
-    rewardTitle: { fontWeight: "500", textAlign: "center", marginBottom: 6 },
-    rewardCost: { fontSize: 12, color: "#777", marginBottom: 8 },
-    rewardAction: {
-        borderWidth: 1,
-        borderColor: "#E0E0E0",
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 12,
+    rewardTitle: {
+        fontWeight: "700",
+        fontSize: 18,
+        textAlign: "center",
+        marginBottom: 6,
+        color: "#000",
     },
-    rewardActionText: { color: "#4CAF50", fontWeight: "600" },
+    rewardCost: {
+        fontSize: 14,
+        color: "#000",
+        marginBottom: 12,
+        fontWeight: "600",
+        textAlign: "center",
+    },
+    rewardAction: {
+        backgroundColor: "rgba(255,255,255,0.85)",
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 14,
+        shadowColor: "#000",
+        shadowOpacity: 0.10,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        alignItems: "center",
+        justifyContent: "center",
+        alignSelf: "center",
+        marginTop: -4,
+        marginBottom: 10,
+    },
+    rewardActionText: {
+        color: "#FF4D7A",
+        fontWeight: "700",
+        fontSize: 13,
+    },
     itemsIconPlaceholder: {
         width: 64,
         height: 64,
@@ -286,16 +356,18 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 140,
+        height: 140,
+        borderRadius: 70,
     },
     avatarContainer: {
+        width: "100%",
+        backgroundColor: "rgba(255, 223, 186, 0.35)",
         alignItems: "center",
-        /* center horizontally and keep at the top of the card */
-        alignSelf: "center",
-        marginTop: 6,
-        marginBottom: 6,
+        justifyContent: "center",
+        paddingVertical: 30,
+        borderRadius: 20,
+        marginBottom: 10
     },
 //missing modal styles that control the reward popup layout
 
@@ -346,7 +418,7 @@ const styles = StyleSheet.create({
     },
 
     modalImageText: {
-        fontsize: 40,
+        fontSize: 80,
     },
 
     modalDesc: {
@@ -381,4 +453,55 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
+    unlockTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        marginBottom: 12,
+    },
+
+    unlockItemsRow: {
+        flexDirection: "row",
+        gap: 20,
+        marginBottom: 16,
+        paddingVertical: 4,
+    },
+
+    unlockCircle: {
+        width: 75,
+        height: 75,
+        borderRadius: 37.5,
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.12,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 2,
+    },
+
+    heartsRow: {
+        alignItems: "center",
+        marginVertical: 10,
+    },
+
+    heartsText: {
+        fontSize: 20,
+    },
+
+    characterButton: {
+        backgroundColor: "#4CAF50",
+        paddingVertical: 14,
+        borderRadius: 30,
+        alignItems: "center",
+        marginBottom: 20,
+    },
+
+    characterButtonText: {
+        color: "#fff",
+        fontWeight: "700",
+        fontSize: 16,
+    },
+    unlockItemIcon: {
+        fontSize: 42,
+    },
 });
