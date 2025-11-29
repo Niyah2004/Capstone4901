@@ -28,6 +28,7 @@ const ParentPinScreen = ({ navigation,route  }) => {
         const storedPin = parentSnap.data().parentPin;
 
         if (pin === storedPin) {
+          //unlockParent(); //testing should allow for navigation
           Alert.alert("Access Granted", "Welcome to your Parent Dashboard!");
           navigation.replace("ParentDashBoard");
         } else {

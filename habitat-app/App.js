@@ -1,53 +1,76 @@
-
- 
+// App.js
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";
 import ChildProfileSetupScreen from "./screens/ChildProfileSetupScreen";
 import LoginScreen from "./screens/LoginScreen";
-import AvatarSelection from "./screens/AvatarSelection";  
+import AvatarSelection from "./screens/AvatarSelection";
 import ChildHome from "./screens/ChildHome";
 import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
-import parentPinScreen from "./screens/parentPinScreen";
-import parentDashBoard from "./screens/ParentDashBoard";
+import ParentPinScreen from "./screens/parentPinScreen";      // 👈 use same case as file
+import ParentDashBoard from "./screens/ParentDashBoard";
 import ParentTaskPage from "./screens/ParentTaskPage";
-import parentReviewTask from "./screens/parentReviewTask";
-import parentReward from "./screens/parentReward";
+import ParentReviewTask from "./screens/parentReviewTask";
+import ParentReward from "./screens/parentReward";
 import AccountSetting from "./screens/AccountSetting";
 
+import { ParentLockProvider, useParentLock } from "./ParentLockContext";
+
 // --- Navigator Setup ---
-const Stack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 /**
- * Parent stack flow (locked behind PIN)
+ * Parent stack: THIS is where ParentPinScreen and ParentDashBoard live.
  */
 function ParentStackScreen() {
   return (
-    <ParentStack.Navigator screenOptions={{ headerShown: false }}>
-      <ParentStack.Screen name="parentPinScreen" component={parentPinScreen} />
-      <ParentStack.Screen name="ParentDashBoard" component={parentDashBoard} />
-      <ParentStack.Screen name="ParentTaskPage" component={ParentTaskPage} />
-      <ParentStack.Screen name="parentReviewTask" component={parentReviewTask} />
-      <ParentStack.Screen name="parentReward" component={parentReward} />
-      <ParentStack.Screen name="AccountSetting" component={AccountSetting} />
+    <ParentStack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName="parentPinScreen"              // 👈 must match the screen name below
+    >
+      <ParentStack.Screen
+        name="parentPinScreen"
+        component={ParentPinScreen}
+      />
+      <ParentStack.Screen
+        name="ParentDashBoard"                        // 👈 EXACT name used in navigation.replace
+        component={ParentDashBoard}
+      />
+      <ParentStack.Screen
+        name="ParentTaskPage"
+        component={ParentTaskPage}
+      />
+      <ParentStack.Screen
+        name="parentReviewTask"
+        component={ParentReviewTask}
+      />
+      <ParentStack.Screen
+        name="parentReward"
+        component={ParentReward}
+      />
+      <ParentStack.Screen
+        name="AccountSetting"
+        component={AccountSetting}
+      />
     </ParentStack.Navigator>
   );
 }
 
 /**
- * Child tab navigation — includes link to parent flow as last tab 
+ * Child tab navigation — Parent tab holds the ParentStack
  */
 function ChildTabs() {
+  const { lockParent } = useParentLock();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -81,27 +104,46 @@ function ChildTabs() {
       <Tab.Screen
         name="Parent"
         component={ParentStackScreen}
-        
+        listeners={{
+          blur: () => {
+            // whenever you leave the Parent tab, lock it
+            lockParent();
+          },
+        }}
       />
     </Tab.Navigator>
   );
 }
 
 /**
- * Main app navigation stack
+ * Root stack – NO parent screens here.
  */
+function RootNavigator() {
+  return (
+    <RootStack.Navigator
+      initialRouteName="SignUp"
+      screenOptions={{ headerShown: false }}
+    >
+      <RootStack.Screen name="LoginScreen" component={LoginScreen} />
+      <RootStack.Screen name="SignUp" component={SignUpScreen} />
+      <RootStack.Screen
+        name="ChildProfileSetup"
+        component={ChildProfileSetupScreen}
+      />
+      <RootStack.Screen name="AvatarSelection" component={AvatarSelection} />
+      <RootStack.Screen name="ChildHome" component={ChildHome} />
+      <RootStack.Screen name="ChildTabs" component={ChildTabs} />
+    </RootStack.Navigator>
+  );
+}
+
 function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-        <Stack.Screen name="ChildHome" component={ChildHome} />
-        <Stack.Screen name="ChildTabs" component={ChildTabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ParentLockProvider>
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </ParentLockProvider>
   );
 }
 
