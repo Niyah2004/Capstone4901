@@ -1,10 +1,10 @@
-// App.js
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";
@@ -101,51 +101,37 @@ function ChildTabs() {
       <Tab.Screen name="Home" component={ChildHome} />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen
-        name="Parent"
-        component={ParentStackScreen}
-        listeners={{
-          blur: () => {
-            // whenever you leave the Parent tab, lock it
-            lockParent();
-          },
-        }}
-      />
+      <Tab.Screen name="Parent" component={ParentStackScreen} />
     </Tab.Navigator>
   );
 }
 
 /**
- * Root stack – NO parent screens here.
+ * Main app navigation stack
  */
-function RootNavigator() {
-  return (
-    <RootStack.Navigator
-      initialRouteName="SignUp"
-      screenOptions={{ headerShown: false }}
-    >
-      <RootStack.Screen name="LoginScreen" component={LoginScreen} />
-      <RootStack.Screen name="SignUp" component={SignUpScreen} />
-      <RootStack.Screen
-        name="ChildProfileSetup"
-        component={ChildProfileSetupScreen}
-      />
-      <RootStack.Screen name="AvatarSelection" component={AvatarSelection} />
-      <RootStack.Screen name="ChildHome" component={ChildHome} />
-      <RootStack.Screen name="ChildTabs" component={ChildTabs} />
-    </RootStack.Navigator>
-  );
-}
+export default function App() {
+  const [orientation, setOrientation] = useState();
 
-function App() {
+  useEffect(() => {
+    const getOrientation = async () => {
+      const current = await ScreenOrientation.getOrientationAsync();
+      setOrientation(current);
+    };
+    getOrientation();
+  }, []);
+
   return (
-    <ParentLockProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </ParentLockProvider>
+    <NavigationContainer>
+     <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+        <Stack.Screen name="ChildHome" component={ChildHome} />
+        <Stack.Screen name="ChildTabs" component={ChildTabs} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
 registerRootComponent(App);
-export default App;

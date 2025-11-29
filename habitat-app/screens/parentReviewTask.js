@@ -135,7 +135,7 @@ export default function ParentReviewTask() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <ScrollView style={styles.ScrollView}>
+        <View style={styles.view}>
           <Text style={styles.header}>Review Tasks</Text>
 
           {tasks.length === 0 ? (
@@ -223,20 +223,17 @@ export default function ParentReviewTask() {
                     </Text>
                   </TouchableOpacity>
 
-                  {/* Optional Delete Icon */}
-                  <TouchableOpacity
-                    style={styles.deleteBtn}
-                    onPress={() => handleDelete(item.id)}
-                  >
-                    <Ionicons name="trash-outline" size={20} color="gray" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
+              {/* Optional Delete Icon */}
+              <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
+                <Ionicons name="trash-outline" size={20} color="gray" />
+              </TouchableOpacity>
+            </View>
           )}
-        </ScrollView>
-      </SafeAreaView>
-    </SafeAreaProvider>
+        />
+      )}
+    </View>
+  </SafeAreaView>
+</SafeAreaProvider>
   );
 }
 
