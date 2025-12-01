@@ -205,7 +205,7 @@ export default function ParentReviewTask() {
                     disabled={item.status === "completed"}
                   >
                     <Text style={styles.completeButtonText}>
-                      {item.status === "completed" ? "Completed" : "Mark Complete"}
+                      {item.status === "completed" ? "Completed" : "Marked Complete"}
                     </Text>
                   </TouchableOpacity>
 
