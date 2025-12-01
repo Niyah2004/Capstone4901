@@ -14,8 +14,8 @@ import AvatarSelection from "./screens/AvatarSelection";
 import ChildHome from "./screens/ChildHome";
 import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
-import ParentPinScreen from "./screens/parentPinScreen";      // 👈 use same case as file
-import ParentDashBoard from "./screens/ParentDashBoard";
+import ParentPinScreen from "./screens/parentPinScreen"; 
+import ParentDashBoard from "./screens/ParentDashBoard";     
 import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
@@ -23,26 +23,24 @@ import AccountSetting from "./screens/AccountSetting";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 
-// --- Navigator Setup ---
-const RootStack = createNativeStackNavigator();
+
+const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-/**
- * Parent stack: THIS is where ParentPinScreen and ParentDashBoard live.
- */
+
 function ParentStackScreen() {
   return (
     <ParentStack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="parentPinScreen"              // 👈 must match the screen name below
+      initialRouteName="parentPinScreen"             
     >
       <ParentStack.Screen
         name="parentPinScreen"
         component={ParentPinScreen}
       />
       <ParentStack.Screen
-        name="ParentDashBoard"                        // 👈 EXACT name used in navigation.replace
+        name="ParentDashBoard"                        
         component={ParentDashBoard}
       />
       <ParentStack.Screen
@@ -65,12 +63,9 @@ function ParentStackScreen() {
   );
 }
 
-/**
- * Child tab navigation — Parent tab holds the ParentStack
- */
+
 function ChildTabs() {
   const { lockParent } = useParentLock();
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -101,7 +96,14 @@ function ChildTabs() {
       <Tab.Screen name="Home" component={ChildHome} />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen name="Parent" component={ParentStackScreen} />
+      <Tab.Screen name="Parent" component={ParentStackScreen} 
+      listeners={{
+          blur: () => {
+            // whenever you leave the Parent tab, lock it
+            lockParent();
+          },
+        }}
+        />
     </Tab.Navigator>
   );
 }
@@ -121,6 +123,7 @@ export default function App() {
   }, []);
 
   return (
+      <ParentLockProvider>
     <NavigationContainer>
      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
@@ -131,6 +134,7 @@ export default function App() {
         <Stack.Screen name="ChildTabs" component={ChildTabs} />
       </Stack.Navigator>
     </NavigationContainer>
+    </ParentLockProvider>
   );
 }
 

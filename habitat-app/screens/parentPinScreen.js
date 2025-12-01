@@ -5,10 +5,12 @@ import { db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { updateDoc } from "firebase/firestore";
+import { useParentLock } from "../ParentLockContext";
 
 
 const ParentPinScreen = ({ navigation,route  }) => {
   const [pin, setPin] = useState("");
+  const { unlockParent } = useParentLock();
 
   const correctPin = async () => {
     if (pin.length !== 4) {
@@ -28,7 +30,7 @@ const ParentPinScreen = ({ navigation,route  }) => {
         const storedPin = parentSnap.data().parentPin;
 
         if (pin === storedPin) {
-          //unlockParent(); //testing should allow for navigation
+          unlockParent(); //testing should allow for navigation
           Alert.alert("Access Granted", "Welcome to your Parent Dashboard!");
           navigation.replace("ParentDashBoard");
         } else {

@@ -140,6 +140,9 @@ export default function ParentTaskPage({ navigation, route }) {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>{"← Back"}</Text>
+        </TouchableOpacity>
         <ScrollView
           style={styles.container}
           contentContainerStyle={{ paddingBottom: 60 }}
@@ -284,4 +287,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+  backButton: {
+    alignSelf: "flex-start",
+    marginLeft: 20,
+    marginTop: 40,
+    marginBottom: 10,
+  },
+  backText: {
+    fontSize: 18,
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+
 });

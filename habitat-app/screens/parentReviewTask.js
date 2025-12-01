@@ -78,7 +78,7 @@ export default function ParentReviewTask() {
     }
   };
 
-  // 🆕 Award points + mark task completed (uses childPoints collection)
+  // Award points + mark task completed (uses childPoints collection)
   async function completeTaskAndAwardPoints({ taskId, childId }) {
     if (!childId) {
       console.warn("No childId on task, cannot award points");
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   stepsText: { fontSize: 12, color: "#777" },
   statusRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   completeText: { marginLeft: 5, color: "#4CAF50", fontSize: 14 },
-  // 🆕 Mark Complete button styles
+  // Mark Complete button styles
   completeButton: {
     marginTop: 10,
     backgroundColor: "#4CAF50",

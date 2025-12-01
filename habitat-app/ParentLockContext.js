@@ -6,8 +6,14 @@ const ParentLockContext = createContext(null);
 export function ParentLockProvider({ children }) {
   const [isParentUnlocked, setIsParentUnlocked] = useState(false);
 
-  const unlockParent = () => setIsParentUnlocked(true);
-  const lockParent = () => setIsParentUnlocked(false);
+  const unlockParent = () => {
+      console.log("🔓Parent unlocked");
+      setIsParentUnlocked(true);
+    };
+  const lockParent = () => {
+      console.log("🔒Parent locked");
+      setIsParentUnlocked(false);
+    };
 
   return (
     <ParentLockContext.Provider
