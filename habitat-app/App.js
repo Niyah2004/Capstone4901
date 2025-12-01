@@ -20,6 +20,7 @@ import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
 import AccountSetting from "./screens/AccountSetting";
+import ForgotPinScreen from "./screens/ForgotPin";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 
@@ -58,6 +59,10 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="AccountSetting"
         component={AccountSetting}
+      />
+      <ParentStack.Screen
+        name="ForgotPin"
+        component={ForgotPinScreen}
       />
     </ParentStack.Navigator>
   );
