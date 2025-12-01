@@ -1,18 +1,48 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { db } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { updateDoc } from "firebase/firestore";
 
-const ParentPinScreen = ({ navigation }) => {
+
+const ParentPinScreen = ({ navigation,route  }) => {
   const [pin, setPin] = useState("");
 
-  const correctPin = "1234"; // placeholder — later, we can fetch this from Firebase
-
-  const handleSubmit = () => {
-    if (pin === correctPin) {
-      navigation.replace("parentDashBoard"); // go to dashboard
-    } else {
-      Alert.alert("Incorrect PIN", "Please try again.");
+  const correctPin = async () => {
+    if (pin.length !== 4) {
+      Alert.alert("Invalid PIN", "PIN must be 4 digits.");
+      return false;
     }
-  };
+    try {
+      const user = getAuth().currentUser;
+      if (!user) {
+        Alert.alert("Error", "No authenticated user found.");
+        return false;
+      }
+      const parentRef = doc(db, "parents", user.uid);
+      const parentSnap = await getDoc(parentRef);
+
+      if (parentSnap.exists()) {
+        const storedPin = parentSnap.data().parentPin;
+
+        if (pin === storedPin) {
+          Alert.alert("Access Granted", "Welcome to your Parent Dashboard!");
+          navigation.replace("ParentDashBoard");
+        } else {
+          Alert.alert("Incorrect PIN", "Please try again.");
+        }
+      } else {
+        Alert.alert("Error", "No PIN found. Please set one up first.");
+      }
+    } catch (error) {
+      console.error("PIN verification error:", error);
+      Alert.alert("Error", "Something went wrong verifying your PIN.");
+    }
+  }; 
+
+  
 
   return (
     <View style={styles.container}>
@@ -28,7 +58,7 @@ const ParentPinScreen = ({ navigation }) => {
         maxLength={4}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+      <TouchableOpacity style={styles.button} onPress={correctPin}>
         <Text style={styles.buttonText}>Submit PIN</Text>
       </TouchableOpacity>
     </View>

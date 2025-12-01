@@ -1,23 +1,74 @@
- import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import WeekCalendar from "./WeekCalendar";
+import { addDays, startOfDay } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; // 👈 ADD THIS IMPORT
+import { Ionicons } from "@expo/vector-icons"; // for icons
+import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
-export default function ChildTask({route, navigation}) {
+export default function ChildTask({ route, navigation }) {
     // temporarily disable these props to avoid undefined errors during demo
     const task = route?.params?.task || { title: "", description: "", isCompleted: false };
 
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description);
     const [isCompleted, setIsCompleted] = useState(task.isCompleted);
-    const demoTasks = new Array(10).fill(null);
+
+    // selected date from WeekCalendar
+    const [selectedDate, setSelectedDate] = useState(new Date());
+
+    // real tasks loaded for the selected date (from Firestore)
+    const [tasksForDate, setTasksForDate] = useState([]);
+    const [loadingTasks, setLoadingTasks] = useState(true);
+
+    // If you support multiple children, set this to the current child's id (e.g. from auth/profile)
+    const currentChildId = null; // replace with real child id when available
+
+    useEffect(() => {
+        if (!selectedDate) return;
+        setLoadingTasks(true);
+
+        const start = startOfDay(selectedDate);
+        const end = addDays(start, 1);
+
+        // Build query constraints
+        const constraints = [
+            where("dateTimestamp", ">=", Timestamp.fromDate(start)),
+            where("dateTimestamp", "<", Timestamp.fromDate(end)),
+        ];
+        if (currentChildId) constraints.unshift(where("childId", "==", currentChildId));
+
+        const q = query(collection(db, "tasks"), ...constraints);
+
+        const unsub = onSnapshot(q, snapshot => {
+            const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            setTasksForDate(list);
+            setLoadingTasks(false);
+        }, err => {
+            console.error("tasks onSnapshot error", err);
+            setLoadingTasks(false);
+        });
+
+        return () => unsub();
+    }, [selectedDate]);
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Today's Tasks</Text>
 
+            <View style={styles.calendarContainer}>
+                <View style={{ flex: 10 }}>
+                    <WeekCalendar
+                        date={selectedDate}
+                        onChange={(newdate) => setSelectedDate(newdate)}
+                    />
+                </View>
+            </View>
+
+
             {/* Week days bar */}
-            <View style={styles.weeksContainer}>
-                {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+            {/* <View style={styles.weeksContainer}>
+               {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
                     <View
                         key={index}
                         style={[styles.dayCircle, index === 4 && styles.presentDay]} // highlight "Friday"
@@ -30,26 +81,35 @@ export default function ChildTask({route, navigation}) {
                     </View>
                 ))}
             </View>
-
+        */}
             {/* Task list */}
+            <Text style={{ marginTop: 6, marginBottom: 6, fontWeight: '600' }}>
+                Tasks for {selectedDate.toDateString()}
+            </Text>
             <ScrollView style={{ marginTop: 10 }}>
-                {demoTasks.map((_, index) => (
-                    <View key={index} style={styles.taskBox}>
-                        <View style={styles.taskHeader}>
-                            <Text style={styles.taskTitle}>Task {index + 1}</Text>
-                            <Text style={styles.points}>10 pts</Text>
-                        </View>
-
-                        <View style={styles.Progress}>
-                            <View style={[styles.progressFill, { width: "50%" }]} />
-                        </View>
-
-                        <TouchableOpacity style={styles.completeButton}>
-                            <Ionicons name="checkbox-outline" size={16} color="#4CAF50" />
-                            <Text style={styles.complete}> Mark as complete</Text>
-                        </TouchableOpacity>
+                {tasksForDate.length === 0 ? (
+                    <View style={styles.taskBox}>
+                        <Text style={{ textAlign: 'center', color: '#777' }}>No tasks for this date.</Text>
                     </View>
-                ))}
+                ) : (
+                    tasksForDate.map((task) => (
+                        <View key={task.id} style={styles.taskBox}>
+                            <View style={styles.taskHeader}>
+                                <Text style={styles.taskTitle}>{task.title}</Text>
+                                <Text style={styles.points}>{task.points} pts</Text>
+                            </View>
+
+                            <View style={styles.Progress}>
+                                <View style={[styles.progressFill, { width: "50%" }]} />
+                            </View>
+
+                            <TouchableOpacity style={styles.completeButton}>
+                                <Ionicons name="checkbox-outline" size={16} color="#4CAF50" />
+                                <Text style={styles.complete}> Mark as complete</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ))
+                )}
             </ScrollView>
         </View>
     );
@@ -70,6 +130,11 @@ const styles = StyleSheet.create({
     weeksContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
+        marginBottom: 20,
+    },
+    calendarContainer: {
+        flexDirection: "row",
+        alignItems: "center",
         marginBottom: 20,
     },
     dayCircle: {
