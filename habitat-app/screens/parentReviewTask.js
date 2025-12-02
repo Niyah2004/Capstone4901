@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet,ScrollView, TouchableOpacity, ActivityIndicator, Animated } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { View, Text, FlatList, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Animated } from "react-native";
+import { Ionicons, Zocial } from "@expo/vector-icons";
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { db } from "../firebaseConfig";
-import { collection, onSnapshot, orderBy, query, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
-import {getAuth} from "firebase/auth";
+import { collection, onSnapshot, orderBy, query, deleteDoc, doc, updateDoc, where, serverTimestamp, addDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 export default function ParentReviewTask() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
- useEffect(() => {
+  useEffect(() => {
     const uid = getAuth().currentUser?.uid;
     if (!uid) { setTasks([]); setLoading(false); return; }
 
     // Filter to only tasks created by this parent
     const q = query(
       collection(db, "tasks"),
-      where("ownerId", "==", uid),       
+      where("ownerId", "==", uid),
       orderBy("createdAt", "desc")
     );
 
@@ -33,9 +33,41 @@ export default function ParentReviewTask() {
     return unsub;
   }, []);
 
-  const handleVerify = async (id) => {
-    try { await updateDoc(doc(db, "tasks", id), { verified: true }); }
-    catch (e) { console.error("Error verifying task:", e); }
+  const handleApprove = async (id, item) => {
+    try {
+      await updateDoc(doc(db, "tasks", id), { verified: true, pendingApproval: false, verifiedAt: serverTimestamp() });
+
+      // notify the child that their completion was approved
+      const childId = item?.completedByChildId;
+      if (childId) {
+        await addDoc(collection(db, "notifications"), {
+          toUserId: childId,
+          fromParentId: getAuth().currentUser?.uid || null,
+          taskId: id,
+          type: "completion_approved",
+          createdAt: serverTimestamp(),
+          read: false,
+        }); Zocial
+      }
+    } catch (e) { console.error("Error approving task:", e); }
+  };
+
+  const handleReject = async (id, item) => {
+    try {
+      await updateDoc(doc(db, "tasks", id), { pendingApproval: false, rejected: true, rejectedAt: serverTimestamp() });
+
+      const childId = item?.completedByChildId;
+      if (childId) {
+        await addDoc(collection(db, "notifications"), {
+          toUserId: childId,
+          fromParentId: getAuth().currentUser?.uid || null,
+          taskId: id,
+          type: "completion_rejected",
+          createdAt: serverTimestamp(),
+          read: false,
+        });
+      }
+    } catch (e) { console.error("Error rejecting task:", e); }
   };
 
   const handleDelete = async (id) => {
@@ -52,69 +84,81 @@ export default function ParentReviewTask() {
   }
 
   return (
-    
+
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <View style={styles.view}>
           <Text style={styles.header}>Review Tasks</Text>
 
-      {tasks.length === 0 ? (
-        <Text style={styles.empty}>No tasks yet. Create one from the dashboard!</Text>
-      ) : (
-        <FlatList
-          data={tasks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.taskCard}>
-              {/* Icon and Title Row */}
-              <View style={styles.row}>
-                <View style={styles.iconContainer}>
-                  <Ionicons name="book-outline" size={24} color="#C8A94B" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.title}>{item.title}</Text>
-                  <Text style={styles.subtitle}>{item.description}</Text>
-                </View>
-                <View style={styles.pointsBadge}>
-                  <Text style={styles.pointsText}>{item.points || "10"} Pts</Text>
-                </View>
-              </View>
+          {tasks.length === 0 ? (
+            <Text style={styles.empty}>No tasks yet. Create one from the dashboard!</Text>
+          ) : (
+            <FlatList
+              data={tasks}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={styles.taskCard}>
+                  {/* Icon and Title Row */}
+                  <View style={styles.row}>
+                    <View style={styles.iconContainer}>
+                      <Ionicons name="book-outline" size={24} color="#C8A94B" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.title}>{item.title}</Text>
+                      <Text style={styles.subtitle}>{item.description}</Text>
+                    </View>
+                    <View style={styles.pointsBadge}>
+                      <Text style={styles.pointsText}>{item.points || "10"} Pts</Text>
+                    </View>
+                  </View>
 
-              {/* Progress Bar */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <Animated.View style={[styles.progressFill, { width: "100%" }]} />
+                  {/* Progress Bar */}
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBar}>
+                      <Animated.View style={[styles.progressFill, { width: "100%" }]} />
+                    </View>
+                    <Text style={styles.stepsText}>1/1 Steps</Text>
+                  </View>
+
+                  {/* Completion & Verify Row */}
+                  {item.pendingApproval && !item.verified ? (
+                    <View style={{ marginTop: 10 }}>
+                      <View style={styles.statusRow}>
+                        <Ionicons name="time-outline" size={20} color="#F0A500" />
+                        <Text style={[styles.completeText, { color: '#F0A500' }]}>Completion requested</Text>
+                      </View>
+
+                      <View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'space-between' }}>
+                        <TouchableOpacity style={styles.verifyButton} onPress={() => handleApprove(item.id, item)}>
+                          <Text style={styles.verifyText}>Approve</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.verifyButton, { backgroundColor: '#E57373' }]} onPress={() => handleReject(item.id, item)}>
+                          <Text style={styles.verifyText}>Reject</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : item.verified ? (
+                    <TouchableOpacity style={[styles.verifyButton, { backgroundColor: '#A5D6A7', marginTop: 10 }]} disabled={true}>
+                      <Text style={styles.verifyText}>Verified</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.statusRow}>
+                      <Ionicons name="remove-circle-outline" size={18} color="#999" />
+                      <Text style={[styles.completeText, { color: '#999' }]}>Not completed</Text>
+                    </View>
+                  )}
+
+                  {/* Optional Delete Icon */}
+                  <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
+                    <Ionicons name="trash-outline" size={20} color="gray" />
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.stepsText}>1/1 Steps</Text>
-              </View>
-
-              {/* Completion & Verify Row */}
-              <View style={styles.statusRow}>
-                <Ionicons name="checkmark-done-circle-outline" size={20} color="#4CAF50" />
-                <Text style={styles.completeText}>Marked as Complete</Text>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.verifyButton, item.verified && { backgroundColor: "#A5D6A7" }]}
-                onPress={() => handleVerify(item.id)}
-                disabled={item.verified}
-              >
-                <Text style={styles.verifyText}>
-                  {item.verified ? "Verified" : "Verify Completed"}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Optional Delete Icon */}
-              <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-                <Ionicons name="trash-outline" size={20} color="gray" />
-              </TouchableOpacity>
-            </View>
+              )}
+            />
           )}
-        />
-      )}
-    </View>
-  </SafeAreaView>
-</SafeAreaProvider>
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

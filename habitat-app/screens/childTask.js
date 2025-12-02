@@ -3,8 +3,9 @@ import WeekCalendar from "./WeekCalendar";
 import { addDays, startOfDay } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // for icons
-import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, Timestamp, updateDoc, doc, serverTimestamp, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { getAuth } from "firebase/auth";
 
 export default function ChildTask({ route, navigation }) {
     // temporarily disable these props to avoid undefined errors during demo
@@ -21,8 +22,33 @@ export default function ChildTask({ route, navigation }) {
     const [tasksForDate, setTasksForDate] = useState([]);
     const [loadingTasks, setLoadingTasks] = useState(true);
 
-    // If you support multiple children, set this to the current child's id (e.g. from auth/profile)
-    const currentChildId = null; // replace with real child id when available
+    // current child's id (from auth). If children use the same auth, this will be the child's uid.
+    const currentChildId = getAuth().currentUser?.uid || null;
+
+    const handleMarkComplete = async (task) => {
+        try {
+            // mark task as awaiting parent approval
+            await updateDoc(doc(db, "tasks", task.id), {
+                pendingApproval: true,
+                completionRequestedAt: serverTimestamp(),
+                completedByChildId: currentChildId || null,
+            });
+
+            // create a lightweight notification for the parent (so parents can show a notifications feed if desired)
+            if (task.ownerId) {
+                await addDoc(collection(db, "notifications"), {
+                    toUserId: task.ownerId,
+                    fromChildId: currentChildId || null,
+                    taskId: task.id,
+                    type: "completion_request",
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
+        } catch (err) {
+            console.error("Error requesting approval:", err);
+        }
+    };
 
     useEffect(() => {
         if (!selectedDate) return;
@@ -39,18 +65,125 @@ export default function ChildTask({ route, navigation }) {
         if (currentChildId) constraints.unshift(where("childId", "==", currentChildId));
 
         const q = query(collection(db, "tasks"), ...constraints);
-
-        const unsub = onSnapshot(q, snapshot => {
+        // query single-instance tasks for the selected date
+        const unsubDate = onSnapshot(q, snapshot => {
             const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            setTasksForDate(list);
+            // sort tasks so that:
+            // - not completed & not pendingApproval come first
+            // - pendingApproval (waiting for parent) come next
+            // - verified / rejected come last
+            list.sort((a, b) => {
+                const score = (t) => {
+                    if (t.verified) return 3;
+                    if (t.rejected) return 3;
+                    if (t.pendingApproval) return 2;
+                    return 1;
+                };
+                const sa = score(a);
+                const sb = score(b);
+                if (sa !== sb) return sa - sb;
+                // fallback: preserve insertion/order by points (desc) then title
+                if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
+                return (a.title || "").localeCompare(b.title || "");
+            });
+            // we'll set tasks after merging with recurring tasks (handled below)
+            setTasksForDate(prev => {
+                // temporarily set date-only tasks; merging happens in recurring handler
+                return list;
+            });
             setLoadingTasks(false);
         }, err => {
             console.error("tasks onSnapshot error", err);
             setLoadingTasks(false);
         });
 
-        return () => unsub();
+        // query recurring tasks assigned to this child
+        let unsubRecurring = () => { };
+        if (currentChildId) {
+            const qRec = query(collection(db, "tasks"), where("childId", "==", currentChildId), where("isRecurring", "==", true));
+            unsubRecurring = onSnapshot(qRec, snap => {
+                const recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                // filter recurring tasks to those that occur on selectedDate
+                const occurs = recs.filter(r => {
+                    try { return occursOnDate(r, selectedDate); } catch (e) { return false; }
+                });
+
+                // merge with date-specific tasks already stored in state
+                setTasksForDate(prevDateTasks => {
+                    const map = new Map();
+                    (prevDateTasks || []).forEach(t => map.set(t.id, t));
+                    occurs.forEach(t => map.set(t.id, t));
+                    const merged = Array.from(map.values());
+                    // apply same sorting as before
+                    merged.sort((a, b) => {
+                        const score = (t) => {
+                            if (t.verified) return 3;
+                            if (t.rejected) return 3;
+                            if (t.pendingApproval) return 2;
+                            return 1;
+                        };
+                        const sa = score(a);
+                        const sb = score(b);
+                        if (sa !== sb) return sa - sb;
+                        if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
+                        return (a.title || "").localeCompare(b.title || "");
+                    });
+                    return merged;
+                });
+            }, err => console.error('recurring onSnapshot error', err));
+        }
+
+        return () => { try { unsubDate(); } catch { }; try { unsubRecurring(); } catch { } };
     }, [selectedDate]);
+
+
+    // Helper: determine if a recurring task occurs on a specific date
+    const occursOnDate = (task, date) => {
+        if (!task || !task.recurrence) return false;
+        const r = task.recurrence;
+        const start = (r.startDate && r.startDate.toDate) ? r.startDate.toDate() : (task.dateTimestamp && task.dateTimestamp.toDate ? task.dateTimestamp.toDate() : null);
+        if (!start) return false;
+
+        // end conditions
+        if (r.endType === 'until' && r.until && r.until.toDate) {
+            const until = r.until.toDate();
+            if (date > until) return false;
+        }
+        if (r.count) {
+            // rough check: if date is before start, false
+            if (date < start) return false;
+        }
+
+        const interval = r.interval || 1;
+        const freq = r.frequency || 'weekly';
+
+        const dayDiff = Math.floor((startOfDay(date) - startOfDay(start)) / (1000 * 60 * 60 * 24));
+
+        if (freq === 'daily') {
+            if (dayDiff < 0) return false;
+            return (dayDiff % interval) === 0;
+        }
+
+        if (freq === 'weekly') {
+            // daysOfWeek: 0=Mon .. 6=Sun
+            const dow = (date.getDay() + 6) % 7; // convert JS 0=Sun to 0=Mon
+            if (!(r.daysOfWeek && r.daysOfWeek.length)) return false;
+            if (!r.daysOfWeek.includes(dow)) return false;
+            // check week interval
+            const weeks = Math.floor(dayDiff / 7);
+            return weeks >= 0 && (weeks % interval) === 0;
+        }
+
+        if (freq === 'monthly') {
+            // basic: same day of month
+            const startDay = start.getDate();
+            if (date.getDate() !== startDay) return false;
+            const months = (date.getFullYear() - start.getFullYear()) * 12 + (date.getMonth() - start.getMonth());
+            return months >= 0 && (months % interval) === 0;
+        }
+
+        return false;
+    };
 
     return (
         <View style={styles.container}>
@@ -103,7 +236,7 @@ export default function ChildTask({ route, navigation }) {
                                 <View style={[styles.progressFill, { width: "50%" }]} />
                             </View>
 
-                            <TouchableOpacity style={styles.completeButton}>
+                            <TouchableOpacity style={styles.completeButton} onPress={() => handleMarkComplete(task)}>
                                 <Ionicons name="checkbox-outline" size={16} color="#4CAF50" />
                                 <Text style={styles.complete}> Mark as complete</Text>
                             </TouchableOpacity>

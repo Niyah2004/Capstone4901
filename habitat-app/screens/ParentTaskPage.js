@@ -14,6 +14,16 @@ export default function ParentTaskPage({ navigation }) {
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
   const [steps, setSteps] = useState([""]);
+  const [childId, setChildId] = useState("");
+
+  // Recurrence state
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceFreq, setRecurrenceFreq] = useState("weekly"); // daily | weekly | monthly
+  const [recurrenceInterval, setRecurrenceInterval] = useState(1);
+  const [recurrenceDays, setRecurrenceDays] = useState([false, false, false, false, false, false, false]); // Mon..Sun
+  const [recurrenceEndType, setRecurrenceEndType] = useState("never"); // never | until | count
+  const [recurrenceUntil, setRecurrenceUntil] = useState(new Date());
+  const [recurrenceCount, setRecurrenceCount] = useState(10);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -43,16 +53,31 @@ export default function ParentTaskPage({ navigation }) {
       const auth = getAuth();
       const user = auth.currentUser;
       const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-      
+
+      const recurrence = isRecurring
+        ? {
+          frequency: recurrenceFreq,
+          interval: recurrenceInterval,
+          daysOfWeek: recurrenceDays.map((v, i) => v ? i : -1).filter(i => i >= 0), // 0=Mon,6=Sun
+          endType: recurrenceEndType,
+          until: recurrenceEndType === 'until' ? Timestamp.fromDate(startOfDay(recurrenceUntil)) : null,
+          count: recurrenceEndType === 'count' ? recurrenceCount : null,
+          startDate: Timestamp.fromDate(start),
+        }
+        : null;
+
       await addDoc(collection(db, "tasks"), {
         title,
         description,
         scheduleDate: date.toISOString().split("T")[0], // YYYY-MM-DD
         //dateTimestamp: Timestamp.fromDate(start), // used for robust day-range queries
-        dateTimestamp: Timestamp.fromDate(dateStart), 
+        dateTimestamp: Timestamp.fromDate(dateStart),
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
-         ownerId: user.uid,   
+        ownerId: user.uid,
+        childId: childId || null,
+        isRecurring: !!isRecurring,
+        recurrence,
         // childId: currentChildId, // add this for  multiple children
         createdAt: serverTimestamp(),
       });
@@ -77,93 +102,167 @@ export default function ParentTaskPage({ navigation }) {
   }
 
   return (
-        <SafeAreaProvider>
-            <SafeAreaView style={styles.container}>
-               <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
-      <Text style={styles.header}>Task Management</Text>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+          <Text style={styles.header}>Task Management</Text>
 
-      {/* Task Title */}
-      <Text style={styles.label}>Task Title</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., Clean my room"
-        value={title}
-        onChangeText={setTitle}
-      />
-
-      {/* Description */}
-      <Text style={styles.label}>Description</Text>
-      <TextInput
-        style={[styles.input, { height: 100 }]}
-        multiline
-        placeholder="e.g., Put away clothes, make the bed, vacuum..."
-        value={description}
-        onChangeText={setDescription}
-      />
-
-      {/* Schedule */}
-      <Text style={styles.label}>Schedule</Text>
-      <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
-        <Text>{date.toISOString().split("T")[0]}</Text>
-      </TouchableOpacity>
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          onChange={(e, selectedDate) => {
-            setShowDatePicker(false);
-            if (selectedDate) setDate(selectedDate);
-          }}
-        />
-      )}
-
-      {/* Time */}
-      <Text style={styles.label}>Time</Text>
-      <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
-        <Text>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
-      </TouchableOpacity>
-      {showTimePicker && (
-        <DateTimePicker
-          value={time}
-          mode="time"
-          display="default"
-          onChange={(e, selectedTime) => {
-            setShowTimePicker(false);
-            if (selectedTime) setTime(selectedTime);
-          }}
-        />
-      )}
-
-      {/* Steps */}
-      <Text style={styles.label}>Steps</Text>
-      {steps.map((step, index) => (
-        <View key={index} style={styles.stepRow}>
+          {/* Task Title */}
+          <Text style={styles.label}>Task Title</Text>
           <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder={`Step ${index + 1} description`}
-            value={step}
-            onChangeText={(text) => handleStepChange(text, index)}
+            style={styles.input}
+            placeholder="e.g., Clean my room"
+            value={title}
+            onChangeText={setTitle}
           />
-          {steps.length > 1 && (
-            <TouchableOpacity onPress={() => handleRemoveStep(index)}>
-              <Ionicons name="close" size={20} color="gray" />
-            </TouchableOpacity>
+
+          {/* Description */}
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            multiline
+            placeholder="e.g., Put away clothes, make the bed, vacuum..."
+            value={description}
+            onChangeText={setDescription}
+          />
+
+          {/* Schedule */}
+          <Text style={styles.label}>Schedule</Text>
+          <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+            <Text>{date.toISOString().split("T")[0]}</Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="default"
+              onChange={(e, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) setDate(selectedDate);
+              }}
+            />
           )}
-        </View>
-      ))}
 
-      <TouchableOpacity style={styles.addStep} onPress={handleAddStep}>
-        <Ionicons name="add" size={20} color="black" />
-        <Text style={styles.addStepText}>Add Step</Text>
-      </TouchableOpacity>
+          {/* Time */}
+          <Text style={styles.label}>Time</Text>
+          <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
+            <Text>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
+          </TouchableOpacity>
+          {showTimePicker && (
+            <DateTimePicker
+              value={time}
+              mode="time"
+              display="default"
+              onChange={(e, selectedTime) => {
+                setShowTimePicker(false);
+                if (selectedTime) setTime(selectedTime);
+              }}
+            />
+          )}
 
-      {/* Save Task */}
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
-        <Text style={styles.saveButtonText}>Save Task</Text>
-      </TouchableOpacity>
-    </ScrollView>
-    </SafeAreaView>
+
+          {/* Child ID (optional) */}
+          <Text style={styles.label}>Child ID (optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Paste child UID (optional)"
+            value={childId}
+            onChangeText={setChildId}
+          />
+
+          {/* Recurrence */}
+          <Text style={styles.label}>Repeat</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+            <TouchableOpacity
+              style={[styles.input, { flex: 1, justifyContent: 'center' }]}
+              onPress={() => setIsRecurring(prev => !prev)}
+            >
+              <Text>{isRecurring ? `Repeats: ${recurrenceFreq}` : 'Does not repeat'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {isRecurring && (
+            <View style={{ marginTop: 10 }}>
+              <Text style={{ fontWeight: '600' }}>Frequency</Text>
+              <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                {['daily', 'weekly', 'monthly'].map((f) => (
+                  <TouchableOpacity key={f} onPress={() => setRecurrenceFreq(f)} style={{ padding: 8, marginRight: 8, backgroundColor: recurrenceFreq === f ? '#5CB85C' : '#f1f1f1', borderRadius: 8 }}>
+                    <Text style={{ color: recurrenceFreq === f ? '#fff' : '#000' }}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {recurrenceFreq === 'weekly' && (
+                <View style={{ marginTop: 10 }}>
+                  <Text style={{ fontWeight: '600' }}>Days of week</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => (
+                      <TouchableOpacity key={d} onPress={() => {
+                        const arr = [...recurrenceDays]; arr[i] = !arr[i]; setRecurrenceDays(arr);
+                      }} style={{ padding: 8, marginRight: 8, marginBottom: 8, backgroundColor: recurrenceDays[i] ? '#5CB85C' : '#f1f1f1', borderRadius: 8 }}>
+                        <Text style={{ color: recurrenceDays[i] ? '#fff' : '#000' }}>{d}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <View style={{ marginTop: 10 }}>
+                <Text style={{ fontWeight: '600' }}>End</Text>
+                <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                  {['never', 'until', 'count'].map((t) => (
+                    <TouchableOpacity key={t} onPress={() => setRecurrenceEndType(t)} style={{ padding: 8, marginRight: 8, backgroundColor: recurrenceEndType === t ? '#5CB85C' : '#f1f1f1', borderRadius: 8 }}>
+                      <Text style={{ color: recurrenceEndType === t ? '#fff' : '#000' }}>{t.charAt(0).toUpperCase() + t.slice(1)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {recurrenceEndType === 'until' && (
+                  <View style={{ marginTop: 8 }}>
+                    <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+                      <Text>{recurrenceUntil.toISOString().split('T')[0]}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {recurrenceEndType === 'count' && (
+                  <View style={{ marginTop: 8 }}>
+                    <TextInput style={styles.input} keyboardType="numeric" value={String(recurrenceCount)} onChangeText={(v) => setRecurrenceCount(Number(v) || 0)} />
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Steps */}
+          <Text style={styles.label}>Steps</Text>
+          {steps.map((step, index) => (
+            <View key={index} style={styles.stepRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder={`Step ${index + 1} description`}
+                value={step}
+                onChangeText={(text) => handleStepChange(text, index)}
+              />
+              {steps.length > 1 && (
+                <TouchableOpacity onPress={() => handleRemoveStep(index)}>
+                  <Ionicons name="close" size={20} color="gray" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
+
+          <TouchableOpacity style={styles.addStep} onPress={handleAddStep}>
+            <Ionicons name="add" size={20} color="black" />
+            <Text style={styles.addStepText}>Add Step</Text>
+          </TouchableOpacity>
+
+          {/* Save Task */}
+          <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
+            <Text style={styles.saveButtonText}>Save Task</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }
