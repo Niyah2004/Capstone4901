@@ -3,10 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, Timestamp, query, where, onSnapshot } from "firebase/firestore";
 import { startOfDay } from 'date-fns';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
+import { useEffect } from "react";
 
 export default function ParentTaskPage({ navigation }) {
   const [title, setTitle] = useState("");
@@ -15,6 +16,7 @@ export default function ParentTaskPage({ navigation }) {
   const [time, setTime] = useState(new Date());
   const [steps, setSteps] = useState([""]);
   const [childId, setChildId] = useState("");
+  const [childrenList, setChildrenList] = useState([]);
 
   // Recurrence state
   const [isRecurring, setIsRecurring] = useState(false);
@@ -101,6 +103,21 @@ export default function ParentTaskPage({ navigation }) {
     });
   }
 
+  // Load children for the current parent to allow selecting a child profile
+  useEffect(() => {
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const q = query(collection(db, 'children'), where('userId', '==', uid));
+    const unsub = onSnapshot(q, snap => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setChildrenList(list);
+      // if there's at least one child and no selected child, auto-select the first
+      if (list.length && !childId) setChildId(list[0].id);
+    }, err => console.error('children onSnapshot', err));
+    return () => unsub();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -161,14 +178,27 @@ export default function ParentTaskPage({ navigation }) {
           )}
 
 
-          {/* Child ID (optional) */}
-          <Text style={styles.label}>Child ID (optional)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Paste child UID (optional)"
-            value={childId}
-            onChangeText={setChildId}
-          />
+          {/* Child selection (optional) */}
+          <Text style={styles.label}>Child (optional)</Text>
+          {childrenList && childrenList.length > 0 ? (
+            <View>
+              <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
+                {childrenList.map(c => (
+                  <TouchableOpacity key={c.id} onPress={() => setChildId(c.id)} style={{ padding: 10, marginRight: 8, marginBottom: 8, backgroundColor: childId === c.id ? '#5CB85C' : '#f1f1f1', borderRadius: 8 }}>
+                    <Text style={{ color: childId === c.id ? '#fff' : '#000' }}>{c.preferredName || c.fullName || 'Child'}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={{ marginTop: 6, color: '#666' }}>{childId ? `Selected: ${childrenList.find(x => x.id === childId)?.preferredName || childrenList.find(x => x.id === childId)?.fullName}` : 'No child selected'}</Text>
+            </View>
+          ) : (
+            <TextInput
+              style={styles.input}
+              placeholder="Paste child UID (optional)"
+              value={childId}
+              onChangeText={setChildId}
+            />
+          )}
 
           {/* Recurrence */}
           <Text style={styles.label}>Repeat</Text>

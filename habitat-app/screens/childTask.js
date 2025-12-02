@@ -9,6 +9,8 @@ import { getAuth } from "firebase/auth";
 
 export default function ChildTask({ route, navigation }) {
     // temporarily disable these props to avoid undefined errors during demo
+    const childId = route?.params?.childId;
+
     const task = route?.params?.task || { title: "", description: "", isCompleted: false };
 
     const [title, setTitle] = useState(task.title);
@@ -23,7 +25,41 @@ export default function ChildTask({ route, navigation }) {
     const [loadingTasks, setLoadingTasks] = useState(true);
 
     // current child's id (from auth). If children use the same auth, this will be the child's uid.
-    const currentChildId = getAuth().currentUser?.uid || null;
+    //const currentChildId = getAuth().currentUser?.uid || null;
+    const currentChildId = route?.params?.childId;
+
+    // Mark task as complete for child, then send parent approval request
+    const markingCompletee = async (taskId, currentStatus) => {
+        try {
+            // Step 1: mark as completed for child
+            await updateDoc(doc(db, "tasks", taskId), {
+                completed: true,
+                completedAt: serverTimestamp(),
+                completedByChildId: currentChildId || null,
+            });
+
+            // Step 2: send parent approval request (optional, can be triggered after)
+            await updateDoc(doc(db, "tasks", taskId), {
+                pendingApproval: true,
+                completionRequestedAt: serverTimestamp(),
+            });
+
+            // Find the task's ownerId from tasksForDate
+            const task = tasksForDate.find(t => t.id === taskId);
+            if (task && task.ownerId) {
+                await addDoc(collection(db, "notifications"), {
+                    toUserId: task.ownerId,
+                    fromChildId: currentChildId || null,
+                    taskId: taskId,
+                    type: "completion_request",
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
+        } catch (err) {
+            console.error("Error requesting approval:", err);
+        }
+    };
 
     const handleMarkComplete = async (task) => {
         try {
@@ -63,6 +99,7 @@ export default function ChildTask({ route, navigation }) {
             where("dateTimestamp", "<", Timestamp.fromDate(end)),
         ];
         if (currentChildId) constraints.unshift(where("childId", "==", currentChildId));
+
 
         const q = query(collection(db, "tasks"), ...constraints);
         // query single-instance tasks for the selected date
@@ -236,10 +273,27 @@ export default function ChildTask({ route, navigation }) {
                                 <View style={[styles.progressFill, { width: "50%" }]} />
                             </View>
 
-                            <TouchableOpacity style={styles.completeButton} onPress={() => handleMarkComplete(task)}>
+                            {/*<TouchableOpacity style={styles.completeButton} 
+                                onPress={() => markingComplete(task)}>
                                 <Ionicons name="checkbox-outline" size={16} color="#4CAF50" />
-                                <Text style={styles.complete}> Mark as complete</Text>
+                                <Text style={styles.complete}> Task complete</Text>
                             </TouchableOpacity>
+                            */}
+
+                            <TouchableOpacity
+                                style={styles.completeButton}
+                                onPress={() => markingCompletee(task.id, task.completed)}
+                            >
+                                <Ionicons
+                                    name={task.completed ? "checkmark-circle" : "ellipse-outline"}
+                                    size={26}
+                                    color={task.completed ? "#4CAF50" : "#999"}
+                                />
+                                <Text style={styles.completeText}>
+                                    {task.completed ? "Completed" : "Mark Complete"}
+                                </Text>
+                            </TouchableOpacity>
+
                         </View>
                     ))
                 )}
