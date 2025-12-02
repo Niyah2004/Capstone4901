@@ -4,10 +4,23 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // for icons
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
-
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+import { useParentLock } from "../ParentLockContext";
 
 
 export default function ParentDashBoard({ navigation }) {
+   const { isParentUnlocked } = useParentLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        // if locked, don’t allow staying on dashboard
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
