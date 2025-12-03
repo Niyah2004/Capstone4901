@@ -1,9 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Animated } from "react-native";
-import { Ionicons, Zocial } from "@expo/vector-icons";
-import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Animated,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { db } from "../firebaseConfig";
-import { collection, onSnapshot, orderBy, query, deleteDoc, doc, updateDoc, where, serverTimestamp, addDoc } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  deleteDoc,
+  doc,
+  updateDoc,
+  where,
+  runTransaction,     // 🆕
+  increment,          // 🆕
+  serverTimestamp,    // 🆕
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 export default function ParentReviewTask() {
@@ -12,7 +33,11 @@ export default function ParentReviewTask() {
 
   useEffect(() => {
     const uid = getAuth().currentUser?.uid;
-    if (!uid) { setTasks([]); setLoading(false); return; }
+    if (!uid) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
 
     // Filter to only tasks created by this parent
     const q = query(
@@ -21,59 +46,83 @@ export default function ParentReviewTask() {
       orderBy("createdAt", "desc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setTasks(list);
-      setLoading(false);
-    }, (err) => {
-      console.error("onSnapshot error:", err);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setTasks(list);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("onSnapshot error:", err);
+        setLoading(false);
+      }
+    );
 
     return unsub;
   }, []);
 
-  const handleApprove = async (id, item) => {
+  const handleVerify = async (id) => {
     try {
-      await updateDoc(doc(db, "tasks", id), { verified: true, pendingApproval: false, verifiedAt: serverTimestamp() });
-
-      // notify the child that their completion was approved
-      const childId = item?.completedByChildId;
-      if (childId) {
-        await addDoc(collection(db, "notifications"), {
-          toUserId: childId,
-          fromParentId: getAuth().currentUser?.uid || null,
-          taskId: id,
-          type: "completion_approved",
-          createdAt: serverTimestamp(),
-          read: false,
-        }); Zocial
-      }
-    } catch (e) { console.error("Error approving task:", e); }
-  };
-
-  const handleReject = async (id, item) => {
-    try {
-      await updateDoc(doc(db, "tasks", id), { pendingApproval: false, rejected: true, rejectedAt: serverTimestamp() });
-
-      const childId = item?.completedByChildId;
-      if (childId) {
-        await addDoc(collection(db, "notifications"), {
-          toUserId: childId,
-          fromParentId: getAuth().currentUser?.uid || null,
-          taskId: id,
-          type: "completion_rejected",
-          createdAt: serverTimestamp(),
-          read: false,
-        });
-      }
-    } catch (e) { console.error("Error rejecting task:", e); }
+      await updateDoc(doc(db, "tasks", id), { verified: true });
+    } catch (e) {
+      console.error("Error verifying task:", e);
+    }
   };
 
   const handleDelete = async (id) => {
-    try { await deleteDoc(doc(db, "tasks", id)); }
-    catch (e) { console.error("Error deleting task:", e); }
+    try {
+      await deleteDoc(doc(db, "tasks", id));
+    } catch (e) {
+      console.error("Error deleting task:", e);
+    }
   };
+
+  // Award points + mark task completed (uses childPoints collection)
+  async function completeTaskAndAwardPoints({ taskId, childId }) {
+    if (!childId) {
+      console.warn("No childId on task, cannot award points");
+      return;
+    }
+
+    const taskRef = doc(db, "tasks", taskId);
+    const childPointsRef = doc(db, "childPoints", childId);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const taskSnap = await transaction.get(taskRef);
+        if (!taskSnap.exists()) throw new Error("Task does not exist");
+
+        const taskData = taskSnap.data();
+
+        // prevent double-award
+        if (taskData.status === "completed") {
+          return;
+        }
+
+        const taskPoints = taskData.points || 0;
+
+        // update childPoints balance
+        transaction.set(
+          childPointsRef,
+          {
+            childId,
+            totalPoints: increment(taskPoints),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        // mark task completed
+        transaction.update(taskRef, {
+          status: "completed",
+          completedAt: serverTimestamp(),
+        });
+      });
+    } catch (err) {
+      console.error("Error completing task and awarding points:", err);
+    }
+  }
 
   if (loading) {
     return (
@@ -84,7 +133,6 @@ export default function ParentReviewTask() {
   }
 
   return (
-
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <View style={styles.view}>
@@ -108,45 +156,72 @@ export default function ParentReviewTask() {
                       <Text style={styles.subtitle}>{item.description}</Text>
                     </View>
                     <View style={styles.pointsBadge}>
-                      <Text style={styles.pointsText}>{item.points || "10"} Pts</Text>
+                      <Text style={styles.pointsText}>
+                        {(item.points ?? 10) + " Pts"}
+                      </Text>
                     </View>
                   </View>
 
                   {/* Progress Bar */}
                   <View style={styles.progressContainer}>
                     <View style={styles.progressBar}>
-                      <Animated.View style={[styles.progressFill, { width: "100%" }]} />
+                      <Animated.View
+                        style={[styles.progressFill, { width: "100%" }]}
+                      />
                     </View>
                     <Text style={styles.stepsText}>1/1 Steps</Text>
                   </View>
 
-                  {/* Completion & Verify Row */}
-                  {item.pendingApproval && !item.verified ? (
-                    <View style={{ marginTop: 10 }}>
-                      <View style={styles.statusRow}>
-                        <Ionicons name="time-outline" size={20} color="#F0A500" />
-                        <Text style={[styles.completeText, { color: '#F0A500' }]}>Completion requested</Text>
-                      </View>
+                  {/* Status Row */}
+                  <View style={styles.statusRow}>
+                    <Ionicons
+                      name={
+                        item.status === "completed"
+                          ? "checkmark-done-circle-outline"
+                          : "time-outline"
+                      }
+                      size={20}
+                      color={item.status === "completed" ? "#4CAF50" : "#999"}
+                    />
+                    <Text style={styles.completeText}>
+                      {item.status === "completed"
+                        ? "Marked as Complete"
+                        : "Pending"}
+                    </Text>
+                  </View>
 
-                      <View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'space-between' }}>
-                        <TouchableOpacity style={styles.verifyButton} onPress={() => handleApprove(item.id, item)}>
-                          <Text style={styles.verifyText}>Approve</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.verifyButton, { backgroundColor: '#E57373' }]} onPress={() => handleReject(item.id, item)}>
-                          <Text style={styles.verifyText}>Reject</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ) : item.verified ? (
-                    <TouchableOpacity style={[styles.verifyButton, { backgroundColor: '#A5D6A7', marginTop: 10 }]} disabled={true}>
-                      <Text style={styles.verifyText}>Verified</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={styles.statusRow}>
-                      <Ionicons name="remove-circle-outline" size={18} color="#999" />
-                      <Text style={[styles.completeText, { color: '#999' }]}>Not completed</Text>
-                    </View>
-                  )}
+                  {/* 🆕 Mark Complete & Award Points */}
+                  <TouchableOpacity
+                    style={[
+                      styles.completeButton,
+                      item.status === "completed" && { backgroundColor: "#A5D6A7" },
+                    ]}
+                    onPress={() =>
+                      completeTaskAndAwardPoints({
+                        taskId: item.id,
+                        childId: item.childId,
+                      })
+                    }
+                    disabled={item.status === "completed"}
+                  >
+                    <Text style={styles.completeButtonText}>
+                      {item.status === "completed" ? "Completed" : "Marked Complete"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Verify Button (parent approval) */}
+                  <TouchableOpacity
+                    style={[
+                      styles.verifyButton,
+                      item.verified && { backgroundColor: "#A5D6A7" },
+                    ]}
+                    onPress={() => handleVerify(item.id)}
+                    disabled={item.verified}
+                  >
+                    <Text style={styles.verifyText}>
+                      {item.verified ? "Verified" : "Verify Completed"}
+                    </Text>
+                  </TouchableOpacity>
 
                   {/* Optional Delete Icon */}
                   <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
@@ -223,6 +298,19 @@ const styles = StyleSheet.create({
   stepsText: { fontSize: 12, color: "#777" },
   statusRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   completeText: { marginLeft: 5, color: "#4CAF50", fontSize: 14 },
+  // Mark Complete button styles
+  completeButton: {
+    marginTop: 10,
+    backgroundColor: "#4CAF50",
+    borderRadius: 25,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  completeButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
   verifyButton: {
     marginTop: 10,
     backgroundColor: "#5CB85C",
@@ -235,4 +323,3 @@ const styles = StyleSheet.create({
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   empty: { textAlign: "center", color: "#777", marginTop: 40 },
 });
-

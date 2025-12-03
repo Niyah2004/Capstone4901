@@ -1,13 +1,76 @@
-
-
-import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // for icons
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useEffect, useState } from "react";
+import { useParentLock } from "../ParentLockContext";
+import { db } from "../firebaseConfig";
+import {doc,onSnapshot,getDoc,query,collection,where,limit} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
+export default function ParentDashBoard({ navigation, route }) {
+   const { isParentUnlocked } = useParentLock();
+
+const [childPoints, setChildPoints] = useState({
+    totalPoints: 0,
+    loading: true,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        // if locked, don’t allow staying on dashboard
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
+
+ useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+if (!user) {
+      // optionally redirect to login or show message
+      setChildPoints((prev) => ({ ...prev, loading: false }));
+      return;
+    }
+
+    // Decide which childId to use
+    // If you're passing childId in navigation params, use that:
+    const childIdFromRoute = route?.params?.childId;
+    const childId = childIdFromRoute || user.uid; // adjust this depending on your schema
+
+    const childPointsRef = doc(db, "childPoints", childId);
+
+    const unsubscribe = onSnapshot(
+  childPointsRef,
+  (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      // support either "points" or "stars" as the field name
+      const balance =
+        data.points ?? data.stars ?? 0;
+
+      setChildPoints({
+        points: balance,
+        loading: false,
+      });
+    } else {
+      setChildPoints({
+        points: 0,
+        loading: false,
+      });
+    }
+  },
+  (error) => {
+    console.error("Error listening to childPoints:", error);
+    setChildPoints((prev) => ({ ...prev, loading: false }));
+  }
+);
+
+    return () => unsubscribe();
+  }, [route]);
 
 
-
-export default function ParentDashBoard({ navigation }) {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -22,9 +85,14 @@ export default function ParentDashBoard({ navigation }) {
           <Text style={styles.balanceTitle}>Current Balance</Text>
         </View>
         <TouchableOpacity style={styles.balanceContent}>
-          <Text style={styles.starCount}>15</Text> 
-          <Text style={styles.starLabel}>Stars</Text>
-          <Text style={styles.points}>1250 Total Points</Text>
+        <Text style={styles.starCount}>
+  {childPoints.loading ? "--" : childPoints.points}
+</Text>
+<Text style={styles.starLabel}>Star Points</Text>
+<Text style={styles.points}>
+  {childPoints.loading ? "Loading..." : "Current Balance"}
+</Text>
+
         </TouchableOpacity>
       </View>
 
