@@ -265,5 +265,88 @@ const styles = StyleSheet.create({
         marginTop: 6,
         marginBottom: 6,
     },
+    //missing modal styles that control the reward popup layout
+
+    modalClaimButton: {
+        backgroundColor: "#4CAF50",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadious: 10,
+        marginTop: 10,
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadious: 4,
+        elevation: 3,
+    },
+
+
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    modalContainer: {
+        width: "80%",
+        backgroundColor: "#fff",
+        borderRadius: 20,
+        padding: 20,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.25,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 5,
+    },
+
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "600",
+        marginBottom: 10,
+        textAlign: "center",
+    },
+
+    modalImagePlaceholder: {
+        marginVertical: 10,
+        alignItems: "center",
+    },
+
+    modalImageText: {
+        fontsize: 40,
+    },
+
+    modalDesc: {
+        fontSize: 14,
+        textAlign: "center",
+        marginVertical: 8,
+        color: "#555",
+    },
+
+    modalPoints: {
+        fontSize: 16,
+        fontWeight: "500",
+        marginBottom: 12,
+    },
+
+    modalCloseButton: {
+        backgroundColor: "#ccc",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadious: 10,
+        marginTop: 8,
+        color: "#4CAF50",
+    },
+
+    modalCloseText: {
+        color: "#000",
+        fontWeight: "600",
+    },
+
+    modalClaimText: {
+        color: "#ffffffff",
+        fontWeight: "600",
+    },
 
 });
