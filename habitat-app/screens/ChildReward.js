@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { db } from "../firebaseConfig";
 import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { LinearGradient } from "expo-linear-gradient";
-
 export default function ChildReward() {
     const auth = getAuth();
     // Temporary placeholder state (can be replaced with fetched data later)
@@ -17,7 +14,7 @@ export default function ChildReward() {
     const [selectedReward, setSelectedReward] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const confettiRef = useRef(null);
-    
+
     useEffect(() => {
         const fetchRewards = async () => {
             try {
@@ -47,87 +44,8 @@ export default function ChildReward() {
         fetchRewards();
     }, []);
 
-    const handleClaimReward = async () => {
-        //fetch points from backend to add them to the already earned points
-        //points are currently a placeholder
-        if (!selectedReward) return;
-
-       try{
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, {
-            stars: totalStars - selectedReward.cost,
-        });
-
-        setTotalStars((prev) => prev - selectedReward.cost);
-
-        confettiRef.current?.start();
-
-        Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
-         console.log("Reward claimed: ", selectedReward.title);
-       } 
-       catch(error){
-        console.error("Error claiming reward: ", error);
-        Alert.alert("Error", "Something went wrong while claiming the reward.");
-       }
-       finally {
-        setModalVisible(false);
-       }
-    };
-
     return (
         <View style={styles.container}>
-
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-
-                        <ConfettiCannon
-                            ref={confettiRef}
-                            count={60}
-                            origin={{ x: 200, y: -20 }}
-                            autoStart={false}
-                            fadeOut={true}
-                        />
-
-                        <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
-
-                        <View style={styles.modalImagePlaceholder}>
-                            <Text style={styles.modalImageText}>🎁</Text>
-                        </View>
-
-                        <Text style={styles.modalDesc}>
-                            {selectedReward?.description || "No description provided."}
-                        </Text>
-                        <Text style={styles.modalPoints}>
-                            ⭐ {selectedReward?.cost} Points
-                        </Text>
-
-
-                        <TouchableOpacity
-                            style={styles.modalCloseButton}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <Text style={styles.modalCloseText}>Close</Text>
-                        </TouchableOpacity>
-
-                    {/*claim button */}
-                        <TouchableOpacity
-                        style={styles.modalClaimButton}
-                        
-                        onPress={handleClaimReward}
-                            //setModalVisible(false)}
-                            //make it update the firebase
-                        >
-                            <Text style ={styles.modalClaimText}>Claim</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
 
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
@@ -147,7 +65,6 @@ export default function ChildReward() {
                     */}
 
                 <View style={styles.pointsRow}>
-                    <Text style={styles.starIcon}>⭐</Text>
                     <Text style={styles.pointsNumber}>{totalStars}</Text>
                     <Text style={styles.pointsLabel}>Star Points</Text>
                 </View>
@@ -161,59 +78,78 @@ export default function ChildReward() {
 
 
 
-            <Text style={styles.unlockTitle}>Unlock More Items :</Text>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.unlockItemsRow}>
-                <View style={[styles.unlockCircle, { backgroundColor: "#FFB6C1" }]}><Text style={styles.unlockItemIcon}>📱</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#A1C4FD" }]}><Text style={styles.unlockItemIcon}>👟</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#FAD0C4" }]}><Text style={styles.unlockItemIcon}>💄</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#84FAB0" }]}><Text style={styles.unlockItemIcon}>🥑</Text></View>
-            </ScrollView>
-
-            <View style={styles.heartsRow}>
-                <Text style={styles.heartsText}>❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</Text>
-            </View>
-
-            <TouchableOpacity style={styles.characterButton}>
-                <Text style={styles.characterButtonText}>Get different Character →</Text>
-            </TouchableOpacity>
-
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
                 {rewards.map((reward) => (
-                    <LinearGradient
-                        key={reward.id}
-                        colors={reward.gradient || ["#FF9966", "#FF5E62"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.rewardCard}
-                    >
-                        <View>
+                    <View key={reward.id} style={styles.rewardCard}>
 
-                            <View style={styles.rewardIconPlaceholder}>
-                                <Text style={styles.placeholderText}>Icon</Text>
-                            </View>
-
-                            <Text style={styles.rewardTitle}>{reward.title}</Text>
-                            <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
-
-
-                            <TouchableOpacity
-                                style={styles.rewardAction}
-                                onPress={() => {
-                                    setSelectedReward(reward);
-                                    setModalVisible(true);
-                                }}
-                            >
-                                <Text style={styles.rewardActionText}>View</Text>
-                            </TouchableOpacity>
+                        <View style={styles.rewardIconPlaceholder}>
+                            <Text style={styles.placeholderText}>Icon</Text>
                         </View>
+                        <Modal
+                            animationType="slide"
+                            transparent={true}
+                            visible={modalVisible}
+                            onShow={() => confettiRef.current?.start()} // 💥 fire confetti when modal appears
+                            onRequestClose={() => setModalVisible(false)}
+                        >
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.modalContainer}>
+
+                                    <ConfettiCannon
+                                        ref={confettiRef}
+                                        count={60}
+                                        origin={{ x: 200, y: -20 }}
+                                        autoStart={false}
+                                        fadeOut={true}
+                                    />
+
+                                    <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
+
+                                    <View style={styles.modalImagePlaceholder}>
+                                        <Text style={styles.modalImageText}>🎁</Text>
+                                    </View>
+
+                                    <Text style={styles.modalDesc}>
+                                        {selectedReward?.description || "No description provided."}
+                                    </Text>
+                                    <Text style={styles.modalPoints}>
+                                        ⭐ {selectedReward?.cost} Points
+                                    </Text>
+
+
+                                    <TouchableOpacity
+                                        style={styles.modalCloseButton}
+                                        onPress={() => setModalVisible(false)}
+                                    >
+                                        <Text style={styles.modalCloseText}>Close</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </Modal>
+
+                        <Text style={styles.rewardTitle}>{reward.title}</Text>
+                        <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
+
+
+                        <TouchableOpacity
+                            style={styles.rewardAction}
+                            onPress={() => {
+                                setSelectedReward(reward);
+                                setModalVisible(true);
+                            }}
+                        >
+                            <Text style={styles.rewardActionText}>View</Text>
+                        </TouchableOpacity>
+                    </View>
                     </LinearGradient>
                 ))}
-            </ScrollView>
-        </View>
+        </ScrollView>
+
+
+        </View >
     );
 }
 
@@ -278,6 +214,9 @@ const styles = StyleSheet.create({
 
     sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
 
+
+    sectionTitle2: { fontSize: 18, fontWeight: "600", marginBottom: 0 },
+
     rewardsScrollContainer: {
         flexDirection: "row",
         paddingBottom: 10,
@@ -290,11 +229,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     rewardCard: {
-        width: 150,
-        height: 185,
-        borderRadius: 16,
-        padding: 10,
-        marginBottom: 10,
+        backgroundColor: "#fff",
+        width: 140,
+        borderRadius: 18,
+        padding: 14,
+        marginBottom: 190,
         alignItems: "center",
         justifyContent: "flex-start",
         shadowColor: "#000",
@@ -369,7 +308,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginBottom: 10
     },
-//missing modal styles that control the reward popup layout
+    //missing modal styles that control the reward popup layout
 
     modalClaimButton: {
         backgroundColor: "#4CAF50",
@@ -379,7 +318,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         shadowColor: "#000",
         shadowOpacity: 0.2,
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowRadious: 4,
         elevation: 3,
     },
@@ -400,7 +339,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         shadowColor: "#000",
         shadowOpacity: 0.25,
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowRadius: 4,
         elevation: 5,
     },
