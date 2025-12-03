@@ -23,7 +23,7 @@ export default function ParentTaskPage({ navigation, route }) {
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
   const [steps, setSteps] = useState([""]);
-  const [childId, setChildId] = useState("");
+  const [childId, setChildId] = useState(route?.params?.childId || "");
   const [childrenList, setChildrenList] = useState([]);
 
   // Recurrence state
@@ -40,8 +40,7 @@ export default function ParentTaskPage({ navigation, route }) {
   // NEW: points input from parent
   const [points, setPoints] = useState("");
 
-  // If you pass childId from previous screen, grab it here
-  const childId = route?.params?.childId || null;
+  // childId is initialized from route params in the state above; use the childId state variable instead
 
   // --- Step Handlers ---
   const handleAddStep = () => setSteps([...steps, ""]);
@@ -52,7 +51,7 @@ export default function ParentTaskPage({ navigation, route }) {
   };
 
   const handleStepChange = (text, index) => {
-    const updated = [...steps];
+    const [childId, setChildId] = useState(route?.params?.childId || null);
     updated[index] = text;
     setSteps(updated);
   };

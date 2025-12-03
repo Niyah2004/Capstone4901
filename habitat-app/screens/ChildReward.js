@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { db } from "../firebaseConfig";
+import { getAuth } from "firebase/auth";
 import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
@@ -80,7 +81,6 @@ export default function ChildReward() {
 
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
-
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
                 {rewards.map((reward) => (
                     <View key={reward.id} style={styles.rewardCard}>
@@ -144,12 +144,9 @@ export default function ChildReward() {
                             <Text style={styles.rewardActionText}>View</Text>
                         </TouchableOpacity>
                     </View>
-                    </LinearGradient>
                 ))}
-        </ScrollView>
-
-
-        </View >
+            </ScrollView>
+        </View>
     );
 }
 
@@ -326,7 +323,7 @@ const styles = StyleSheet.create({
 
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5",
+        backgroundColor: "rgba(0,0,0,0.5)",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -357,7 +354,7 @@ const styles = StyleSheet.create({
     },
 
     modalImageText: {
-        fontSize: 80,
+        fontSize: 40,
     },
 
     modalDesc: {
@@ -392,55 +389,4 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
-    unlockTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        marginBottom: 12,
-    },
-
-    unlockItemsRow: {
-        flexDirection: "row",
-        gap: 20,
-        marginBottom: 16,
-        paddingVertical: 4,
-    },
-
-    unlockCircle: {
-        width: 75,
-        height: 75,
-        borderRadius: 37.5,
-        justifyContent: "center",
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.12,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 2,
-    },
-
-    heartsRow: {
-        alignItems: "center",
-        marginVertical: 10,
-    },
-
-    heartsText: {
-        fontSize: 20,
-    },
-
-    characterButton: {
-        backgroundColor: "#4CAF50",
-        paddingVertical: 14,
-        borderRadius: 30,
-        alignItems: "center",
-        marginBottom: 20,
-    },
-
-    characterButtonText: {
-        color: "#fff",
-        fontWeight: "700",
-        fontSize: 16,
-    },
-    unlockItemIcon: {
-        fontSize: 42,
-    },
 });
