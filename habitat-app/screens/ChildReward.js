@@ -47,62 +47,6 @@ export default function ChildReward() {
 
     return (
         <View style={styles.container}>
-<<<<<<< HEAD
-            <ScrollView style={styles.ScrollView}>
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-
-                        <ConfettiCannon
-                            ref={confettiRef}
-                            count={60}
-                            origin={{ x: 200, y: -20 }}
-                            autoStart={false}
-                            fadeOut={true}
-                        />
-
-                        <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
-
-                        <View style={styles.modalImagePlaceholder}>
-                            <Text style={styles.modalImageText}>🎁</Text>
-                        </View>
-
-                        <Text style={styles.modalDesc}>
-                            {selectedReward?.description || "No description provided."}
-                        </Text>
-                        <Text style={styles.modalPoints}>
-                            ⭐ {selectedReward?.cost} Points
-                        </Text>
-
-
-                        <TouchableOpacity
-                            style={styles.modalCloseButton}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <Text style={styles.modalCloseText}>Close</Text>
-                        </TouchableOpacity>
-
-                    {/*claim button */}
-                        <TouchableOpacity
-                        style={styles.modalClaimButton}
-                        
-                        onPress={handleClaimReward}
-                            //setModalVisible(false)}
-                            //make it update the firebase
-                        >
-                            <Text style ={styles.modalClaimText}>Claim</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-=======
->>>>>>> 36ab196ec906d72587a2f05d906eafb8ef375b55
-
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
 
@@ -134,26 +78,6 @@ export default function ChildReward() {
 
 
 
-<<<<<<< HEAD
-            <Text style={styles.unlockTitle}>Unlock More Items :</Text>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.unlockItemsRow}>
-                <View style={[styles.unlockCircle, { backgroundColor: "#FFB6C1" }]}><Text style={styles.unlockItemIcon}>📱</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#A1C4FD" }]}><Text style={styles.unlockItemIcon}>👟</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#FAD0C4" }]}><Text style={styles.unlockItemIcon}>💄</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#84FAB0" }]}><Text style={styles.unlockItemIcon}>🥑</Text></View>
-            </ScrollView>
-
-           {/* <View style={styles.heartsRow}>
-                <Text style={styles.heartsText}>❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</Text>
-            </View> */}
-
-            <TouchableOpacity style={styles.characterButton}>
-                <Text style={styles.characterButtonText}>Get different Character →</Text>
-            </TouchableOpacity>
-
-=======
->>>>>>> 36ab196ec906d72587a2f05d906eafb8ef375b55
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
@@ -222,7 +146,6 @@ export default function ChildReward() {
                 ))}
               
             </ScrollView>
-        </ScrollView>
     </View>
     );
 }
