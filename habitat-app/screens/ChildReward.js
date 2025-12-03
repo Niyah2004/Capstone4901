@@ -76,7 +76,7 @@ export default function ChildReward() {
 
     return (
         <View style={styles.container}>
-
+            <ScrollView style={styles.ScrollView}>
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -170,9 +170,9 @@ export default function ChildReward() {
                 <View style={[styles.unlockCircle, { backgroundColor: "#84FAB0" }]}><Text style={styles.unlockItemIcon}>🥑</Text></View>
             </ScrollView>
 
-            <View style={styles.heartsRow}>
+           {/* <View style={styles.heartsRow}>
                 <Text style={styles.heartsText}>❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</Text>
-            </View>
+            </View> */}
 
             <TouchableOpacity style={styles.characterButton}>
                 <Text style={styles.characterButtonText}>Get different Character →</Text>
@@ -212,8 +212,10 @@ export default function ChildReward() {
                         </View>
                     </LinearGradient>
                 ))}
+              
             </ScrollView>
-        </View>
+        </ScrollView>
+    </View>
     );
 }
 
