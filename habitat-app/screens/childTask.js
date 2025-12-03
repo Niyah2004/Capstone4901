@@ -45,6 +45,7 @@ export default function ChildTask({ route, navigation }) {
     //const currentChildId = getAuth().currentUser?.uid || null;
     // Use the signed-in child's UID for filtering tasks
     const currentChildUid = getAuth().currentUser?.uid;
+    console.log('Current child UID:', currentChildUid);
 
     // Mark task as complete for child, then send parent approval request
     const markingCompletee = async (taskId, currentStatus) => {
@@ -113,10 +114,11 @@ export default function ChildTask({ route, navigation }) {
 
         // Build query constraints
         const constraints = [
-            where("userId", "==", currentChildUid),
             where("dateTimestamp", ">=", Timestamp.fromDate(start)),
             where("dateTimestamp", "<", Timestamp.fromDate(end)),
         ];
+        // Optionally, add childId filter if you want to filter by child profile
+        if (childId) constraints.unshift(where("childId", "==", childId));
         const q = query(collection(db, "tasks"), ...constraints);
         // query single-instance tasks for the selected date
         const unsubDate = onSnapshot(q, snapshot => {

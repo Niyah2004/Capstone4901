@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,21 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { db } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
-import { startOfDay } from 'date-fns';
-import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  Timestamp,
+  doc,
+  setDoc,
+  increment,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { startOfDay } from "date-fns";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { getAuth } from "firebase/auth";
-import { useEffect } from "react";
 
 export default function ParentTaskPage({ navigation, route }) {
   const [title, setTitle] = useState("");
@@ -23,27 +33,25 @@ export default function ParentTaskPage({ navigation, route }) {
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
   const [steps, setSteps] = useState([""]);
-  const [childId, setChildId] = useState("");
-  const [childrenList, setChildrenList] = useState([]);
-
-  // Recurrence state
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrenceFreq, setRecurrenceFreq] = useState("weekly"); // daily | weekly | monthly
-  const [recurrenceInterval, setRecurrenceInterval] = useState(1);
-  const [recurrenceDays, setRecurrenceDays] = useState([false, false, false, false, false, false, false]); // Mon..Sun
-  const [recurrenceEndType, setRecurrenceEndType] = useState("never"); // never | until | count
-  const [recurrenceUntil, setRecurrenceUntil] = useState(new Date());
-  const [recurrenceCount, setRecurrenceCount] = useState(10);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-
-  // NEW: points input from parent
   const [points, setPoints] = useState("");
+  const [childrenList, setChildrenList] = useState([]);
 
-  // If you pass childId from previous screen, grab it here
   const childId = route?.params?.childId || null;
 
-  // --- Step Handlers ---
+  useEffect(() => {
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const q = query(collection(db, "children"), where("parentId", "==", uid));
+    getDocs(q).then((snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setChildrenList(list);
+    });
+  }, []);
+
   const handleAddStep = () => setSteps([...steps, ""]);
 
   const handleRemoveStep = (index) => {
@@ -57,7 +65,6 @@ export default function ParentTaskPage({ navigation, route }) {
     setSteps(updated);
   };
 
-  // --- Save Task ---
   const handleSaveTask = async () => {
     if (!title.trim() || !description.trim()) {
       Alert.alert("Missing Info", "Please fill in both task title and description.");
@@ -73,21 +80,44 @@ export default function ParentTaskPage({ navigation, route }) {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
-      const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
 
-      await addDoc(collection(db, "tasks"), {
+      if (!user) {
+        Alert.alert("Error", "No authenticated parent found.");
+        return;
+      }
+
+      const parentId = user.uid;
+      const dateStart = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        0,
+        0,
+        0,
+        0
+      );
+
+      let childUserId = null;
+      if (childId) {
+        const childObj = childrenList?.find((c) => c.id === childId);
+        if (childObj) childUserId = childObj.userId || null;
+      }
+
+      const taskRef = await addDoc(collection(db, "tasks"), {
         title,
         description,
         scheduleDate: date.toISOString().split("T")[0], // YYYY-MM-DD
         dateTimestamp: Timestamp.fromDate(dateStart),
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
-        ownerId: user.uid,
-        // childId: currentChildId, // add this for  multiple children
+        ownerId: parentId,
+        childId: childId || null,
+        userId: childUserId,
+        points: parsedPoints,
+        status: "pending",
         createdAt: serverTimestamp(),
       });
 
-      // 2) Update parent's point summary (parentPoints collection)
       const parentPointsRef = doc(db, "parentPoints", parentId);
       await setDoc(
         parentPointsRef,
@@ -123,25 +153,16 @@ export default function ParentTaskPage({ navigation, route }) {
     });
   }
 
-  // Load children for the current parent to allow selecting a child profile
-  useEffect(() => {
-    const auth = getAuth();
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-    const q = query(collection(db, 'children'), where('userId', '==', uid));
-    const unsub = onSnapshot(q, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setChildrenList(list);
-      // if there's at least one child and no selected child, auto-select the first
-      if (list.length && !childId) setChildId(list[0].id);
-    }, err => console.error('children onSnapshot', err));
-    return () => unsub();
-  }, []);
-
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>{"← Back"}</Text>
+        </TouchableOpacity>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={{ paddingBottom: 60 }}
+        >
           <Text style={styles.header}>Task Management</Text>
 
           {/* Task Title */}
@@ -163,9 +184,22 @@ export default function ParentTaskPage({ navigation, route }) {
             onChangeText={setDescription}
           />
 
+          {/* Points */}
+          <Text style={styles.label}>Points</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., 10"
+            keyboardType="numeric"
+            value={points}
+            onChangeText={setPoints}
+          />
+
           {/* Schedule */}
           <Text style={styles.label}>Schedule</Text>
-          <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => setShowDatePicker(true)}
+          >
             <Text>{date.toISOString().split("T")[0]}</Text>
           </TouchableOpacity>
           {showDatePicker && (
@@ -182,8 +216,13 @@ export default function ParentTaskPage({ navigation, route }) {
 
           {/* Time */}
           <Text style={styles.label}>Time</Text>
-          <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
-            <Text>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Text>
+              {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </Text>
           </TouchableOpacity>
           {showTimePicker && (
             <DateTimePicker
