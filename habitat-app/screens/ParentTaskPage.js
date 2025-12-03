@@ -68,19 +68,25 @@ export default function ParentTaskPage({ navigation }) {
         }
         : null;
 
+      // Find the selected child's userId from childrenList
+      let childUserId = null;
+      if (childId) {
+        const childObj = childrenList.find(c => c.id === childId);
+        if (childObj) childUserId = childObj.userId || null;
+      }
+
       await addDoc(collection(db, "tasks"), {
         title,
         description,
         scheduleDate: date.toISOString().split("T")[0], // YYYY-MM-DD
-        //dateTimestamp: Timestamp.fromDate(start), // used for robust day-range queries
         dateTimestamp: Timestamp.fromDate(dateStart),
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: user.uid,
         childId: childId || null,
+        userId: childUserId,
         isRecurring: !!isRecurring,
         recurrence,
-        // childId: currentChildId, // add this for  multiple children
         createdAt: serverTimestamp(),
       });
 

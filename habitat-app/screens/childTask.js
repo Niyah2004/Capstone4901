@@ -20,13 +20,31 @@ export default function ChildTask({ route, navigation }) {
     // selected date from WeekCalendar
     const [selectedDate, setSelectedDate] = useState(new Date());
 
+    // Dynamically update screen title based on selected date
+    useEffect(() => {
+        if (!navigation || !selectedDate) return;
+        const today = new Date();
+        const isToday = selectedDate.getFullYear() === today.getFullYear() &&
+            selectedDate.getMonth() === today.getMonth() &&
+            selectedDate.getDate() === today.getDate();
+        let title;
+        if (isToday) {
+            title = "Today's Tasks";
+        } else {
+            const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
+            title = `${dayName}'s Tasks`;
+        }
+        navigation.setOptions({ title });
+    }, [selectedDate, navigation]);
+
     // real tasks loaded for the selected date (from Firestore)
     const [tasksForDate, setTasksForDate] = useState([]);
     const [loadingTasks, setLoadingTasks] = useState(true);
 
     // current child's id (from auth). If children use the same auth, this will be the child's uid.
     //const currentChildId = getAuth().currentUser?.uid || null;
-    const currentChildId = route?.params?.childId;
+    // Use the signed-in child's UID for filtering tasks
+    const currentChildUid = getAuth().currentUser?.uid;
 
     // Mark task as complete for child, then send parent approval request
     const markingCompletee = async (taskId, currentStatus) => {
@@ -35,7 +53,7 @@ export default function ChildTask({ route, navigation }) {
             await updateDoc(doc(db, "tasks", taskId), {
                 completed: true,
                 completedAt: serverTimestamp(),
-                completedByChildId: currentChildId || null,
+                completedByChildId: currentChildUid || null,
             });
 
             // Step 2: send parent approval request (optional, can be triggered after)
@@ -49,7 +67,7 @@ export default function ChildTask({ route, navigation }) {
             if (task && task.ownerId) {
                 await addDoc(collection(db, "notifications"), {
                     toUserId: task.ownerId,
-                    fromChildId: currentChildId || null,
+                    fromChildId: currentChildUid || null,
                     taskId: taskId,
                     type: "completion_request",
                     createdAt: serverTimestamp(),
@@ -67,14 +85,14 @@ export default function ChildTask({ route, navigation }) {
             await updateDoc(doc(db, "tasks", task.id), {
                 pendingApproval: true,
                 completionRequestedAt: serverTimestamp(),
-                completedByChildId: currentChildId || null,
+                completedByChildId: currentChildUid || null,
             });
 
             // create a lightweight notification for the parent (so parents can show a notifications feed if desired)
             if (task.ownerId) {
                 await addDoc(collection(db, "notifications"), {
                     toUserId: task.ownerId,
-                    fromChildId: currentChildId || null,
+                    fromChildId: currentChildUid || null,
                     taskId: task.id,
                     type: "completion_request",
                     createdAt: serverTimestamp(),
@@ -95,12 +113,10 @@ export default function ChildTask({ route, navigation }) {
 
         // Build query constraints
         const constraints = [
+            where("userId", "==", currentChildUid),
             where("dateTimestamp", ">=", Timestamp.fromDate(start)),
             where("dateTimestamp", "<", Timestamp.fromDate(end)),
         ];
-        if (currentChildId) constraints.unshift(where("childId", "==", currentChildId));
-
-
         const q = query(collection(db, "tasks"), ...constraints);
         // query single-instance tasks for the selected date
         const unsubDate = onSnapshot(q, snapshot => {
@@ -136,8 +152,8 @@ export default function ChildTask({ route, navigation }) {
 
         // query recurring tasks assigned to this child
         let unsubRecurring = () => { };
-        if (currentChildId) {
-            const qRec = query(collection(db, "tasks"), where("childId", "==", currentChildId), where("isRecurring", "==", true));
+        if (currentChildUid) {
+            const qRec = query(collection(db, "tasks"), where("userId", "==", currentChildUid), where("isRecurring", "==", true));
             unsubRecurring = onSnapshot(qRec, snap => {
                 const recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 // filter recurring tasks to those that occur on selectedDate
@@ -204,11 +220,21 @@ export default function ChildTask({ route, navigation }) {
         if (freq === 'weekly') {
             // daysOfWeek: 0=Mon .. 6=Sun
             const dow = (date.getDay() + 6) % 7; // convert JS 0=Sun to 0=Mon
-            if (!(r.daysOfWeek && r.daysOfWeek.length)) return false;
-            if (!r.daysOfWeek.includes(dow)) return false;
+            if (!(r.daysOfWeek && r.daysOfWeek.length)) {
+                console.log('No daysOfWeek set for recurrence', r);
+                return false;
+            }
+            if (!r.daysOfWeek.includes(dow)) {
+                console.log(`Weekly recurrence: ${date.toDateString()} is dow=${dow}, not in`, r.daysOfWeek);
+                return false;
+            }
             // check week interval
             const weeks = Math.floor(dayDiff / 7);
-            return weeks >= 0 && (weeks % interval) === 0;
+            const occurs = weeks >= 0 && (weeks % interval) === 0;
+            if (!occurs) {
+                console.log(`Weekly recurrence: week interval failed for ${date.toDateString()} (weeks=${weeks}, interval=${interval})`);
+            }
+            return occurs;
         }
 
         if (freq === 'monthly') {
@@ -252,9 +278,18 @@ export default function ChildTask({ route, navigation }) {
                 ))}
             </View>
         */}
-            {/* Task list */}
+            {/* Task list 
+            This makes the task list dynamic based on the selected date  and changes the title accordingly */}
             <Text style={{ marginTop: 6, marginBottom: 6, fontWeight: '600' }}>
-                Tasks for {selectedDate.toDateString()}
+                {(() => {
+                    const today = new Date();
+                    const isToday = selectedDate.getFullYear() === today.getFullYear() &&
+                        selectedDate.getMonth() === today.getMonth() &&
+                        selectedDate.getDate() === today.getDate();
+                    if (isToday) return "Today's Tasks";
+                    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
+                    return `${dayName}'s Tasks`;
+                })()}
             </Text>
             <ScrollView style={{ marginTop: 10 }}>
                 {tasksForDate.length === 0 ? (
