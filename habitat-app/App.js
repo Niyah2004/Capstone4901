@@ -20,6 +20,9 @@ import ParentTaskPage from "./screens/ParentTaskPage";
 import parentReviewTask from "./screens/parentReviewTask";
 import parentReward from "./screens/parentReward";
 import AccountSetting from "./screens/AccountSetting";
+import ChangePassword from "./screens/ChangePassword";
+import ChangeEmail from "./screens/ChangeEmail";
+import ChangePin from "./screens/ChangePin";
 
 // --- Navigator Setup ---
 const Stack = createNativeStackNavigator();
@@ -38,6 +41,9 @@ function ParentStackScreen() {
       <ParentStack.Screen name="parentReviewTask" component={parentReviewTask} />
       <ParentStack.Screen name="parentReward" component={parentReward} />
       <ParentStack.Screen name="AccountSetting" component={AccountSetting} />
+      <ParentStack.Screen name="ChangePassword" component={ChangePassword} />
+      <ParentStack.Screen name="ChangeEmail" component={ChangeEmail} />
+      <ParentStack.Screen name="ChangePin" component={ChangePin} />
     </ParentStack.Navigator>
   );
 }
@@ -97,9 +103,9 @@ export default function App() {
 
   return (
     <NavigationContainer>
-     <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+     <Stack.Navigator initialRouteName="SignUpScreen" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
         <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
         <Stack.Screen name="ChildHome" component={ChildHome} />

@@ -125,13 +125,12 @@ export default function ChildHome() {
             </SafeAreaView>
         );
     }
-// ...existing code...
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
     topSection: { marginTop: 20, alignItems: "center" },
     title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5,textAlign: "center" },
-    date: { fontSize: 14, color: "#666", textAlign: "center" },
+    date: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
     progressBarContainer: {  height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },

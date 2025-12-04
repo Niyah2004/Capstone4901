@@ -9,7 +9,7 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function ParentDashBoard({ navigation }) {
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider >
       <SafeAreaView style={styles.container}>
         <ScrollView style={styles.ScrollView}>
           {/* Header */}
@@ -65,26 +65,26 @@ export default function ParentDashBoard({ navigation }) {
           onPress={() => navigation.navigate("ParentTaskPage")}
           >
             <Ionicons name="list-outline" size={24} color="#000" />
-            <Text>Task Management</Text>
+            <Text style={styles.manageText}>Task Management</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.manageBox}
           //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
              onPress={() => navigation.navigate("parentReward")}
              >
-            <Ionicons name="gift-outline" size={24} color="#000" />
-            <Text>Create Reward</Text>
+            <Ionicons name="gift-outline" size={26} color="#000" />
+            <Text style={styles.manageText}>Create Reward</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.manageBox}
           onPress={() => navigation.navigate("parentReviewTask")}
           >
             <Ionicons name="checkmark-circle-outline" size={24} color="#000" />
-            <Text>Review Task</Text>
+            <Text style={styles.manageText}>Review Task</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.manageBox}
           onPress={() => navigation.navigate("AccountSetting")}
           >
             <Ionicons name="settings-outline" size={24} color="#000" />
-            <Text>Settings</Text>
+            <Text style={styles.manageText}>Settings</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -118,20 +118,29 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   balanceTitle: {
+    width: "80%",
+    textAlign: "center",
+    fontWeight: "500",
     fontSize: 16,
-    marginLeft: 8,
+    marginLeft: 1,
   },
   balanceContent: {
     alignItems: "center",
   },
   starCount: {
+    width: "100%",
+    textAlign: "center",
     fontSize: 50,
     fontWeight: "700",
   },
   starLabel: {
+    width: "100%",
+    textAlign: "center",
     fontSize: 20,
   },
   points: {
+    width: "100%",
+    textAlign: "center",
     color: "gray",
     marginTop: 4,
   },
@@ -218,6 +227,10 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: "center",
     marginBottom: 10,
+  },
+  manageText: {
+    width: "100%",
+    textAlign: "center",
   },
 });
 

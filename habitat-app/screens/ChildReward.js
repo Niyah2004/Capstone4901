@@ -75,6 +75,7 @@ export default function ChildReward() {
     };
 
     return (
+        <ScrollView>
         <View style={styles.container}>
 
             <Modal
@@ -214,6 +215,7 @@ export default function ChildReward() {
                 ))}
             </ScrollView>
         </View>
+        </ScrollView>
     );
 }
 

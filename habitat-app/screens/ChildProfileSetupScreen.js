@@ -1,5 +1,11 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+import {doc, setDoc} from "firebase/firestore";
+import { auth } from "../auth";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { getAuth } from "firebase/auth";
 
 export default function ChildProfileSetupScreen({ navigation, route }) {
   const [pin, setPin] = useState("");
@@ -15,9 +21,38 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       Alert.alert("PIN Error", "PIN must be 4 digits and match confirmation.");
       return;
     }
-    // placeholder: save data to state / backend
-    Alert.alert("Saved", "Child profile saved.");
-    navigation.navigate("AvatarSelection");
+    if (!fullName) {
+      Alert.alert("Missing Info", "Please enter the child's name.");
+      return;
+    }
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const userId = user ? user.uid : null;
+      const parentRef = await setDoc(doc(db, "parents", userId), {
+        parentPin: pin,
+        userId,
+        createdAt: new Date().toISOString(),
+      });
+      console.log("Parent pin saved with Parent Id:", userId);
+      
+    
+      const docRef = await addDoc(collection(db, "children"), {
+        fullName,
+        preferredName,
+        age,
+        grade,
+        notes,
+        userId,
+      });
+      Alert.alert("Saved", "Child profile saved.");
+     // console.log("Parent pin saved with Parent Id:", parentRef.id);
+      console.log("Navigating to AvatarSelection with childId:", docRef.id);
+      navigation.navigate("AvatarSelection", { childId: docRef.id });
+    } catch (e) {
+      console.log("Error adding document: ", e);
+      Alert.alert("Error", "Could not save profile.");
+    }
   };
 
   return (

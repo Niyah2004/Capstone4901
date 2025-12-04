@@ -20,13 +20,18 @@ export default function AvatarSelection({navigation, route}) {
   
   {/* Add avatar to database->navigate to ChildHome screen */}
   const handleGetStarted = async () => {
-    if (selectedAvatar && childId) {
+    try {
+      if (selectedAvatar && childId) {
       const docRef = doc(db, "children", childId);
-    await updateDoc(docRef, {
-      avatar: selectedAvatar
-    });
-      navigation.navigate("ChildHome");
+      await updateDoc(docRef, {avatar: selectedAvatar});
+      navigation.navigate("ChildTabs");
+      }
     }
+    catch (e) {
+      console.error("Error saving avatar: ", e);
+    }
+    // Navigate to ChildTabs screen
+    navigation.navigate("ChildTabs");
   };
 
   return (
@@ -37,19 +42,22 @@ export default function AvatarSelection({navigation, route}) {
         <View style={styles.avatarContainer}>
             {avatars.map((avatar) => (
             <TouchableOpacity
-                key={avatar.id}
-                onPress={() => handleAvatarSelect(avatar.id)}
+              key={avatar.id}
+              onPress={() => handleAvatarSelect(avatar.id)}
             >
-                <Image source={avatar.image} style={[styles.avatar,
-                  selectedAvatar === avatar.id && styles.selectedAvatar, //Highlight if selected
-                  ]}
-                />
+              <Image 
+              source={avatar.image} 
+              style={[
+                styles.avatar,
+                selectedAvatar === avatar.id && styles.selectedAvatar, //Highlight if selected
+                ]}
+              />
             </TouchableOpacity>
             ))}
         </View>
 
         {/* Get started button */}
-        <TouchableOpacity style={[styles.button]} onPress={handleGetStarted} disabled={!selectedAvatar}>
+        <TouchableOpacity style={[styles.button]} onPress={handleGetStarted}>
             <Text style={styles.buttonText}>Get Started</Text>
         </TouchableOpacity>
     </SafeAreaView>
