@@ -1,16 +1,53 @@
 // Comfort page for parents to create and manage rewards for their children
 import { collection, addDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, storage } from "../firebaseConfig";
 import React, { useState } from 'react'; 
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 
 export default function ParentReward({navigation}) {
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
   const [points, setPoints] = useState("");
   const [frequency, setFrequency] = useState("One-Time");
+  const [rewardImage, setRewardImage] = useState (null);
+  const [imageUri, setImageUri] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
+  
+  //adding the picture to the reward
+const pickImage = async () => {
+  let result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes:ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1,1],
+    quality: 0.7,
+  });
+
+  if (!result.canceled){
+    setRewardImage(result.assets[0].uri);
+  }
+};
+
+  //uploading image to the firebase
+const uploadImageAsync = async (uri) => {
+  //setUploading(true);
+
+  const response = await fetch(uri);
+  const blob = await response.blob();
+
+  const filename = `rewardImages/${Date.now()}.jpg`;
+  const storageRef = ref(storage, filename);
+
+  await uploadBytes(storageRef, blob);
+  //const downloadUrl = await getDownloadURL(storageRef);
+  //setUploading(false);
+  return await getDownloadUrl(storageRef);
+
+};
   
   const saveReward = async () => {
     if (!rewardName || !points) {
@@ -19,11 +56,17 @@ export default function ParentReward({navigation}) {
     }
   
     try {
+      let imageURL = null;
+
+      if(rewardImage){
+        imageURL = await uploadImageAsync(rewardImage);
+      }
       await addDoc(collection(db, "rewards"), {
         name: rewardName,
         description: description,
         points: parseInt(points),
         frequency: frequency,
+        image: imageURL,
         createdAt: new Date(),
       });
   
@@ -32,6 +75,8 @@ export default function ParentReward({navigation}) {
     } catch (error) {
       console.error("Error saving reward:", error);
       Alert.alert("Error", "Could not save reward, try again later.");
+      console.error("Firestore write error:", error);
+      Alert.alert("Firestore Error", error.message);
     }
   };
   
