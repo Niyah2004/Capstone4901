@@ -1,5 +1,5 @@
 // Comfort page for parents to create and manage rewards for their children
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, getDoc, doc } from "firebase/firestore";
 import { db, storage } from "../firebaseConfig";
 import React, { useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
@@ -142,9 +142,23 @@ const uploadImageAsync = async (uri) => {
       ))}
     </View>
 
+<TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
+    <Text style={styles.addImageButtonText}>Add Image</Text>
+    </TouchableOpacity>
+
     <TouchableOpacity style={styles.saveButton} onPress={saveReward}>
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
+
+
+
+{rewardImage && (
+  <Image
+    source={{ uri: rewardImage }}
+    style={{ width: 100, height: 100, marginTop: 10, borderRadius: 10 }}
+  />
+)}
+
   </View>
     </ScrollView>
   );
@@ -240,4 +254,17 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
     fontWeight: "bold",
   },
+
+  addImageButton: {
+  backgroundColor: "#4CAF50",
+  padding: 15,
+  borderRadius: 8,
+  alignItems: "center",
+  marginTop: 10,
+},
+addImageButtonText: {
+  color: "#fff",
+  fontWeight: "bold",
+},
+
 });
