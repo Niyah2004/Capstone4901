@@ -64,7 +64,7 @@ export default function ChildReward() {
                 status: "claimed",
                 user_id: childId,
             });
-            
+
             confettiRef.current?.start();
 
             Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
@@ -214,6 +214,8 @@ export default function ChildReward() {
                             >
                                 <Text style={styles.rewardActionText}>View</Text>
                             </TouchableOpacity>
+
+                            
                         </View>
                     </LinearGradient>
                 ))}

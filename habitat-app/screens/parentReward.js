@@ -235,8 +235,9 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: "#4CAF50",
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
+    marginTop: 10,
   },
   saveButtonText: {
     color: "#fff",
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
   addImageButton: {
   backgroundColor: "#4CAF50",
   padding: 15,
-  borderRadius: 8,
+  borderRadius: 10,
   alignItems: "center",
   marginTop: 10,
 },
