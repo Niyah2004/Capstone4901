@@ -25,14 +25,15 @@ const [childPoints, setChildPoints] = useState({
     }, [isParentUnlocked, navigation])
   );
 
- useEffect(() => {
+ useFocusEffect(
+  useCallback(() => {
     const auth = getAuth();
     const user = auth.currentUser;
-if (!user) {
-      // optionally redirect to login or show message
-      setChildPoints((prev) => ({ ...prev, loading: false }));
-      return;
-    }
+    if (!user) {
+          // optionally redirect to login or show message
+          setChildPoints({points: 0, loading: false });
+          return;
+        }
 
     // Decide which childId to use
     // If you're passing childId in navigation params, use that:
@@ -68,7 +69,7 @@ if (!user) {
 );
 
     return () => unsubscribe();
-  }, [route]);
+  }, [route]));
 
 
   return (

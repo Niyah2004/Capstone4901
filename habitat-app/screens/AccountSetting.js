@@ -8,8 +8,6 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth, signOut } from "firebase/auth";
 import { collection, query, where, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { setLanguageCode } from "@react-native-firebase/auth";
-
 
 export default function AccountSetting({navigation}) {
   const[parentName, setParentName] = useState("");
