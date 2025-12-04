@@ -76,7 +76,7 @@ export default function ChildReward() {
 
     return (
         <View style={styles.container}>
-
+            <ScrollView style={styles.ScrollView}>
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -213,8 +213,7 @@ export default function ChildReward() {
                     </LinearGradient>
                 ))}
             </ScrollView>
-
-
+   </ScrollView>
         </View>
     );
 }
