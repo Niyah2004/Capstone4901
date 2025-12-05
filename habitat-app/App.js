@@ -14,38 +14,78 @@ import AvatarSelection from "./screens/AvatarSelection";
 import ChildHome from "./screens/ChildHome";
 import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
-import parentPinScreen from "./screens/parentPinScreen";
-import parentDashBoard from "./screens/ParentDashBoard";
+import ParentPinScreen from "./screens/parentPinScreen"; 
+import ParentDashBoard from "./screens/ParentDashBoard";     
 import ParentTaskPage from "./screens/ParentTaskPage";
-import parentReviewTask from "./screens/parentReviewTask";
-import parentReward from "./screens/parentReward";
+import ParentReviewTask from "./screens/parentReviewTask";
+import ParentReward from "./screens/parentReward";
 import AccountSetting from "./screens/AccountSetting";
+import ForgotPinScreen from "./screens/ForgotPin";
+import ChangePassword from "./screens/ChangePassword";
+import ChangeEmail from "./screens/ChangeEmail";
+import ChangePin from "./screens/ChangePin";
 
-// --- Navigator Setup ---
+import { ParentLockProvider, useParentLock } from "./ParentLockContext";
+
+
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-/**
- * Parent stack flow (locked behind PIN)
- */
+
 function ParentStackScreen() {
   return (
-    <ParentStack.Navigator screenOptions={{ headerShown: false }}>
-      <ParentStack.Screen name="parentPinScreen" component={parentPinScreen} />
-      <ParentStack.Screen name="ParentDashBoard" component={parentDashBoard} />
-      <ParentStack.Screen name="ParentTaskPage" component={ParentTaskPage} />
-      <ParentStack.Screen name="parentReviewTask" component={parentReviewTask} />
-      <ParentStack.Screen name="parentReward" component={parentReward} />
-      <ParentStack.Screen name="AccountSetting" component={AccountSetting} />
+    <ParentStack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName="parentPinScreen"             
+    >
+      <ParentStack.Screen
+        name="parentPinScreen"
+        component={ParentPinScreen}
+      />
+      <ParentStack.Screen
+        name="ParentDashBoard"                        
+        component={ParentDashBoard}
+      />
+      <ParentStack.Screen
+        name="ParentTaskPage"
+        component={ParentTaskPage}
+      />
+      <ParentStack.Screen
+        name="parentReviewTask"
+        component={ParentReviewTask}
+      />
+      <ParentStack.Screen
+        name="parentReward"
+        component={ParentReward}
+      />
+      <ParentStack.Screen
+        name="AccountSetting"
+        component={AccountSetting}
+      />
+      <ParentStack.Screen
+        name="ForgotPin"
+        component={ForgotPinScreen}
+      />
+      <ParentStack.Screen 
+        name="ChangePassword" 
+        component={ChangePassword} 
+      />
+      <ParentStack.Screen 
+        name="ChangeEmail" 
+        component={ChangeEmail} 
+      />
+      <ParentStack.Screen
+        name="ChangePin" 
+        component={ChangePin} 
+      />
     </ParentStack.Navigator>
   );
 }
 
-/**
- * Child tab navigation — includes link to parent flow as last tab 
- */
+
 function ChildTabs() {
+  const { lockParent } = useParentLock();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -76,7 +116,14 @@ function ChildTabs() {
       <Tab.Screen name="Home" component={ChildHome} />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen name="Parent" component={ParentStackScreen} />
+      <Tab.Screen name="Parent" component={ParentStackScreen} 
+      listeners={{
+          blur: () => {
+            // whenever you leave the Parent tab, lock it
+            lockParent();
+          },
+        }}
+        />
     </Tab.Navigator>
   );
 }
@@ -96,8 +143,9 @@ export default function App() {
   }, []);
 
   return (
+      <ParentLockProvider>
     <NavigationContainer>
-     <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
@@ -106,6 +154,7 @@ export default function App() {
         <Stack.Screen name="ChildTabs" component={ChildTabs} />
       </Stack.Navigator>
     </NavigationContainer>
+    </ParentLockProvider>
   );
 }
 

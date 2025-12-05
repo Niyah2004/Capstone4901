@@ -5,10 +5,12 @@ import { db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { updateDoc } from "firebase/firestore";
+import { useParentLock } from "../ParentLockContext";
 
 
 const ParentPinScreen = ({ navigation,route  }) => {
   const [pin, setPin] = useState("");
+  const { unlockParent } = useParentLock();
 
   const correctPin = async () => {
     if (pin.length !== 4) {
@@ -28,6 +30,7 @@ const ParentPinScreen = ({ navigation,route  }) => {
         const storedPin = parentSnap.data().parentPin;
 
         if (pin === storedPin) {
+          unlockParent(); //testing should allow for navigation
           Alert.alert("Access Granted", "Welcome to your Parent Dashboard!");
           navigation.replace("ParentDashBoard");
         } else {
@@ -60,6 +63,13 @@ const ParentPinScreen = ({ navigation,route  }) => {
 
       <TouchableOpacity style={styles.button} onPress={correctPin}>
         <Text style={styles.buttonText}>Submit PIN</Text>
+      </TouchableOpacity>
+
+       <TouchableOpacity
+        style={styles.forgotButton}
+        onPress={() => navigation.navigate("ForgotPin")}
+      >
+        <Text style={styles.forgotText}>Forgot PIN?</Text>
       </TouchableOpacity>
     </View>
   );
@@ -101,6 +111,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  forgotButton: {
+    marginTop: 15,
+  },
+  forgotText: {
+    color: "#4CAF50",
+    fontWeight: "500",
   },
 });
 

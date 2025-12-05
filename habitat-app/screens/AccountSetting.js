@@ -1,136 +1,370 @@
 // this is the account setting file may need to be updated later place holder code for now 
-import react, {use, useState} from "react"
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, ScrollView, Image } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; // for icons
-import { useNavigation } from "@react-navigation/native";
+import React, { useState, useCallback} from "react"
+import { useFocusEffect } from "@react-navigation/native";
+import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, ScrollView} from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { getAuth, signOut } from "firebase/auth";
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 export default function AccountSetting({navigation}) {
-  const[Pname, setName] = useState("parent name");
-  const [childName, setChildName] = useState("child name");
-  const [preferredName, ChildPreferredName] = useState("child preferred name");
-  const [phone, setPhone] = useState("123-456-7890");
-  const [email, setEmail] = useState("example@  email.com");
-  const [password, setPassword] = useState("********");
+  const[parentName, setParentName] = useState("");
+  const [childsName, setChildName] = useState("");
+  const [childsPreferredName, setChildPreferredName] = useState("");
+  const [phoneNum, setPhone] = useState("");
+  const [userEmail, setEmail] = useState("");
+  const [password, setPassword] = useState("************");
   const [pin, setPin]= useState("****");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [loading, setLoading] = useState(false);
    
-  const handleSaveChanges = () => {
-    console.log("Changes saved (placeholder:" , {
-      Pname,
-      childName,
-      preferredName,
-      phone,
-      email,
-      password,
-      pin,
-      notificationsEnabled
-    });
+  const handleLogOut = async() => {
+    try {
+      const auth = getAuth();
+      await signOut(auth);
+      console.log("User logged out");
+      navigation.navigate("LoginScreen");
+    } catch (error) {
+      console.error("Error logging out: ", error);
+    }
   };
+  // Fetch parent profile data
+  useFocusEffect(
+  useCallback(() => {
+    const fetchParentData = async () => {
+      try {
+        setLoading(true);
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            setParentName("");
+            setPhone("");
+            return;
+        }
+        const docRef = doc(db, "parents", user.uid);
+        const snap = await getDoc(docRef);
+
+        if (snap.exists()) {
+            const data = snap.data();
+            setParentName(data.name || "");
+            setPhone(data.phone || "");
+        } else {
+            setParentName("");
+            setPhone("");
+        }
+      } catch (error) {
+          console.error("Error fetching parent profile:", error);
+          setParentName("");
+          setPhone("");
+      } finally {
+        setLoading(false);
+      }
+    }; 
+  fetchParentData();
+  }, []));
+
+  // Fetch child profile data
+  useFocusEffect(
+  useCallback(() => {
+    const fetchChildData = async () => {
+      try {
+        setLoading(true);
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            setChildName("");
+            setChildPreferredName("");
+            return;
+        }
+        const uid = user.uid;
+        const q = query(collection(db, "children"), where("userId", "==", uid));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const data = querySnapshot.docs[0].data();
+            setChildName(data.fullName || "");
+            setChildPreferredName(data.preferredName || "");
+        } else {
+            setChildName("");
+            setChildPreferredName("");
+        }
+      } catch (error) {
+          console.error("Error fetching child profile:", error);
+          setChildName("");
+          setChildPreferredName("");
+      } finally {   
+        setLoading(false);
+      }
+    }; 
+  fetchChildData();
+  }, []));
+
+  // Get latest user email 
+  useFocusEffect(
+  useCallback(() => {
+    const reloadUserEmail = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (user) {
+          await user.reload();           // make sure Firebase has the latest data
+          setEmail(user.email || "");
+        } else {
+          setEmail("");
+        }
+      } catch (err) {
+        console.log("Error reloading user:", err);
+      }
+    };
+    reloadUserEmail();
+  }, [])
+);
+  
+  const handleSaveChanges = async () => {
+    if (!parentName.trim() || !phoneNum.trim()) {
+        Alert.alert("Missing Info", "Please enter your name or phone number.");
+        return;
+      }
+    
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+            Alert.alert("Error", "No logged-in user. Please log in again.");
+            return;
+      }
+
+      const docRef = doc(db, "parents", user.uid);
+      await setDoc(docRef, {
+        name: parentName, 
+        phone: phoneNum}, 
+        { merge: true });
+      Alert.alert("Success", "Changes saved.");
+      navigation.navigate("ParentDashBoard");
+
+      } catch (error) {
+      console.error("Error saving changes: ", error);
+      Alert.alert("Error", "Could not save changes. Please try again.");
+    }
+    
+  };
+
 
     return ( 
       <SafeAreaProvider>
         <SafeAreaView style={styles.container}
         edges ={['top']}>
           <ScrollView style={styles.ScrollView}>
+            
+          <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Text style={styles.backText}>← Back</Text>
+              <Ionicons style={styles.backButton} name="arrow-back" />
             </TouchableOpacity>
 
-      <View style={styles.header}>
-        <Text style={styles.title}>Our profile</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("SignUpScreen")}>
-          <Text style={styles.logout}>Log out</Text>
-        </TouchableOpacity>
-      </View>
+            <Text style={styles.title}>Our Profile</Text>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Name</Text>
-        <TextInput style={styles.input} value={Pname} onChangeText={setName} />
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
+              <Text style={styles.logoutButtonText}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
+            
+          <View style={styles.row}>
+            <View style={styles.column}>
+              <Text style={styles.label}>Parent's Name:</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, { width: "100%", marginRight: 0 }]}
+                  value={parentName}
+                  onChangeText={setParentName}
+                  placeholder={"Parent Name"}
+                />
 
-        <Text style={styles.label}>Child’s Name</Text>
-        <TextInput
-          style={styles.input}
-          value={childName}
-          onChangeText={setChildName}
-        />
+              <View style={styles.iconWrapper}>
+                <MaterialCommunityIcons name="pencil-outline" size={18} color="#555" />
+              </View>
+              
+              </View>
+            </View>
+            <View style={styles.column}>
+              <Text style={styles.label}>Child's Name:</Text>
+              <TextInput
+                style={[styles.input, { width: "100%", marginRight: 0 }]}
+                value={childsName}
+                onChangeText={setChildName}
+                placeholder={"Child Name"}
+                editable={false}
+              />
+              <Text style={[styles.label, { marginTop: 8 }]}>Preferred Name:</Text>
+              <TextInput
+                style={[styles.prefInput, { width: "100%", marginRight: 0 }]}
+                value={childsPreferredName}
+                onChangeText={setChildPreferredName}
+                placeholder="Preferred Name"
+                placeholderTextColor="#333"
+                editable={false}
+              />
+            </View>
+          </View>
 
-        <Text style={styles.label}> Child Preferred Name</Text>
-        <TextInput
-          style={styles.input}
-          value={preferredName}
-          onChangeText={ChildPreferredName}
-        />
+          <View>  
+            <Text style={styles.label}>Phone</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput style={styles.input} value={phoneNum} placeholder="123-456-7890" onChangeText={setPhone} keyboardType="phone-pad"/>
+            <View style={styles.iconWrapper}>
+                <MaterialCommunityIcons name="pencil-outline" size={18} color="#555" />
+              </View>
+            </View>
 
-        <Text style={styles.label}>Phone</Text>
-        <TextInput
-          style={styles.input}
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
+            <View style={styles.changeRow}>
+              <Text style={styles.label}>Email</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("ChangeEmail")}>
+                <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change Email</Text>
+              </TouchableOpacity>
+            </View> 
+            <TextInput
+              style={styles.input}
+              value={userEmail}
+              placeholder="example@email.com"
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              editable={false}
+            />
+            <View style={styles.changeRow}>
+              <Text style={styles.label}>Password</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("ChangePassword")}>
+                <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change Password</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              editable={false}
+            />
+            <View style={styles.changeRow}>
+              <Text style={styles.label}>PIN</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("ChangePin")}> 
+                <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change PIN</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.input}
+              value={pin}
+              onChangeText={setPin}
+              editable={false}
+            />
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
+            <View style={styles.switchRow}>
+              <Text style={styles.label}>Enable Notifications</Text>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+              />
+            </View>
 
-        <Text style={styles.label}>Update Password</Text>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+            <TouchableOpacity style={[styles.saveButton, loading && { opacity: 0.6 }]} onPress={handleSaveChanges} disabled={loading}>
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            </TouchableOpacity>
 
-        <Text style={styles.label}>Update Pin</Text>
-        <TextInput
-          style={styles.input}
-          value={pin}
-          onChangeText={setPin}
-          secureTextEntry
-        />
-
-        <View style={styles.switchRow}>
-          <Text style={styles.label}>Enable Notifications</Text>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
-          <Text style={styles.saveButtonText}>Save changes</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-    </SafeAreaView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  header: {
+  container: { 
+    flex: 1, 
+    backgroundColor: "#fff", 
+    padding: 15 
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  changeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 40,
+    width: "100%",
   },
-  title: { fontSize: 22, fontWeight: "600" },
-  logout: { color: "#777", fontWeight: "500" },
-  form: { marginTop: 30 },
-  label: { fontSize: 14, fontWeight: "500", marginBottom: 4, color: "#333" },
+  column: {
+    width: "48%",
+    flexDirection: "column",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: "1%",
+    marginBottom: "5%",
+  },
+  backButton: { 
+    color: "#000",
+    fontSize: 20, 
+    marginRight: 10 
+  },
+  title: { 
+    marginLeft: 10,
+    fontSize: 22, 
+    fontWeight: "600" 
+  },
+  logoutButton: { 
+    width: 65,
+    height: 40,
+    backgroundColor: "#ff0000ff",
+    alignItems: "center",
+    borderRadius: 8,
+    justifyContent: "center",
+  },
+  logoutButtonText: { 
+    fontSize: 12,
+    color: "#fff", 
+    fontWeight: "600"
+  },
+  label: { 
+    fontSize: 14, 
+    fontWeight: "500", 
+    marginBottom: 4, 
+    color: "#333", 
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 8,
     padding: 10,
-    marginBottom: 15,
-    fontSize: 15,
+    marginTop: "1%",
+    marginBottom: "5%",
+    backgroundColor: "#f9f9f9",
+    fontSize: 12,
+  },
+  inputWrapper: {
+    position: "relative",
+    width: "100%",
+  },
+  iconWrapper: {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    transform: [{ translateY: -12 }],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  prefInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 10,
+    marginTop: "1%",
+    marginBottom: "5%",
+    backgroundColor: "#f9f9f9",
+    fontSize: 12,
+    textAlign: "left",
   },
   switchRow: {
     flexDirection: "row",
@@ -139,11 +373,22 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   saveButton: {
+    width: "50%",
     backgroundColor: "#4CAF50",
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
+    alignSelf: "center",
     marginTop: 20,
   },
-  saveButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  saveButtonText: { 
+    color: "#fff", 
+    fontWeight: "600", 
+    fontSize: 16 
+  },
+  text:{
+    fontSize:16,
+    color:"#000",  
+    width:"100%"
+  }
 });
