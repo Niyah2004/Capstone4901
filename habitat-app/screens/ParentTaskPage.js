@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,9 @@ import {
   doc,
   setDoc,
   increment,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 import { startOfDay } from "date-fns";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
@@ -32,14 +35,23 @@ export default function ParentTaskPage({ navigation, route }) {
   const [steps, setSteps] = useState([""]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-
-  // NEW: points input from parent
   const [points, setPoints] = useState("");
+  const [childrenList, setChildrenList] = useState([]);
 
-  // If you pass childId from previous screen, grab it here
   const childId = route?.params?.childId || null;
 
-  // --- Step Handlers ---
+  useEffect(() => {
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const q = query(collection(db, "children"), where("parentId", "==", uid));
+    getDocs(q).then((snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setChildrenList(list);
+    });
+  }, []);
+
   const handleAddStep = () => setSteps([...steps, ""]);
 
   const handleRemoveStep = (index) => {
@@ -53,7 +65,6 @@ export default function ParentTaskPage({ navigation, route }) {
     setSteps(updated);
   };
 
-  // --- Save Task ---
   const handleSaveTask = async () => {
     if (!title.trim() || !description.trim()) {
       Alert.alert("Missing Info", "Please fill in both task title and description.");
@@ -86,7 +97,12 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
-      // 1) Save task with points + status
+      let childUserId = null;
+      if (childId) {
+        const childObj = childrenList?.find((c) => c.id === childId);
+        if (childObj) childUserId = childObj.userId || null;
+      }
+
       const taskRef = await addDoc(collection(db, "tasks"), {
         title,
         description,
@@ -95,13 +111,13 @@ export default function ParentTaskPage({ navigation, route }) {
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: parentId,
-        childId: childId || null, // TODO: wire real childId if you have it
+        childId: childId || null,
+        userId: childUserId,
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
       });
 
-      // 2) Update parent's point summary (parentPoints collection)
       const parentPointsRef = doc(db, "parentPoints", parentId);
       await setDoc(
         parentPointsRef,

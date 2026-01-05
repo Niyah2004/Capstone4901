@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { db } from "../firebaseConfig";
 import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,7 +17,7 @@ export default function ChildReward() {
     const [selectedReward, setSelectedReward] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const confettiRef = useRef(null);
-    
+
     useEffect(() => {
         const fetchRewards = async () => {
             try {
@@ -52,31 +52,31 @@ export default function ChildReward() {
         //points are currently a placeholder
         if (!selectedReward) return;
 
-       try{
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, {
-            stars: totalStars - selectedReward.cost,
-        });
+        try {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, {
+                stars: totalStars - selectedReward.cost,
+            });
 
-        setTotalStars((prev) => prev - selectedReward.cost);
+            setTotalStars((prev) => prev - selectedReward.cost);
 
-        confettiRef.current?.start();
+            confettiRef.current?.start();
 
-        Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
-         console.log("Reward claimed: ", selectedReward.title);
-       } 
-       catch(error){
-        console.error("Error claiming reward: ", error);
-        Alert.alert("Error", "Something went wrong while claiming the reward.");
-       }
-       finally {
-        setModalVisible(false);
-       }
+            Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
+            console.log("Reward claimed: ", selectedReward.title);
+        }
+        catch (error) {
+            console.error("Error claiming reward: ", error);
+            Alert.alert("Error", "Something went wrong while claiming the reward.");
+        }
+        finally {
+            setModalVisible(false);
+        }
     };
 
     return (
         <View style={styles.container}>
-
+            <ScrollView style={styles.ScrollView}>
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -115,15 +115,15 @@ export default function ChildReward() {
                             <Text style={styles.modalCloseText}>Close</Text>
                         </TouchableOpacity>
 
-                    {/*claim button */}
+                        {/*claim button */}
                         <TouchableOpacity
-                        style={styles.modalClaimButton}
-                        
-                        onPress={handleClaimReward}
-                            //setModalVisible(false)}
-                            //make it update the firebase
+                            style={styles.modalClaimButton}
+
+                            onPress={handleClaimReward}
+                        //setModalVisible(false)}
+                        //make it update the firebase
                         >
-                            <Text style ={styles.modalClaimText}>Claim</Text>
+                            <Text style={styles.modalClaimText}>Claim</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -213,6 +213,7 @@ export default function ChildReward() {
                     </LinearGradient>
                 ))}
             </ScrollView>
+   </ScrollView>
         </View>
     );
 }
@@ -277,6 +278,9 @@ const styles = StyleSheet.create({
     switchButtonText: { color: "#fff", fontWeight: "600" },
 
     sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
+
+
+    sectionTitle2: { fontSize: 18, fontWeight: "600", marginBottom: 0 },
 
     rewardsScrollContainer: {
         flexDirection: "row",
@@ -369,7 +373,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginBottom: 10
     },
-//missing modal styles that control the reward popup layout
+    //missing modal styles that control the reward popup layout
 
     modalClaimButton: {
         backgroundColor: "#4CAF50",
@@ -379,7 +383,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         shadowColor: "#000",
         shadowOpacity: 0.2,
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowRadious: 4,
         elevation: 3,
     },
@@ -400,7 +404,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         shadowColor: "#000",
         shadowOpacity: 0.25,
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowRadius: 4,
         elevation: 5,
     },

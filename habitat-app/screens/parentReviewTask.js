@@ -223,17 +223,17 @@ export default function ParentReviewTask() {
                     </Text>
                   </TouchableOpacity>
 
-              {/* Optional Delete Icon */}
-              <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-                <Ionicons name="trash-outline" size={20} color="gray" />
-              </TouchableOpacity>
-            </View>
+                  {/* Optional Delete Icon */}
+                  <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
+                    <Ionicons name="trash-outline" size={20} color="gray" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
           )}
-        />
-      )}
-    </View>
-  </SafeAreaView>
-</SafeAreaProvider>
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

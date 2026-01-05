@@ -21,6 +21,9 @@ import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
 import AccountSetting from "./screens/AccountSetting";
 import ForgotPinScreen from "./screens/ForgotPin";
+import ChangePassword from "./screens/ChangePassword";
+import ChangeEmail from "./screens/ChangeEmail";
+import ChangePin from "./screens/ChangePin";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 
@@ -63,6 +66,18 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="ForgotPin"
         component={ForgotPinScreen}
+      />
+      <ParentStack.Screen 
+        name="ChangePassword" 
+        component={ChangePassword} 
+      />
+      <ParentStack.Screen 
+        name="ChangeEmail" 
+        component={ChangeEmail} 
+      />
+      <ParentStack.Screen
+        name="ChangePin" 
+        component={ChangePin} 
       />
     </ParentStack.Navigator>
   );
@@ -130,7 +145,7 @@ export default function App() {
   return (
       <ParentLockProvider>
     <NavigationContainer>
-     <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
