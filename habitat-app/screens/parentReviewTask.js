@@ -21,9 +21,9 @@ import {
   doc,
   updateDoc,
   where,
-  runTransaction,     // 🆕
-  increment,          // 🆕
-  serverTimestamp,    // 🆕
+  runTransaction,     
+  increment,          
+  serverTimestamp,    
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
@@ -43,7 +43,8 @@ export default function ParentReviewTask() {
     const q = query(
       collection(db, "tasks"),
       where("ownerId", "==", uid),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
+      where("pendingApproval", "==", true),
     );
 
     const unsub = onSnapshot(
