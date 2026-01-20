@@ -21,9 +21,9 @@ import {
   doc,
   updateDoc,
   where,
-  runTransaction,     // 🆕
-  increment,          // 🆕
-  serverTimestamp,    // 🆕
+  runTransaction,     
+  increment,          
+  serverTimestamp,    
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
@@ -43,7 +43,8 @@ export default function ParentReviewTask() {
     const q = query(
       collection(db, "tasks"),
       where("ownerId", "==", uid),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
+      where("pendingApproval", "==", true),
     );
 
     const unsub = onSnapshot(
@@ -62,13 +63,54 @@ export default function ParentReviewTask() {
     return unsub;
   }, []);
 
-  const handleVerify = async (id) => {
+  /*const handleVerify = async (id) => {
     try {
       await updateDoc(doc(db, "tasks", id), { verified: true });
     } catch (e) {
       console.error("Error verifying task:", e);
     }
-  };
+  };*/
+
+  const handleVerify = async (taskId) => {
+  const taskRef = doc(db, "tasks", taskId);
+
+  try {
+    await runTransaction(db, async (tx) => {
+      const taskSnap = await tx.get(taskRef);
+      if (!taskSnap.exists()) return;
+
+      const t = taskSnap.data();
+
+      // prevent double-award
+      if (t.pointsAwarded === true || t.verified === true) return;
+
+      const childUid = t.completedByChildId || t.childId;
+      if (!childUid) throw new Error("Task missing child id to award points");
+
+      const points = Number(t.points || 0);
+      const childPointsRef = doc(db, "childPoints", childUid);
+
+      // award points
+      tx.set(
+        childPointsRef,
+        { childId: childUid, totalPoints: increment(points), updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+
+      // mark verified + close out pending approval
+      tx.update(taskRef, {
+        verified: true,
+        verifiedAt: serverTimestamp(),
+        pendingApproval: false,
+        status: "completed",
+        pointsAwarded: true,
+      });
+    });
+  } catch (e) {
+    console.error("Error verifying + awarding points:", e);
+  }
+};
+
 
   const handleDelete = async (id) => {
     try {
@@ -173,7 +215,7 @@ export default function ParentReviewTask() {
                   </View>
 
                   {/* Status Row */}
-                  <View style={styles.statusRow}>
+                { /* <View style={styles.statusRow}>
                     <Ionicons
                       name={
                         item.status === "completed"
@@ -188,7 +230,16 @@ export default function ParentReviewTask() {
                         ? "Marked as Complete"
                         : "Pending"}
                     </Text>
-                  </View>
+                  </View>*/}
+                  <Ionicons
+  name={item.pendingApproval ? "checkmark-done-circle-outline" : "time-outline"}
+  size={20}
+  color={item.pendingApproval ? "#4CAF50" : "#999"}
+/>
+<Text style={styles.completeText}>
+  {item.pendingApproval ? "Marked as Complete (Waiting for you)" : "Pending"}
+</Text>
+
 
                   {/* 🆕 Mark Complete & Award Points */}
                   <TouchableOpacity
@@ -210,18 +261,14 @@ export default function ParentReviewTask() {
                   </TouchableOpacity>
 
                   {/* Verify Button (parent approval) */}
-                  <TouchableOpacity
-                    style={[
-                      styles.verifyButton,
-                      item.verified && { backgroundColor: "#A5D6A7" },
-                    ]}
-                    onPress={() => handleVerify(item.id)}
-                    disabled={item.verified}
-                  >
-                    <Text style={styles.verifyText}>
-                      {item.verified ? "Verified" : "Verify Completed"}
-                    </Text>
-                  </TouchableOpacity>
+                 <TouchableOpacity
+  style={[styles.verifyButton, item.verified && { backgroundColor: "#A5D6A7" }]}
+  onPress={() => handleVerify(item.id)}
+  disabled={item.verified}
+>
+  <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
+</TouchableOpacity>
+
 
                   {/* Optional Delete Icon */}
                   <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
