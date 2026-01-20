@@ -1,430 +1,453 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import WeekCalendar from "./WeekCalendar";
 import { addDays, startOfDay } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; // for icons
-import { collection, query, where, onSnapshot, Timestamp, updateDoc, doc, serverTimestamp, addDoc } from "firebase/firestore";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  Timestamp,
+  doc,
+  serverTimestamp,
+  runTransaction,
+  increment,
+} from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 
+import Slider from "@react-native-community/slider";
+
+
 export default function ChildTask({ route, navigation }) {
-    // temporarily disable these props to avoid undefined errors during demo
-    const childId = route?.params?.childId;
+  const childId = route?.params?.childId;
+  const currentChildUid = getAuth().currentUser?.uid;
 
-    const task = route?.params?.task || { title: "", description: "", isCompleted: false };
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [tasksForDate, setTasksForDate] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
 
-    const [title, setTitle] = useState(task.title);
-    const [description, setDescription] = useState(task.description);
-    const [isCompleted, setIsCompleted] = useState(task.isCompleted);
+  // ✅ store child points locally (and keep it in sync with Firestore)
+  const [childPoints, setChildPoints] = useState(0);
 
-    // selected date from WeekCalendar
-    const [selectedDate, setSelectedDate] = useState(new Date());
+  // ✅ Helper: recurring occurrence (MUST be above useEffect that uses it)
+  const occursOnDate = useCallback((task, date) => {
+    if (!task || !task.recurrence) return false;
+    const r = task.recurrence;
 
-    // Dynamically update screen title based on selected date
-    useEffect(() => {
-        if (!navigation || !selectedDate) return;
-        const today = new Date();
-        const isToday = selectedDate.getFullYear() === today.getFullYear() &&
-            selectedDate.getMonth() === today.getMonth() &&
-            selectedDate.getDate() === today.getDate();
-        let title;
-        if (isToday) {
-            title = "Today's Tasks";
-        } else {
-            const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
-            title = `${dayName}'s Tasks`;
-        }
-        navigation.setOptions({ title });
-    }, [selectedDate, navigation]);
+    const start =
+      (r.startDate && r.startDate.toDate) ? r.startDate.toDate()
+      : (task.dateTimestamp && task.dateTimestamp.toDate) ? task.dateTimestamp.toDate()
+      : null;
 
-    // real tasks loaded for the selected date (from Firestore)
-    const [tasksForDate, setTasksForDate] = useState([]);
-    const [loadingTasks, setLoadingTasks] = useState(true);
+    if (!start) return false;
 
-    // current child's id (from auth). If children use the same auth, this will be the child's uid.
-    //const currentChildId = getAuth().currentUser?.uid || null;
-    // Use the signed-in child's UID for filtering tasks
-    const currentChildUid = getAuth().currentUser?.uid;
-    console.log('Current child UID:', currentChildUid);
+    if (r.endType === "until" && r.until?.toDate) {
+      const until = r.until.toDate();
+      if (date > until) return false;
+    }
 
-    // Mark task as complete for child, then send parent approval request
-    const markingCompletee = async (taskId, currentStatus) => {
-        try {
-            // Step 1: mark as completed for child
-            await updateDoc(doc(db, "tasks", taskId), {
-                completed: true,
-                completedAt: serverTimestamp(),
-                completedByChildId: currentChildUid || null,
-            });
+    const interval = r.interval || 1;
+    const freq = r.frequency || "weekly";
+    const dayDiff = Math.floor((startOfDay(date) - startOfDay(start)) / (1000 * 60 * 60 * 24));
 
-            // Step 2: send parent approval request (optional, can be triggered after)
-            await updateDoc(doc(db, "tasks", taskId), {
-                pendingApproval: true,
-                completionRequestedAt: serverTimestamp(),
-            });
+    if (freq === "daily") {
+      if (dayDiff < 0) return false;
+      return (dayDiff % interval) === 0;
+    }
 
-            // Find the task's ownerId from tasksForDate
-            const task = tasksForDate.find(t => t.id === taskId);
-            if (task && task.ownerId) {
-                await addDoc(collection(db, "notifications"), {
-                    toUserId: task.ownerId,
-                    fromChildId: currentChildUid || null,
-                    taskId: taskId,
-                    type: "completion_request",
-                    createdAt: serverTimestamp(),
-                    read: false,
-                });
-            }
-        } catch (err) {
-            console.error("Error requesting approval:", err);
-        }
-    };
+    if (freq === "weekly") {
+      const dow = (date.getDay() + 6) % 7; // JS Sunday->6, Monday->0
+      if (!Array.isArray(r.daysOfWeek) || r.daysOfWeek.length === 0) return false;
+      if (!r.daysOfWeek.includes(dow)) return false;
 
-    const handleMarkComplete = async (task) => {
-        try {
-            // mark task as awaiting parent approval
-            await updateDoc(doc(db, "tasks", task.id), {
-                pendingApproval: true,
-                completionRequestedAt: serverTimestamp(),
-                completedByChildId: currentChildUid || null,
-            });
+      const weeks = Math.floor(dayDiff / 7);
+      return weeks >= 0 && (weeks % interval) === 0;
+    }
 
-            // create a lightweight notification for the parent (so parents can show a notifications feed if desired)
-            if (task.ownerId) {
-                await addDoc(collection(db, "notifications"), {
-                    toUserId: task.ownerId,
-                    fromChildId: currentChildUid || null,
-                    taskId: task.id,
-                    type: "completion_request",
-                    createdAt: serverTimestamp(),
-                    read: false,
-                });
-            }
-        } catch (err) {
-            console.error("Error requesting approval:", err);
-        }
-    };
+    if (freq === "monthly") {
+      const startDay = start.getDate();
+      if (date.getDate() !== startDay) return false;
+      const months = (date.getFullYear() - start.getFullYear()) * 12 + (date.getMonth() - start.getMonth());
+      return months >= 0 && (months % interval) === 0;
+    }
 
-    useEffect(() => {
-        if (!selectedDate) return;
-        setLoadingTasks(true);
+    return false;
+  }, []);
 
-        const start = startOfDay(selectedDate);
-        const end = addDays(start, 1);
+  // ✅ Dynamic nav title based on date
+  useEffect(() => {
+    if (!navigation || !selectedDate) return;
 
-        // Build query constraints
-        const constraints = [
-            where("dateTimestamp", ">=", Timestamp.fromDate(start)),
-            where("dateTimestamp", "<", Timestamp.fromDate(end)),
-        ];
-        // Optionally, add childId filter if you want to filter by child profile
-        if (childId) constraints.unshift(where("childId", "==", childId));
-        const q = query(collection(db, "tasks"), ...constraints);
-        // query single-instance tasks for the selected date
-        const unsubDate = onSnapshot(q, snapshot => {
-            const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            // sort tasks so that:
-            // - not completed & not pendingApproval come first
-            // - pendingApproval (waiting for parent) come next
-            // - verified / rejected come last
-            list.sort((a, b) => {
-                const score = (t) => {
-                    if (t.verified) return 3;
-                    if (t.rejected) return 3;
-                    if (t.pendingApproval) return 2;
-                    return 1;
-                };
-                const sa = score(a);
-                const sb = score(b);
-                if (sa !== sb) return sa - sb;
-                // fallback: preserve insertion/order by points (desc) then title
-                if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
-                return (a.title || "").localeCompare(b.title || "");
-            });
-            // we'll set tasks after merging with recurring tasks (handled below)
-            setTasksForDate(prev => {
-                // temporarily set date-only tasks; merging happens in recurring handler
-                return list;
-            });
-            setLoadingTasks(false);
-        }, err => {
-            console.error("tasks onSnapshot error", err);
-            setLoadingTasks(false);
+    const today = new Date();
+    const isToday =
+      selectedDate.getFullYear() === today.getFullYear() &&
+      selectedDate.getMonth() === today.getMonth() &&
+      selectedDate.getDate() === today.getDate();
+
+    const dayName = selectedDate.toLocaleDateString("en-US", { weekday: "long" });
+    navigation.setOptions({ title: isToday ? "Today's Tasks" : `${dayName}'s Tasks` });
+  }, [selectedDate, navigation]);
+
+  // ✅ Keep childPoints synced from Firestore
+  useEffect(() => {
+  if (!currentChildUid) return;
+
+  const childPointsRef = doc(db, "childPoints", currentChildUid);
+  const unsub = onSnapshot(childPointsRef, (snap) => {
+    if (snap.exists()) setChildPoints(snap.data().totalPoints || 0);
+    else setChildPoints(0);
+  });
+
+  return () => unsub();
+}, [currentChildUid]);
+
+  // ✅ Load tasks (date-specific + recurring)
+  useEffect(() => {
+    if (!selectedDate) return;
+    setLoadingTasks(true);
+
+    const start = startOfDay(selectedDate);
+    const end = addDays(start, 1);
+
+    const constraints = [
+      where("dateTimestamp", ">=", Timestamp.fromDate(start)),
+      where("dateTimestamp", "<", Timestamp.fromDate(end)),
+    ];
+    if (childId) constraints.unshift(where("childId", "==", childId));
+
+    const qDate = query(collection(db, "tasks"), ...constraints);
+
+    const unsubDate = onSnapshot(
+      qDate,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            ...data,
+            // ✅ ensure progressPercent is always defined for UI
+            progressPercent:
+              typeof data.progressPercent === "number"
+                ? data.progressPercent
+                : data.completed
+                ? 100
+                : 0,
+          };
         });
 
-        // query recurring tasks assigned to this child
-        let unsubRecurring = () => { };
-        if (currentChildUid) {
-            const qRec = query(collection(db, "tasks"), where("userId", "==", currentChildUid), where("isRecurring", "==", true));
-            unsubRecurring = onSnapshot(qRec, snap => {
-                const recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                // filter recurring tasks to those that occur on selectedDate
-                const occurs = recs.filter(r => {
-                    try { return occursOnDate(r, selectedDate); } catch (e) { return false; }
-                });
-
-                // merge with date-specific tasks already stored in state
-                setTasksForDate(prevDateTasks => {
-                    const map = new Map();
-                    (prevDateTasks || []).forEach(t => map.set(t.id, t));
-                    occurs.forEach(t => map.set(t.id, t));
-                    const merged = Array.from(map.values());
-                    // apply same sorting as before
-                    merged.sort((a, b) => {
-                        const score = (t) => {
-                            if (t.verified) return 3;
-                            if (t.rejected) return 3;
-                            if (t.pendingApproval) return 2;
-                            return 1;
-                        };
-                        const sa = score(a);
-                        const sb = score(b);
-                        if (sa !== sb) return sa - sb;
-                        if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
-                        return (a.title || "").localeCompare(b.title || "");
-                    });
-                    return merged;
-                });
-            }, err => console.error('recurring onSnapshot error', err));
-        }
-
-        return () => { try { unsubDate(); } catch { }; try { unsubRecurring(); } catch { } };
-    }, [selectedDate]);
-
-
-    // Helper: determine if a recurring task occurs on a specific date
-    const occursOnDate = (task, date) => {
-        if (!task || !task.recurrence) return false;
-        const r = task.recurrence;
-        const start = (r.startDate && r.startDate.toDate) ? r.startDate.toDate() : (task.dateTimestamp && task.dateTimestamp.toDate ? task.dateTimestamp.toDate() : null);
-        if (!start) return false;
-
-        // end conditions
-        if (r.endType === 'until' && r.until && r.until.toDate) {
-            const until = r.until.toDate();
-            if (date > until) return false;
-        }
-        if (r.count) {
-            // rough check: if date is before start, false
-            if (date < start) return false;
-        }
-
-        const interval = r.interval || 1;
-        const freq = r.frequency || 'weekly';
-
-        const dayDiff = Math.floor((startOfDay(date) - startOfDay(start)) / (1000 * 60 * 60 * 24));
-
-        if (freq === 'daily') {
-            if (dayDiff < 0) return false;
-            return (dayDiff % interval) === 0;
-        }
-
-        if (freq === 'weekly') {
-            // daysOfWeek: 0=Mon .. 6=Sun
-            const dow = (date.getDay() + 6) % 7; // convert JS 0=Sun to 0=Mon
-            if (!(r.daysOfWeek && r.daysOfWeek.length)) {
-                console.log('No daysOfWeek set for recurrence', r);
-                return false;
-            }
-            if (!r.daysOfWeek.includes(dow)) {
-                console.log(`Weekly recurrence: ${date.toDateString()} is dow=${dow}, not in`, r.daysOfWeek);
-                return false;
-            }
-            // check week interval
-            const weeks = Math.floor(dayDiff / 7);
-            const occurs = weeks >= 0 && (weeks % interval) === 0;
-            if (!occurs) {
-                console.log(`Weekly recurrence: week interval failed for ${date.toDateString()} (weeks=${weeks}, interval=${interval})`);
-            }
-            return occurs;
-        }
-
-        if (freq === 'monthly') {
-            // basic: same day of month
-            const startDay = start.getDate();
-            if (date.getDate() !== startDay) return false;
-            const months = (date.getFullYear() - start.getFullYear()) * 12 + (date.getMonth() - start.getMonth());
-            return months >= 0 && (months % interval) === 0;
-        }
-
-        return false;
-    };
-
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Today's Tasks</Text>
-
-            <View style={styles.calendarContainer}>
-                <View style={{ flex: 10 }}>
-                    <WeekCalendar
-                        date={selectedDate}
-                        onChange={(newdate) => setSelectedDate(newdate)}
-                    />
-                </View>
-            </View>
-
-
-            {/* Week days bar */}
-            {/* <View style={styles.weeksContainer}>
-               {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
-                    <View
-                        key={index}
-                        style={[styles.dayCircle, index === 4 && styles.presentDay]} // highlight "Friday"
-                    >
-                        <Text
-                            style={[styles.dayText, index === 4 && styles.presentDateText]}
-                        >
-                            {day}
-                        </Text>
-                    </View>
-                ))}
-            </View>
-        */}
-            {/* Task list 
-            This makes the task list dynamic based on the selected date  and changes the title accordingly */}
-            <Text style={{ marginTop: 6, marginBottom: 6, fontWeight: '600' }}>
-                {(() => {
-                    const today = new Date();
-                    const isToday = selectedDate.getFullYear() === today.getFullYear() &&
-                        selectedDate.getMonth() === today.getMonth() &&
-                        selectedDate.getDate() === today.getDate();
-                    if (isToday) return "Today's Tasks";
-                    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
-                    return `${dayName}'s Tasks`;
-                })()}
-            </Text>
-            <ScrollView style={{ marginTop: 10 }}>
-                {tasksForDate.length === 0 ? (
-                    <View style={styles.taskBox}>
-                        <Text style={{ textAlign: 'center', color: '#777' }}>No tasks for this date.</Text>
-                    </View>
-                ) : (
-                    tasksForDate.map((task) => (
-                        <View key={task.id} style={styles.taskBox}>
-                            <View style={styles.taskHeader}>
-                                <Text style={styles.taskTitle}>{task.title}</Text>
-                                <Text style={styles.points}>{task.points} pts</Text>
-                            </View>
-
-                            <View style={styles.Progress}>
-                                <View style={[styles.progressFill, { width: "50%" }]} />
-                            </View>
-
-                            {/*<TouchableOpacity style={styles.completeButton} 
-                                onPress={() => markingComplete(task)}>
-                                <Ionicons name="checkbox-outline" size={16} color="#4CAF50" />
-                                <Text style={styles.complete}> Task complete</Text>
-                            </TouchableOpacity>
-                            */}
-
-                            <TouchableOpacity
-                                style={styles.completeButton}
-                                onPress={() => markingCompletee(task.id, task.completed)}
-                            >
-                                <Ionicons
-                                    name={task.completed ? "checkmark-circle" : "ellipse-outline"}
-                                    size={26}
-                                    color={task.completed ? "#4CAF50" : "#999"}
-                                />
-                                <Text style={styles.completeText}>
-                                    {task.completed ? "Completed" : "Mark Complete"}
-                                </Text>
-                            </TouchableOpacity>
-
-                        </View>
-                    ))
-                )}
-            </ScrollView>
-        </View>
+        setTasksForDate(list);
+        setLoadingTasks(false);
+      },
+      (err) => {
+        console.error("tasks onSnapshot error", err);
+        setLoadingTasks(false);
+      }
     );
+
+    let unsubRecurring = () => {};
+    if (currentChildUid) {
+      const qRec = query(
+        collection(db, "tasks"),
+        where("userId", "==", currentChildUid),
+        where("isRecurring", "==", true)
+      );
+
+      unsubRecurring = onSnapshot(qRec, (snap) => {
+        const recs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const occurs = recs
+          .filter((r) => occursOnDate(r, selectedDate))
+          .map((r) => ({
+            ...r,
+            progressPercent:
+              typeof r.progressPercent === "number" ? r.progressPercent : r.completed ? 100 : 0,
+          }));
+
+        setTasksForDate((prev) => {
+          const map = new Map();
+          (prev || []).forEach((t) => map.set(t.id, t));
+          occurs.forEach((t) => map.set(t.id, t));
+          return Array.from(map.values());
+        });
+      });
+    }
+
+    return () => {
+      try { unsubDate(); } catch {}
+      try { unsubRecurring(); } catch {}
+    };
+  }, [selectedDate, childId, currentChildUid, occursOnDate]);
+
+  // ✅ UI-only live update while sliding (no Firestore spam)
+  const updateProgressLocal = (taskId, value) => {
+    setTasksForDate((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, progressPercent: value } : t))
+    );
+  };
+
+  // ✅ Persist progress to Firestore when sliding stops
+  const persistProgress = async (taskId, value) => {
+    try {
+      await runTransaction(db, async (tx) => {
+        const taskRef = doc(db, "tasks", taskId);
+        tx.update(taskRef, { progressPercent: value });
+      });
+    } catch (e) {
+      console.error("Error saving progress:", e);
+    }
+  };
+/*
+  // ✅ Complete task + award points to childPoints (transaction prevents double-award)
+  const markTaskComplete = async (task) => {
+    if (!task?.id || !currentChildUid) return;
+
+    try {
+      await runTransaction(db, async (tx) => {
+        const taskRef = doc(db, "tasks", task.id);
+        const taskSnap = await tx.get(taskRef);
+
+        if (!taskSnap.exists()) return;
+
+        const current = taskSnap.data();
+        if (current.completed === true) return; // 🚫 already completed -> no double points
+
+        const pointsToAdd = Number(task.points || 0);
+
+        // Update task
+        tx.update(taskRef, {
+          completed: true,
+          completedAt: serverTimestamp(),
+          completedByChildId: currentChildUid,
+          pendingApproval: true,
+          completionRequestedAt: serverTimestamp(),
+          progressPercent: 100,
+        });
+
+        // Update child points
+        const childRef = doc(db, "children", currentChildUid); // <-- change if needed
+        tx.set(childRef, { points: increment(pointsToAdd) }, { merge: true });
+
+        // Add parent notification if owner exists
+        if (current.ownerId) {
+          const notifRef = doc(collection(db, "notifications"));
+          tx.set(notifRef, {
+            toUserId: current.ownerId,
+            fromChildId: currentChildUid,
+            taskId: task.id,
+            type: "completion_request",
+            createdAt: serverTimestamp(),
+            read: false,
+          });
+        }
+      });
+
+      // Local UI will update from snapshots, but this makes it feel instant:
+      setChildPoints((p) => p + Number(task.points || 0));
+    } catch (err) {
+      console.error("Error completing task + awarding points:", err);
+    }
+  };
+*/
+const markTaskComplete = async (task) => {
+  if (!task?.id || !currentChildUid) return;
+
+  try {
+    await runTransaction(db, async (tx) => {
+      const taskRef = doc(db, "tasks", task.id);
+      const taskSnap = await tx.get(taskRef);
+      if (!taskSnap.exists()) return;
+
+      const current = taskSnap.data();
+
+      // already requested/complete -> don’t spam updates
+      if (current.pendingApproval === true || current.verified === true) return;
+
+      tx.update(taskRef, {
+        completed: true, // child checked it off
+        completedAt: serverTimestamp(),
+        completedByChildId: currentChildUid,
+        pendingApproval: true, // parent needs to verify
+        completionRequestedAt: serverTimestamp(),
+        progressPercent: 100,
+        status: "pendingApproval", // optional, but helpful
+      });
+
+      // parent notification
+      if (current.ownerId) {
+        const notifRef = doc(collection(db, "notifications"));
+        tx.set(notifRef, {
+          toUserId: current.ownerId,
+          fromChildId: currentChildUid,
+          taskId: task.id,
+          type: "completion_request",
+          createdAt: serverTimestamp(),
+          read: false,
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Error requesting approval:", err);
+  }
+};
+
+  const titleForDate = (() => {
+    const today = new Date();
+    const isToday =
+      selectedDate.getFullYear() === today.getFullYear() &&
+      selectedDate.getMonth() === today.getMonth() &&
+      selectedDate.getDate() === today.getDate();
+    if (isToday) return "Today's Tasks";
+    const dayName = selectedDate.toLocaleDateString("en-US", { weekday: "long" });
+    return `${dayName}'s Tasks`;
+  })();
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Today's Tasks</Text>
+
+      {/* Optional display so you can see points stacking */}
+      <Text style={styles.pointsTotal}>My Points: {childPoints}</Text>
+
+      <View style={styles.calendarContainer}>
+        <View style={{ flex: 10 }}>
+          <WeekCalendar date={selectedDate} onChange={(d) => setSelectedDate(d)} />
+        </View>
+      </View>
+
+      <Text style={styles.sectionHeader}>{titleForDate}</Text>
+
+      <ScrollView style={{ marginTop: 10 }}>
+        {loadingTasks ? (
+          <View style={styles.taskBox}>
+            <Text style={{ textAlign: "center", color: "#777" }}>Loading...</Text>
+          </View>
+        ) : tasksForDate.length === 0 ? (
+          <View style={styles.taskBox}>
+            <Text style={{ textAlign: "center", color: "#777" }}>No tasks for this date.</Text>
+          </View>
+        ) : (
+          tasksForDate.map((task) => {
+            const progress = Math.max(0, Math.min(100, Number(task.progressPercent || 0)));
+
+            return (
+              <View key={task.id} style={styles.taskBox}>
+                <View style={styles.taskHeader}>
+                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  <Text style={styles.points}>{task.points} pts</Text>
+                </View>
+
+                <Slider
+                  value={progress}
+                  minimumValue={0}
+                  maximumValue={100}
+                  step={1}
+                  disabled={task.completed}
+                  onValueChange={(val) => updateProgressLocal(task.id, val)}
+                  onSlidingComplete={(val) => persistProgress(task.id, val)}
+                  minimumTrackTintColor="#4CAF50"   // green filled part
+                  maximumTrackTintColor="#E0E0E0"   // gray remaining part
+                  thumbTintColor="#4CAF50"
+               
+                />
+                <Text style={styles.progressLabel}>{Math.round(progress)}%</Text>
+                <View style={styles.progressContainer}>
+                <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                </View>
+
+                {/* ✅ Complete button actually works + awards points */}
+                <TouchableOpacity
+                  style={[styles.completeButton, task.completed && styles.completeButtonDisabled]}
+                  disabled={task.completed}
+                  onPress={() => markTaskComplete(task)}
+                >
+                  <Ionicons
+                    name={task.completed ? "checkmark-circle" : "ellipse-outline"}
+                    size={26}
+                    color={task.completed ? "#4CAF50" : "#999"}
+                  />
+                  <Text style={styles.completeText}>
+                    {task.completed ? "Completed" : "Mark Complete"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#F7F7F7",
-        paddingHorizontal: 20,
-        paddingTop: 50,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "600",
-        marginBottom: 10,
-    },
-    weeksContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 20,
-    },
-    calendarContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 20,
-    },
-    dayCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#E0E0E0",
-    },
-    presentDay: {
-        backgroundColor: "#4CAF50",
-    },
-    dayText: {
-        fontSize: 16,
-        color: "#333",
-    },
-    presentDateText: {
-        color: "#fff",
-        fontWeight: "bold",
-    },
-    taskBox: {
-        backgroundColor: "#fff",
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 15,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    taskHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 10,
-    },
-    taskTitle: {
-        fontSize: 18,
-        fontWeight: "500",
-    },
-    points: {
-        fontSize: 16,
-        color: "#4CAF50",
-    },
-    Progress: {
-        height: 8,
-        backgroundColor: "#E0E0E0",
-        borderRadius: 4,
-        overflow: "hidden",
-        marginBottom: 10,
-    },
-    progressFill: {
-        height: 8,
-        backgroundColor: "#4CAF50",
-        borderRadius: 4,
-    },
-    completeButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 8,
-    },
-    complete: {
-        color: "#4CAF50",
-        fontWeight: "bold",
-        marginLeft: 5,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: "#F7F7F7",
+    paddingHorizontal: 20,
+    paddingTop: 50,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  pointsTotal: {
+    fontSize: 14,
+    color: "#4CAF50",
+    marginBottom: 10,
+    fontWeight: "600",
+  },
+  calendarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sectionHeader: {
+    marginTop: 6,
+    marginBottom: 6,
+    fontWeight: "600",
+  },
+  taskBox: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  taskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  taskTitle: {
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  points: {
+    fontSize: 16,
+    color: "#4CAF50",
+  },
+sliderRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+slider: { flex: 1, height: 40, marginRight: 10 },
+percentText: { width: 52, textAlign: "right", fontWeight: "600", color: "#4CAF50" },
+
+  completeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  completeButtonDisabled: {
+    opacity: 0.6,
+  },
+  completeText: {
+    marginLeft: 8,
+    fontWeight: "700",
+    color: "#333",
+  },
 });
