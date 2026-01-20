@@ -47,7 +47,7 @@ export default function ChildReward() {
         fetchRewards();
     }, []);
 
-    const handleClaimReward = async () => {
+    const handleClaimReward = async (childId, selectedReward) => {
         //fetch points from backend to add them to the already earned points
         //points are currently a placeholder
         if (!selectedReward) return;
@@ -57,8 +57,13 @@ export default function ChildReward() {
             await updateDoc(userRef, {
                 stars: totalStars - selectedReward.cost,
             });
-
             setTotalStars((prev) => prev - selectedReward.cost);
+
+            await addDoc(collection(db, "claims"), {
+                item_id: selectedReward.id,
+                status: "claimed",
+                user_id: childId,
+            });
 
             confettiRef.current?.start();
 
@@ -209,6 +214,8 @@ export default function ChildReward() {
                             >
                                 <Text style={styles.rewardActionText}>View</Text>
                             </TouchableOpacity>
+
+                            
                         </View>
                     </LinearGradient>
                 ))}
