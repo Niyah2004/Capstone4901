@@ -11,8 +11,8 @@ import { getAuth } from "firebase/auth";
 export default function ParentDashBoard({ navigation, route }) {
    const { isParentUnlocked } = useParentLock();
 
-const [childPoints, setChildPoints] = useState({
-    totalPoints: 0,
+  const [childPoints, setChildPoints] = useState({
+    points: 0,
     loading: true,
   });
 
@@ -25,20 +25,24 @@ const [childPoints, setChildPoints] = useState({
     }, [isParentUnlocked, navigation])
   );
 
- useFocusEffect(
+  useFocusEffect(
   useCallback(() => {
     const auth = getAuth();
     const user = auth.currentUser;
-    if (!user) {
-          // optionally redirect to login or show message
-          setChildPoints({points: 0, loading: false });
-          return;
-        }
+    if (!user && !route?.params?.childId) {
+      // optionally redirect to login or show message
+      setChildPoints({ points: 0, loading: false });
+      return;
+    }
 
-    // Decide which childId to use
-    // If you're passing childId in navigation params, use that:
+    // Use the same childId logic as ChildTask to keep points aligned.
     const childIdFromRoute = route?.params?.childId;
-    const childId = childIdFromRoute || user.uid; // adjust this depending on your schema
+    const childId = childIdFromRoute || user?.uid;
+
+    if (!childId) {
+      setChildPoints({ points: 0, loading: false });
+      return;
+    }
 
     const childPointsRef = doc(db, "childPoints", childId);
 
@@ -48,8 +52,7 @@ const [childPoints, setChildPoints] = useState({
     if (snapshot.exists()) {
       const data = snapshot.data();
       // support either "points" or "stars" as the field name
-      const balance =
-        data.points ?? data.stars ?? 0;
+      const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
 
       setChildPoints({
         points: balance,
@@ -289,4 +292,3 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
-

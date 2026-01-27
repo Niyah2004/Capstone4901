@@ -23,15 +23,16 @@ import Slider from "@react-native-community/slider";
 export default function ChildTask({ route, navigation }) {
   const childId = route?.params?.childId;
   const currentChildUid = getAuth().currentUser?.uid;
+  const pointsChildId = childId || currentChildUid;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasksForDate, setTasksForDate] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  // ✅ store child points locally (and keep it in sync with Firestore)
+  // store child points locally (and keep it in sync with Firestore)
   const [childPoints, setChildPoints] = useState(0);
 
-  // ✅ Helper: recurring occurrence (MUST be above useEffect that uses it)
+
   const occursOnDate = useCallback((task, date) => {
     if (!task || !task.recurrence) return false;
     const r = task.recurrence;
@@ -76,7 +77,7 @@ export default function ChildTask({ route, navigation }) {
     return false;
   }, []);
 
-  // ✅ Dynamic nav title based on date
+
   useEffect(() => {
     if (!navigation || !selectedDate) return;
 
@@ -90,20 +91,25 @@ export default function ChildTask({ route, navigation }) {
     navigation.setOptions({ title: isToday ? "Today's Tasks" : `${dayName}'s Tasks` });
   }, [selectedDate, navigation]);
 
-  // ✅ Keep childPoints synced from Firestore
+  // Keep childPoints synced from Firestore
   useEffect(() => {
-  if (!currentChildUid) return;
+    if (!pointsChildId) return;
 
-  const childPointsRef = doc(db, "childPoints", currentChildUid);
-  const unsub = onSnapshot(childPointsRef, (snap) => {
-    if (snap.exists()) setChildPoints(snap.data().totalPoints || 0);
-    else setChildPoints(0);
-  });
+    const childPointsRef = doc(db, "childPoints", pointsChildId);
+    const unsub = onSnapshot(childPointsRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
+        setChildPoints(balance);
+      } else {
+        setChildPoints(0);
+      }
+    });
 
-  return () => unsub();
-}, [currentChildUid]);
+    return () => unsub();
+  }, [pointsChildId]);
 
-  // ✅ Load tasks (date-specific + recurring)
+  // Load tasks (date-specific + recurring)
   useEffect(() => {
     if (!selectedDate) return;
     setLoadingTasks(true);
@@ -127,7 +133,7 @@ export default function ChildTask({ route, navigation }) {
           return {
             id: d.id,
             ...data,
-            // ✅ ensure progressPercent is always defined for UI
+            // ensure progressPercent is always defined for UI
             progressPercent:
               typeof data.progressPercent === "number"
                 ? data.progressPercent
@@ -179,14 +185,14 @@ export default function ChildTask({ route, navigation }) {
     };
   }, [selectedDate, childId, currentChildUid, occursOnDate]);
 
-  // ✅ UI-only live update while sliding (no Firestore spam)
+  // UI-only live update while sliding (no Firestore spam)
   const updateProgressLocal = (taskId, value) => {
     setTasksForDate((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, progressPercent: value } : t))
     );
   };
 
-  // ✅ Persist progress to Firestore when sliding stops
+  //  Persist progress to Firestore when sliding stops
   const persistProgress = async (taskId, value) => {
     try {
       await runTransaction(db, async (tx) => {
@@ -198,7 +204,7 @@ export default function ChildTask({ route, navigation }) {
     }
   };
 /*
-  // ✅ Complete task + award points to childPoints (transaction prevents double-award)
+  //  Complete task + award points to childPoints (transaction prevents double-award)
   const markTaskComplete = async (task) => {
     if (!task?.id || !currentChildUid) return;
 
