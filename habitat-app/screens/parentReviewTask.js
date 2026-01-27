@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Animated,
@@ -19,7 +18,6 @@ import {
   query,
   deleteDoc,
   doc,
-  updateDoc,
   where,
   runTransaction,     
   increment,          
@@ -30,6 +28,8 @@ import { getAuth } from "firebase/auth";
 export default function ParentReviewTask() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [parentChecks, setParentChecks] = useState({});
+  const [activeTab, setActiveTab] = useState("pending");
 
   useEffect(() => {
     const uid = getAuth().currentUser?.uid;
@@ -43,8 +43,7 @@ export default function ParentReviewTask() {
     const q = query(
       collection(db, "tasks"),
       where("ownerId", "==", uid),
-      orderBy("createdAt", "desc"),
-      where("pendingApproval", "==", true),
+      orderBy("createdAt", "desc")
     );
 
     const unsub = onSnapshot(
@@ -120,51 +119,18 @@ export default function ParentReviewTask() {
     }
   };
 
-  // Award points + mark task completed (uses childPoints collection)
-  async function completeTaskAndAwardPoints({ taskId, childId }) {
-    if (!childId) {
-      console.warn("No childId on task, cannot award points");
-      return;
-    }
+  const toggleParentCheck = (taskId) => {
+    setParentChecks((prev) => ({ ...prev, [taskId]: !prev[taskId] }));
+  };
 
-    const taskRef = doc(db, "tasks", taskId);
-    const childPointsRef = doc(db, "childPoints", childId);
+  const isChildCompleted = (task) =>
+    task.pendingApproval === true ||
+    task.completed === true ||
+    task.status === "pendingApproval" ||
+    task.status === "completed";
 
-    try {
-      await runTransaction(db, async (transaction) => {
-        const taskSnap = await transaction.get(taskRef);
-        if (!taskSnap.exists()) throw new Error("Task does not exist");
-
-        const taskData = taskSnap.data();
-
-        // prevent double-award
-        if (taskData.status === "completed") {
-          return;
-        }
-
-        const taskPoints = taskData.points || 0;
-
-        // update childPoints balance
-        transaction.set(
-          childPointsRef,
-          {
-            childId,
-            totalPoints: increment(taskPoints),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-
-        // mark task completed
-        transaction.update(taskRef, {
-          status: "completed",
-          completedAt: serverTimestamp(),
-        });
-      });
-    } catch (err) {
-      console.error("Error completing task and awarding points:", err);
-    }
-  }
+  const pendingTasks = tasks.filter((t) => !isChildCompleted(t));
+  const completedTasks = tasks.filter((t) => isChildCompleted(t));
 
   if (loading) {
     return (
@@ -180,13 +146,42 @@ export default function ParentReviewTask() {
         <View style={styles.view}>
           <Text style={styles.header}>Review Tasks</Text>
 
-          {tasks.length === 0 ? (
-            <Text style={styles.empty}>No tasks yet. Create one from the dashboard!</Text>
+          <View style={styles.tabs}>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === "pending" && styles.tabButtonActive]}
+              onPress={() => setActiveTab("pending")}
+            >
+              <Text style={[styles.tabText, activeTab === "pending" && styles.tabTextActive]}>
+                Pending
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === "completed" && styles.tabButtonActive]}
+              onPress={() => setActiveTab("completed")}
+            >
+              <Text style={[styles.tabText, activeTab === "completed" && styles.tabTextActive]}>
+                Completed
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {(activeTab === "pending" ? pendingTasks : completedTasks).length === 0 ? (
+            <Text style={styles.empty}>
+              {activeTab === "pending"
+                ? "No pending tasks."
+                : "No completed tasks yet."}
+            </Text>
           ) : (
             <FlatList
-              data={tasks}
+              data={activeTab === "pending" ? pendingTasks : completedTasks}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
+              renderItem={({ item }) => {
+                const childCompleted = isChildCompleted(item);
+                const parentChecked = item.verified
+                  ? true
+                  : Boolean(parentChecks[item.id]);
+
+                return (
                 <View style={styles.taskCard}>
                   {/* Icon and Title Row */}
                   <View style={styles.row}>
@@ -231,40 +226,54 @@ export default function ParentReviewTask() {
                         : "Pending"}
                     </Text>
                   </View>*/}
-                  <Ionicons
-  name={item.pendingApproval ? "checkmark-done-circle-outline" : "time-outline"}
-  size={20}
-  color={item.pendingApproval ? "#4CAF50" : "#999"}
-/>
-<Text style={styles.completeText}>
-  {item.pendingApproval ? "Marked as Complete (Waiting for you)" : "Pending"}
-</Text>
+                  <View style={styles.statusRow}>
+                    <Ionicons
+                      name={childCompleted ? "checkbox-outline" : "square-outline"}
+                      size={20}
+                      color={childCompleted ? "#4CAF50" : "#999"}
+                    />
+                    <Text
+                      style={[
+                        styles.completeText,
+                        !childCompleted && styles.completeTextMuted,
+                      ]}
+                    >
+                      Marked as Complete
+                    </Text>
+                  </View>
 
-
-                  {/* 🆕 Mark Complete & Award Points */}
+                  {/* Parent confirmation checkbox */}
                   <TouchableOpacity
-                    style={[
-                      styles.completeButton,
-                      item.status === "completed" && { backgroundColor: "#A5D6A7" },
-                    ]}
-                    onPress={() =>
-                      completeTaskAndAwardPoints({
-                        taskId: item.id,
-                        childId: item.childId,
-                      })
-                    }
-                    disabled={item.status === "completed"}
+                    style={styles.statusRow}
+                    onPress={() => toggleParentCheck(item.id)}
+                    disabled={!childCompleted || item.verified}
                   >
-                    <Text style={styles.completeButtonText}>
-                      {item.status === "completed" ? "Completed" : "Marked Complete"}
+                    <Ionicons
+                      name={parentChecked ? "checkbox-outline" : "square-outline"}
+                      size={20}
+                      color={
+                        !childCompleted || item.verified ? "#999" : "#4CAF50"
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.completeText,
+                        (!childCompleted || item.verified) && styles.completeTextMuted,
+                      ]}
+                    >
+                      Parent Verified
                     </Text>
                   </TouchableOpacity>
 
                   {/* Verify Button (parent approval) */}
                  <TouchableOpacity
-  style={[styles.verifyButton, item.verified && { backgroundColor: "#A5D6A7" }]}
+  style={[
+    styles.verifyButton,
+    (!childCompleted || item.verified || !parentChecked) &&
+      styles.verifyButtonDisabled,
+  ]}
   onPress={() => handleVerify(item.id)}
-  disabled={item.verified}
+  disabled={!childCompleted || item.verified || !parentChecked}
 >
   <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
 </TouchableOpacity>
@@ -275,7 +284,7 @@ export default function ParentReviewTask() {
                     <Ionicons name="trash-outline" size={20} color="gray" />
                   </TouchableOpacity>
                 </View>
-              )}
+              )}}
             />
           )}
         </View>
@@ -297,6 +306,29 @@ const styles = StyleSheet.create({
     color: "#333",
     textAlign: "center",
     marginBottom: 15,
+  },
+  tabs: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  tabButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    marginHorizontal: 6,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  tabButtonActive: {
+    borderBottomColor: "#4CAF50",
+  },
+  tabText: {
+    fontSize: 14,
+    color: "#8A8FA3",
+    fontWeight: "600",
+  },
+  tabTextActive: {
+    color: "#4CAF50",
   },
   taskCard: {
     backgroundColor: "#fff",
@@ -345,19 +377,7 @@ const styles = StyleSheet.create({
   stepsText: { fontSize: 12, color: "#777" },
   statusRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   completeText: { marginLeft: 5, color: "#4CAF50", fontSize: 14 },
-  // Mark Complete button styles
-  completeButton: {
-    marginTop: 10,
-    backgroundColor: "#4CAF50",
-    borderRadius: 25,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  completeButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 15,
-  },
+  completeTextMuted: { color: "#777" },
   verifyButton: {
     marginTop: 10,
     backgroundColor: "#5CB85C",
@@ -365,6 +385,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: "center",
   },
+  verifyButtonDisabled: { backgroundColor: "#A5D6A7" },
   verifyText: { color: "#fff", fontWeight: "600", fontSize: 15 },
   deleteBtn: { position: "absolute", top: 10, right: 10 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
