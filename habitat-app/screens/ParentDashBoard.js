@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // for icons
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useParentLock } from "../ParentLockContext";
 import { db } from "../firebaseConfig";
 import { doc, onSnapshot, query, collection, where } from "firebase/firestore";
@@ -10,9 +10,9 @@ import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 
 export default function ParentDashBoard({ navigation, route }) {
-   const { isParentUnlocked } = useParentLock();
-   const { theme } = useTheme();
-   const colors = theme.colors;
+  const { isParentUnlocked } = useParentLock();
+  const { theme } = useTheme();
+  const colors = theme.colors;
 
   const [childPoints, setChildPoints] = useState({
     points: 0,
@@ -39,9 +39,10 @@ export default function ParentDashBoard({ navigation, route }) {
       return;
     }
 
-    // Use the same childId logic as ChildTask to keep points aligned.
+    // Decide which childId to use
+    // If you're passing childId in navigation params, use that:
     const childIdFromRoute = route?.params?.childId;
-    const childId = childIdFromRoute || user?.uid;
+    const childId = childIdFromRoute || user?.uid; // adjust this depending on your schema
 
     if (!childId) {
       setChildPoints({ points: 0, loading: false });
@@ -49,6 +50,7 @@ export default function ParentDashBoard({ navigation, route }) {
     }
 
     const childPointsRef = doc(db, "childPoints", childId);
+
     const pointsUnsub = onSnapshot(
       childPointsRef,
       (snapshot) => {
@@ -74,20 +76,28 @@ export default function ParentDashBoard({ navigation, route }) {
       }
     );
 
-    // Pending tasks = not yet verified
-    const pendingQuery = query(
-      collection(db, "tasks"),
-      where("ownerId", "==", user.uid),
-      where("verified", "==", false)
-    );
-    const pendingUnsub = onSnapshot(
-      pendingQuery,
-      (snap) => setPendingCount(snap.size),
-      (err) => {
-        console.error("Error listening to pending tasks:", err);
-        setPendingCount(0);
-      }
-    );
+    let pendingUnsub = () => {};
+    if (user?.uid) {
+      // Pending tasks = completed by child, not yet verified
+      const pendingQuery = query(
+        collection(db, "tasks"),
+        where("ownerId", "==", user.uid),
+        where("pendingApproval", "==", true)
+      );
+      pendingUnsub = onSnapshot(
+        pendingQuery,
+        (snap) => {
+          const count = snap.docs.filter((d) => d.data()?.verified !== true).length;
+          setPendingCount(count);
+        },
+        (err) => {
+          console.error("Error listening to pending tasks:", err);
+          setPendingCount(0);
+        }
+      );
+    } else {
+      setPendingCount(0);
+    }
 
     return () => {
       try { pointsUnsub(); } catch {}
@@ -190,7 +200,7 @@ export default function ParentDashBoard({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#e4d6d6ff",
+    backgroundColor: "#fff",
     padding: 50,
   },
   header: {
@@ -200,7 +210,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   card: {
-    backgroundColor: "#b9ff93ff",
+    backgroundColor: "#EAF5E4",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
