@@ -18,20 +18,24 @@ import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 
 import Slider from "@react-native-community/slider";
+import { useTheme } from "../theme/ThemeContext";
 
 
 export default function ChildTask({ route, navigation }) {
   const childId = route?.params?.childId;
   const currentChildUid = getAuth().currentUser?.uid;
+  const pointsChildId = childId || currentChildUid;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasksForDate, setTasksForDate] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const { theme } = useTheme();
+  const colors = theme.colors;
 
-  // ✅ store child points locally (and keep it in sync with Firestore)
+  // store child points locally (and keep it in sync with Firestore)
   const [childPoints, setChildPoints] = useState(0);
 
-  // ✅ Helper: recurring occurrence (MUST be above useEffect that uses it)
+
   const occursOnDate = useCallback((task, date) => {
     if (!task || !task.recurrence) return false;
     const r = task.recurrence;
@@ -76,7 +80,7 @@ export default function ChildTask({ route, navigation }) {
     return false;
   }, []);
 
-  // ✅ Dynamic nav title based on date
+
   useEffect(() => {
     if (!navigation || !selectedDate) return;
 
@@ -90,22 +94,28 @@ export default function ChildTask({ route, navigation }) {
     navigation.setOptions({ title: isToday ? "Today's Tasks" : `${dayName}'s Tasks` });
   }, [selectedDate, navigation]);
 
-  // ✅ Keep childPoints synced from Firestore
+  // Keep childPoints synced from Firestore
   useEffect(() => {
-  if (!currentChildUid) return;
+    if (!pointsChildId) return;
 
-  const childPointsRef = doc(db, "childPoints", currentChildUid);
-  const unsub = onSnapshot(childPointsRef, (snap) => {
-    if (snap.exists()) setChildPoints(snap.data().totalPoints || 0);
-    else setChildPoints(0);
-  });
+    const childPointsRef = doc(db, "childPoints", pointsChildId);
+    const unsub = onSnapshot(childPointsRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
+        setChildPoints(balance);
+      } else {
+        setChildPoints(0);
+      }
+    });
 
-  return () => unsub();
-}, [currentChildUid]);
+    return () => unsub();
+  }, [pointsChildId]);
 
-  // ✅ Load tasks (date-specific + recurring)
+  // Load tasks (date-specific + recurring)
   useEffect(() => {
     if (!selectedDate) return;
+    if (!childId && !currentChildUid) return;
     setLoadingTasks(true);
 
     const start = startOfDay(selectedDate);
@@ -115,7 +125,11 @@ export default function ChildTask({ route, navigation }) {
       where("dateTimestamp", ">=", Timestamp.fromDate(start)),
       where("dateTimestamp", "<", Timestamp.fromDate(end)),
     ];
-    if (childId) constraints.unshift(where("childId", "==", childId));
+    if (childId) {
+      constraints.unshift(where("childId", "==", childId));
+    } else if (currentChildUid) {
+      constraints.unshift(where("userId", "==", currentChildUid));
+    }
 
     const qDate = query(collection(db, "tasks"), ...constraints);
 
@@ -127,7 +141,7 @@ export default function ChildTask({ route, navigation }) {
           return {
             id: d.id,
             ...data,
-            // ✅ ensure progressPercent is always defined for UI
+            // ensure progressPercent is always defined for UI
             progressPercent:
               typeof data.progressPercent === "number"
                 ? data.progressPercent
@@ -147,7 +161,31 @@ export default function ChildTask({ route, navigation }) {
     );
 
     let unsubRecurring = () => {};
-    if (currentChildUid) {
+    if (childId) {
+      const qRec = query(
+        collection(db, "tasks"),
+        where("childId", "==", childId),
+        where("isRecurring", "==", true)
+      );
+
+      unsubRecurring = onSnapshot(qRec, (snap) => {
+        const recs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const occurs = recs
+          .filter((r) => occursOnDate(r, selectedDate))
+          .map((r) => ({
+            ...r,
+            progressPercent:
+              typeof r.progressPercent === "number" ? r.progressPercent : r.completed ? 100 : 0,
+          }));
+
+        setTasksForDate((prev) => {
+          const map = new Map();
+          (prev || []).forEach((t) => map.set(t.id, t));
+          occurs.forEach((t) => map.set(t.id, t));
+          return Array.from(map.values());
+        });
+      });
+    } else if (currentChildUid) {
       const qRec = query(
         collection(db, "tasks"),
         where("userId", "==", currentChildUid),
@@ -179,14 +217,14 @@ export default function ChildTask({ route, navigation }) {
     };
   }, [selectedDate, childId, currentChildUid, occursOnDate]);
 
-  // ✅ UI-only live update while sliding (no Firestore spam)
+  // UI-only live update while sliding (no Firestore spam)
   const updateProgressLocal = (taskId, value) => {
     setTasksForDate((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, progressPercent: value } : t))
     );
   };
 
-  // ✅ Persist progress to Firestore when sliding stops
+  //  Persist progress to Firestore when sliding stops
   const persistProgress = async (taskId, value) => {
     try {
       await runTransaction(db, async (tx) => {
@@ -198,7 +236,7 @@ export default function ChildTask({ route, navigation }) {
     }
   };
 /*
-  // ✅ Complete task + award points to childPoints (transaction prevents double-award)
+  //  Complete task + award points to childPoints (transaction prevents double-award)
   const markTaskComplete = async (task) => {
     if (!task?.id || !currentChildUid) return;
 
@@ -303,11 +341,11 @@ const markTaskComplete = async (task) => {
   })();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Today's Tasks</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Today's Tasks</Text>
 
       {/* Optional display so you can see points stacking */}
-      <Text style={styles.pointsTotal}>My Points: {childPoints}</Text>
+      <Text style={[styles.pointsTotal, { color: colors.primary }]}>My Points: {childPoints}</Text>
 
       <View style={styles.calendarContainer}>
         <View style={{ flex: 10 }}>
@@ -315,26 +353,26 @@ const markTaskComplete = async (task) => {
         </View>
       </View>
 
-      <Text style={styles.sectionHeader}>{titleForDate}</Text>
+      <Text style={[styles.sectionHeader, { color: colors.text }]}>{titleForDate}</Text>
 
       <ScrollView style={{ marginTop: 10 }}>
         {loadingTasks ? (
-          <View style={styles.taskBox}>
-            <Text style={{ textAlign: "center", color: "#777" }}>Loading...</Text>
+          <View style={[styles.taskBox, { backgroundColor: colors.card }]}>
+            <Text style={{ textAlign: "center", color: colors.muted }}>Loading...</Text>
           </View>
         ) : tasksForDate.length === 0 ? (
-          <View style={styles.taskBox}>
-            <Text style={{ textAlign: "center", color: "#777" }}>No tasks for this date.</Text>
+          <View style={[styles.taskBox, { backgroundColor: colors.card }]}>
+            <Text style={{ textAlign: "center", color: colors.muted }}>No tasks for this date.</Text>
           </View>
         ) : (
           tasksForDate.map((task) => {
             const progress = Math.max(0, Math.min(100, Number(task.progressPercent || 0)));
 
             return (
-              <View key={task.id} style={styles.taskBox}>
+              <View key={task.id} style={[styles.taskBox, { backgroundColor: colors.card }]}>
                 <View style={styles.taskHeader}>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
-                  <Text style={styles.points}>{task.points} pts</Text>
+                  <Text style={[styles.taskTitle, { color: colors.text }]}>{task.title}</Text>
+                  <Text style={[styles.points, { color: colors.primary }]}>{task.points} pts</Text>
                 </View>
 
                 <Slider
@@ -345,14 +383,14 @@ const markTaskComplete = async (task) => {
                   disabled={task.completed}
                   onValueChange={(val) => updateProgressLocal(task.id, val)}
                   onSlidingComplete={(val) => persistProgress(task.id, val)}
-                  minimumTrackTintColor="#4CAF50"   // green filled part
-                  maximumTrackTintColor="#E0E0E0"   // gray remaining part
-                  thumbTintColor="#4CAF50"
+                  minimumTrackTintColor={colors.primary}   // filled part
+                  maximumTrackTintColor={colors.border}    // remaining part
+                  thumbTintColor={colors.primary}
                
                 />
-                <Text style={styles.progressLabel}>{Math.round(progress)}%</Text>
+                <Text style={[styles.progressLabel, { color: colors.text }]}>{Math.round(progress)}%</Text>
                 <View style={styles.progressContainer}>
-                <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
                 </View>
 
                 {/* ✅ Complete button actually works + awards points */}
@@ -364,9 +402,9 @@ const markTaskComplete = async (task) => {
                   <Ionicons
                     name={task.completed ? "checkmark-circle" : "ellipse-outline"}
                     size={26}
-                    color={task.completed ? "#4CAF50" : "#999"}
+                    color={task.completed ? colors.primary : colors.muted}
                   />
-                  <Text style={styles.completeText}>
+                  <Text style={[styles.completeText, { color: colors.text }]}>
                     {task.completed ? "Completed" : "Mark Complete"}
                   </Text>
                 </TouchableOpacity>

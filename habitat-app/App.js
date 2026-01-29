@@ -26,6 +26,7 @@ import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
+import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 
 
 const Stack = createNativeStackNavigator();
@@ -86,13 +87,14 @@ function ParentStackScreen() {
 
 function ChildTabs() {
   const { lockParent } = useParentLock();
+  const { theme } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#fff5f5ff" },
-        tabBarActiveTintColor: "#4CAF50",
-        tabBarInactiveTintColor: "#999",
+        tabBarStyle: { backgroundColor: theme.colors.tabBar, borderTopColor: theme.colors.border },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.muted,
         tabBarIcon: ({ color, size }) => {
           let iconName;
           switch (route.name) {
@@ -131,8 +133,9 @@ function ChildTabs() {
 /**
  * Main app navigation stack
  */
-export default function App() {
+function AppNavigator() {
   const [orientation, setOrientation] = useState();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const getOrientation = async () => {
@@ -143,19 +146,27 @@ export default function App() {
   }, []);
 
   return (
-      <ParentLockProvider>
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-        <Stack.Screen name="ChildHome" component={ChildHome} />
-        <Stack.Screen name="ChildTabs" component={ChildTabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ParentLockProvider>
+      <NavigationContainer theme={theme}>
+        <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="LoginScreen" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+          <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+          <Stack.Screen name="ChildHome" component={ChildHome} />
+          <Stack.Screen name="ChildTabs" component={ChildTabs} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </ParentLockProvider>
   );
 }
 
-registerRootComponent(App);
+export default function AppWithProviders() {
+  return (
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
+  );
+}
+
+registerRootComponent(AppWithProviders);
