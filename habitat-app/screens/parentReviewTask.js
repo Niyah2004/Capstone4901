@@ -24,12 +24,15 @@ import {
   serverTimestamp,    
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function ParentReviewTask() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [parentChecks, setParentChecks] = useState({});
   const [activeTab, setActiveTab] = useState("pending");
+  const { theme } = useTheme();
+  const colors = theme.colors;
 
   useEffect(() => {
     const uid = getAuth().currentUser?.uid;
@@ -129,8 +132,8 @@ export default function ParentReviewTask() {
     task.status === "pendingApproval" ||
     task.status === "completed";
 
-  const pendingTasks = tasks.filter((t) => !isChildCompleted(t));
-  const completedTasks = tasks.filter((t) => isChildCompleted(t));
+  const pendingTasks = tasks.filter((t) => !t.verified);
+  const completedTasks = tasks.filter((t) => t.verified);
 
   if (loading) {
     return (
@@ -142,31 +145,53 @@ export default function ParentReviewTask() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.view}>
-          <Text style={styles.header}>Review Tasks</Text>
+          <Text style={[styles.header, { color: colors.text }]}>Review Tasks</Text>
 
           <View style={styles.tabs}>
             <TouchableOpacity
-              style={[styles.tabButton, activeTab === "pending" && styles.tabButtonActive]}
+              style={[
+                styles.tabButton,
+                activeTab === "pending" && styles.tabButtonActive,
+                activeTab === "pending" && { borderBottomColor: colors.primary },
+              ]}
               onPress={() => setActiveTab("pending")}
             >
-              <Text style={[styles.tabText, activeTab === "pending" && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: colors.muted },
+                  activeTab === "pending" && styles.tabTextActive,
+                  activeTab === "pending" && { color: colors.primary },
+                ]}
+              >
                 Pending
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tabButton, activeTab === "completed" && styles.tabButtonActive]}
+              style={[
+                styles.tabButton,
+                activeTab === "completed" && styles.tabButtonActive,
+                activeTab === "completed" && { borderBottomColor: colors.primary },
+              ]}
               onPress={() => setActiveTab("completed")}
             >
-              <Text style={[styles.tabText, activeTab === "completed" && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: colors.muted },
+                  activeTab === "completed" && styles.tabTextActive,
+                  activeTab === "completed" && { color: colors.primary },
+                ]}
+              >
                 Completed
               </Text>
             </TouchableOpacity>
           </View>
 
           {(activeTab === "pending" ? pendingTasks : completedTasks).length === 0 ? (
-            <Text style={styles.empty}>
+            <Text style={[styles.empty, { color: colors.muted }]}>
               {activeTab === "pending"
                 ? "No pending tasks."
                 : "No completed tasks yet."}
@@ -182,18 +207,18 @@ export default function ParentReviewTask() {
                   : Boolean(parentChecks[item.id]);
 
                 return (
-                <View style={styles.taskCard}>
+                <View style={[styles.taskCard, { backgroundColor: colors.card, shadowColor: "#000" }]}>
                   {/* Icon and Title Row */}
                   <View style={styles.row}>
-                    <View style={styles.iconContainer}>
+                    <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
                       <Ionicons name="book-outline" size={24} color="#C8A94B" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.title}>{item.title}</Text>
-                      <Text style={styles.subtitle}>{item.description}</Text>
+                      <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+                      <Text style={[styles.subtitle, { color: colors.muted }]}>{item.description}</Text>
                     </View>
-                    <View style={styles.pointsBadge}>
-                      <Text style={styles.pointsText}>
+                    <View style={[styles.pointsBadge, { backgroundColor: colors.background }]}>
+                      <Text style={[styles.pointsText, { color: colors.primary }]}>
                         {(item.points ?? 10) + " Pts"}
                       </Text>
                     </View>
@@ -201,12 +226,12 @@ export default function ParentReviewTask() {
 
                   {/* Progress Bar */}
                   <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
+                    <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
                       <Animated.View
                         style={[styles.progressFill, { width: "100%" }]}
                       />
                     </View>
-                    <Text style={styles.stepsText}>1/1 Steps</Text>
+                    <Text style={[styles.stepsText, { color: colors.muted }]}>1/1 Steps</Text>
                   </View>
 
                   {/* Status Row */}
@@ -236,6 +261,7 @@ export default function ParentReviewTask() {
                       style={[
                         styles.completeText,
                         !childCompleted && styles.completeTextMuted,
+                        !childCompleted && { color: colors.muted },
                       ]}
                     >
                       Marked as Complete
@@ -259,6 +285,7 @@ export default function ParentReviewTask() {
                       style={[
                         styles.completeText,
                         (!childCompleted || item.verified) && styles.completeTextMuted,
+                        (!childCompleted || item.verified) && { color: colors.muted },
                       ]}
                     >
                       Parent Verified
