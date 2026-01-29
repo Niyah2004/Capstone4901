@@ -190,7 +190,7 @@ export default function ParentDashBoard({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#e4d6d6ff",
     padding: 50,
   },
   header: {
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   card: {
-    backgroundColor: "#EAF5E4",
+    backgroundColor: "#b9ff93ff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
