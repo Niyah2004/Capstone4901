@@ -1,10 +1,10 @@
 // this is the child home page import code here 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Image } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 
@@ -12,7 +12,9 @@ export default function ChildHome() {
     const [childName, setChildName] = useState("");
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
-    const [progress] = useState(new Animated.Value(150));
+    const [childPoints, setChildPoints] = useState(0);
+    const progress = useRef(new Animated.Value(0)).current;
+    const MAX_POINTS = 300;
 
     useEffect(() => {
         const fetchChildData = async () => {
@@ -46,6 +48,35 @@ export default function ChildHome() {
         };
         fetchChildData();
     }, []);
+
+    useEffect(() => {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            setChildPoints(0);
+            Animated.timing(progress, {
+                toValue: 0,
+                duration: 400,
+                useNativeDriver: false,
+            }).start();
+            return;
+        }
+
+        const childPointsRef = doc(db, "childPoints", user.uid);
+        const unsub = onSnapshot(childPointsRef, (snap) => {
+            const data = snap.exists() ? snap.data() : {};
+            const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
+            setChildPoints(points);
+            const clamped = Math.max(0, Math.min(MAX_POINTS, points));
+            Animated.timing(progress, {
+                toValue: clamped,
+                duration: 600,
+                useNativeDriver: false,
+            }).start();
+        });
+
+        return () => unsub();
+    }, [progress]);
     // Map avatar id to image
     const avatarImages = {
         panda: require("../assets/panda.png"),
@@ -86,14 +117,14 @@ export default function ChildHome() {
                                 style={[
                                     styles.progressBar, {
                                         width: progress.interpolate({
-                                            inputRange: [0, 150],
+                                            inputRange: [0, MAX_POINTS],
                                             outputRange: ['0%', '100%']
                                         }),
                                     },
                                 ]}
                             />
                         </View>
-                        <Text style={styles.progressText}>150</Text>
+                        <Text style={styles.progressText}>{childPoints}</Text>
                     </View>
                 </View>
                 {/* Middle Section: Avatar */}
