@@ -45,7 +45,7 @@ export default function ParentTaskPage({ navigation, route }) {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    const q = query(collection(db, "children"), where("parentId", "==", uid));
+    const q = query(collection(db, "children"), where("userId", "==", uid));
     getDocs(q).then((snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setChildrenList(list);
@@ -97,10 +97,10 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
-      let childUserId = null;
+      let childUserId = parentId; // Default to parent's uid so all children can see the task
       if (childId) {
         const childObj = childrenList?.find((c) => c.id === childId);
-        if (childObj) childUserId = childObj.userId || null;
+        if (childObj) childUserId = childObj.userId || parentId;
       }
 
       const taskRef = await addDoc(collection(db, "tasks"), {
