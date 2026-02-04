@@ -6,9 +6,11 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 
 
 export default function ParentReward({navigation}) {
+  const auth = getAuth();
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
   const [points, setPoints] = useState("");
@@ -45,7 +47,7 @@ const uploadImageAsync = async (uri) => {
   await uploadBytes(storageRef, blob);
   //const downloadUrl = await getDownloadURL(storageRef);
   //setUploading(false);
-  return await getDownloadUrl(storageRef);
+  return await getDownloadURL(storageRef);
 
 };
   
@@ -62,6 +64,7 @@ const uploadImageAsync = async (uri) => {
         imageURL = await uploadImageAsync(rewardImage);
       }
       await addDoc(collection(db, "rewards"), {
+        parentId: auth.currentUser.uid,
         name: rewardName,
         description: description,
         points: parseInt(points),
