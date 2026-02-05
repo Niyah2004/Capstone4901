@@ -1,28 +1,36 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { db } from "../firebaseConfig";
 import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function ChildReward() {
     const auth = getAuth();
-    // Temporary placeholder state (can be replaced with fetched data later)
-    const [totalStars, setTotalStars] = useState(257);
+    const parentId = auth.currentUser?.uid;
+    const [totalStars, setTotalStars] = useState(0);
     const [rewards, setRewards] = useState([]);
     const [selectedReward, setSelectedReward] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [childName, setChildName] = useState("Lea");
+    const [avatar, setAvatar] = useState("panda");
     const confettiRef = useRef(null);
     
     useEffect(() => {
+        if (!parentId) return;
+        
         const fetchRewards = async () => {
             try {
-                const querySnapshot = await getDocs(collection(db, "rewards"));
-                const gradientPresets = [
+                const q = query(
+                    collection(db, "rewards"),
+                    where("parentId", "==", parentId)
+                  );
+                  
+                  const querySnapshot = await getDocs(q);                const gradientPresets = [
                     ["#FF9A9E", "#FAD0C4"],
                     ["#A1C4FD", "#C2E9FB"],
                     ["#FBC2EB", "#A6C1EE"],
@@ -47,37 +55,92 @@ export default function ChildReward() {
         fetchRewards();
     }, []);
 
-    const handleClaimReward = async () => {
-        //fetch points from backend to add them to the already earned points
-        //points are currently a placeholder
-        if (!selectedReward) return;
+    // Fetch child's stars from childPoints collection
+    useEffect(() => {
+        if (!auth.currentUser) return;
 
-       try{
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, {
-            stars: totalStars - selectedReward.cost,
+        const childPointsRef = doc(db, "childPoints", auth.currentUser.uid);
+        const unsubscribe = onSnapshot(childPointsRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
+                setTotalStars(points);
+            } else {
+                setTotalStars(0);
+            }
         });
 
-        setTotalStars((prev) => prev - selectedReward.cost);
+        return () => unsubscribe();
+    }, []);
 
-        confettiRef.current?.start();
+    // Fetch child's profile (name and avatar)
+    useEffect(() => {
+        const fetchChildProfile = async () => {
+            if (!auth.currentUser) return;
 
-        Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
-         console.log("Reward claimed: ", selectedReward.title);
-       } 
-       catch(error){
-        console.error("Error claiming reward: ", error);
-        Alert.alert("Error", "Something went wrong while claiming the reward.");
-       }
-       finally {
-        setModalVisible(false);
-       }
+            try {
+                const q = query(
+                    collection(db, "children"),
+                    where("userId", "==", auth.currentUser.uid)
+                );
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const data = querySnapshot.docs[0].data();
+                    setChildName(data.preferredName || data.fullName || "Lea");
+                    setAvatar(data.avatar || "panda");
+                }
+            } catch (error) {
+                console.error("Error fetching child profile:", error);
+            }
+        };
+
+        fetchChildProfile();
+    }, []);
+
+    const handleClaimReward = async () => {
+        if (!selectedReward || !auth.currentUser) return;
+
+        // Check if child has enough stars
+        if (totalStars < selectedReward.cost) {
+            Alert.alert("Not Enough Stars", `You need ${selectedReward.cost} stars but only have ${totalStars} stars.`);
+            return;
+        }
+
+        try {
+            // Update childPoints collection
+            const childPointsRef = doc(db, "childPoints", auth.currentUser.uid);
+            await updateDoc(childPointsRef, {
+                points: totalStars - selectedReward.cost,
+            });
+
+            // Record the claim
+            await addDoc(collection(db, "claims"), {
+                item_id: selectedReward.id,
+                rewardName: selectedReward.title,
+                status: "claimed",
+                user_id: auth.currentUser.uid,
+                claimedAt: new Date(),
+            });
+
+            confettiRef.current?.start();
+
+            Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
+            console.log("Reward claimed: ", selectedReward.title);
+        }
+        catch (error) {
+            console.error("Error claiming reward: ", error);
+            Alert.alert("Error", "Something went wrong while claiming the reward.");
+        }
+        finally {
+            setModalVisible(false);
+        }
     };
 
     return (
         <ScrollView>
         <View style={styles.container}>
-
+            <ScrollView style={styles.ScrollView}>
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -116,15 +179,15 @@ export default function ChildReward() {
                             <Text style={styles.modalCloseText}>Close</Text>
                         </TouchableOpacity>
 
-                    {/*claim button */}
+                        {/*claim button */}
                         <TouchableOpacity
-                        style={styles.modalClaimButton}
-                        
-                        onPress={handleClaimReward}
-                            //setModalVisible(false)}
-                            //make it update the firebase
+                            style={styles.modalClaimButton}
+
+                            onPress={handleClaimReward}
+                        //setModalVisible(false)}
+                        //make it update the firebase
                         >
-                            <Text style ={styles.modalClaimText}>Claim</Text>
+                            <Text style={styles.modalClaimText}>Claim</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -136,7 +199,12 @@ export default function ChildReward() {
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image */}
                     <Image
-                        source={require("../assets/panda.png")} //Avatar image path
+                        source={
+                            avatar === "panda" ? require("../assets/panda.png") :
+                            avatar === "turtle" ? require("../assets/turtle.jpg") :
+                            avatar === "giraffe" ? require("../assets/giraffe.jpg") :
+                            require("../assets/panda.png")
+                        }
                         style={styles.avatar}
                     />
                 </View>
@@ -155,7 +223,7 @@ export default function ChildReward() {
 
 
                 <View style={styles.greetingRow}>
-                    <Text style={styles.greetingTitle}>Amazing job, Lea! keep building those Habits</Text>
+                    <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits</Text>
                 </View>
             </View>
 
@@ -210,10 +278,13 @@ export default function ChildReward() {
                             >
                                 <Text style={styles.rewardActionText}>View</Text>
                             </TouchableOpacity>
+
+                            
                         </View>
                     </LinearGradient>
                 ))}
             </ScrollView>
+   </ScrollView>
         </View>
         </ScrollView>
     );
@@ -279,6 +350,9 @@ const styles = StyleSheet.create({
     switchButtonText: { color: "#fff", fontWeight: "600" },
 
     sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
+
+
+    sectionTitle2: { fontSize: 18, fontWeight: "600", marginBottom: 0 },
 
     rewardsScrollContainer: {
         flexDirection: "row",
@@ -371,7 +445,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginBottom: 10
     },
-//missing modal styles that control the reward popup layout
+    //missing modal styles that control the reward popup layout
 
     modalClaimButton: {
         backgroundColor: "#4CAF50",
@@ -381,7 +455,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         shadowColor: "#000",
         shadowOpacity: 0.2,
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowRadious: 4,
         elevation: 3,
     },
@@ -402,7 +476,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         shadowColor: "#000",
         shadowOpacity: 0.25,
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowRadius: 4,
         elevation: 5,
     },
