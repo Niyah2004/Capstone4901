@@ -14,8 +14,8 @@ import AvatarSelection from "./screens/AvatarSelection";
 import ChildHome from "./screens/ChildHome";
 import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
-import ParentPinScreen from "./screens/parentPinScreen"; 
-import ParentDashBoard from "./screens/ParentDashBoard";     
+import ParentPinScreen from "./screens/parentPinScreen";
+import ParentDashBoard from "./screens/ParentDashBoard";
 import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
@@ -24,6 +24,7 @@ import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
+import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
@@ -38,14 +39,14 @@ function ParentStackScreen() {
   return (
     <ParentStack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="parentPinScreen"             
+      initialRouteName="parentPinScreen"
     >
       <ParentStack.Screen
         name="parentPinScreen"
         component={ParentPinScreen}
       />
       <ParentStack.Screen
-        name="ParentDashBoard"                        
+        name="ParentDashBoard"
         component={ParentDashBoard}
       />
       <ParentStack.Screen
@@ -68,17 +69,21 @@ function ParentStackScreen() {
         name="ForgotPin"
         component={ForgotPinScreen}
       />
-      <ParentStack.Screen 
-        name="ChangePassword" 
-        component={ChangePassword} 
-      />
-      <ParentStack.Screen 
-        name="ChangeEmail" 
-        component={ChangeEmail} 
+      <ParentStack.Screen
+        name="ChangePassword"
+        component={ChangePassword}
       />
       <ParentStack.Screen
-        name="ChangePin" 
-        component={ChangePin} 
+        name="ChangeEmail"
+        component={ChangeEmail}
+      />
+      <ParentStack.Screen
+        name="ChangePin"
+        component={ChangePin}
+      />
+      <ParentStack.Screen
+        name="GenericTaskLibrary"
+        component={GenericTaskLibrary}
       />
     </ParentStack.Navigator>
   );
@@ -118,14 +123,14 @@ function ChildTabs() {
       <Tab.Screen name="Home" component={ChildHome} />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen name="Parent" component={ParentStackScreen} 
-      listeners={{
+      <Tab.Screen name="Parent" component={ParentStackScreen}
+        listeners={{
           blur: () => {
             // whenever you leave the Parent tab, lock it
             lockParent();
           },
         }}
-        />
+      />
     </Tab.Navigator>
   );
 }
