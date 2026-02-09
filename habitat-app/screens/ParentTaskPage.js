@@ -96,6 +96,7 @@ export default function ParentTaskPage({ navigation, route }) {
       return;
     }
 
+
     const parsedPoints = parseInt(points, 10);
     if (isNaN(parsedPoints) || parsedPoints < 0) {
       Alert.alert("Invalid Points", "Points must be a non-negative number.");
@@ -131,7 +132,8 @@ export default function ParentTaskPage({ navigation, route }) {
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: parentId,
-        childId: childId || null, // TODO: wire real childId if you have it
+        childId: childId || null,
+        userId: childId || null, // Set userId for child queries
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
