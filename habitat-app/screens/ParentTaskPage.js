@@ -39,7 +39,7 @@ export default function ParentTaskPage({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [points, setPoints] = useState("");
-  const childId = route?.params?.childId || null;
+  // No childId requirement. Tasks are for the logged-in user.
 
 
   // Dropdown state for generic tasks
@@ -132,8 +132,7 @@ export default function ParentTaskPage({ navigation, route }) {
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: parentId,
-        childId: childId || null,
-        userId: childId || null, // Set userId for child queries
+        userId: user.uid, // Always set userId to the currently logged-in user's UID
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
