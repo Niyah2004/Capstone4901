@@ -68,16 +68,6 @@ const ParentPinScreen = ({ navigation,route  }) => {
           maxLength={4}
         />
 
-      <Text style={styles.label}>Enter Your PIN</Text>
-      <TextInput
-        style={styles.input}
-        value={pin}
-        onChangeText={setPin}
-        keyboardType="numeric"
-        secureTextEntry
-        maxLength={4}
-      />
-
       <TouchableOpacity style={styles.button} onPress={correctPin}>
         <Text style={styles.buttonText}>Submit PIN</Text>
       </TouchableOpacity>
@@ -88,7 +78,8 @@ const ParentPinScreen = ({ navigation,route  }) => {
       >
         <Text style={styles.forgotText}>Forgot PIN?</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
@@ -153,6 +144,7 @@ const styles = StyleSheet.create({
   forgotText: {
     color: "#4CAF50",
     fontWeight: "500",
+    alignSelf: "center",
   },
 });
 
