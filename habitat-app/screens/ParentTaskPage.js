@@ -19,15 +19,18 @@ import {
   doc,
   setDoc,
   increment,
+  getDocs,
   query,
   where,
-  getDocs,
 } from "firebase/firestore";
 import { startOfDay } from "date-fns";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { getAuth } from "firebase/auth";
 
+import { Picker } from "@react-native-picker/picker";
+
 export default function ParentTaskPage({ navigation, route }) {
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date());
@@ -36,22 +39,43 @@ export default function ParentTaskPage({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [points, setPoints] = useState("");
-  const [childrenList, setChildrenList] = useState([]);
-
   const childId = route?.params?.childId || null;
 
-  useEffect(() => {
-    const auth = getAuth();
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
 
-    const q = query(collection(db, "children"), where("parentId", "==", uid));
-    getDocs(q).then((snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setChildrenList(list);
-    });
+  // Dropdown state for generic tasks
+  const [taskList, setTaskList] = useState([]);
+  const [selectedTaskId, setSelectedTaskId] = useState("");
+
+  // Fetch generic tasks from the stockpile (genericTasks collection)
+  useEffect(() => {
+    const fetchGenericTasks = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "genericTasks"));
+        const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setTaskList(tasks);
+      } catch (err) {
+        console.error("Error fetching generic tasks:", err);
+      }
+    };
+    fetchGenericTasks();
   }, []);
 
+  // When a generic task is selected, populate fields
+  useEffect(() => {
+    if (!selectedTaskId) return;
+    const task = taskList.find(t => t.id === selectedTaskId);
+    if (task) {
+      setTitle(task.title || "");
+      setDescription(task.description || "");
+      setPoints(task.points ? String(task.points) : "");
+      setSteps(Array.isArray(task.steps) ? task.steps : [""]);
+      // Use today's date and time for new task
+      setDate(new Date());
+      setTime(new Date());
+    }
+  }, [selectedTaskId]);
+
+  // --- Step Handlers ---
   const handleAddStep = () => setSteps([...steps, ""]);
 
   const handleRemoveStep = (index) => {
@@ -65,6 +89,7 @@ export default function ParentTaskPage({ navigation, route }) {
     setSteps(updated);
   };
 
+  // --- Save Task ---
   const handleSaveTask = async () => {
     if (!title.trim() || !description.trim()) {
       Alert.alert("Missing Info", "Please fill in both task title and description.");
@@ -97,12 +122,7 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
-      let childUserId = null;
-      if (childId) {
-        const childObj = childrenList?.find((c) => c.id === childId);
-        if (childObj) childUserId = childObj.userId || null;
-      }
-
+      // 1) Save task with points + status
       const taskRef = await addDoc(collection(db, "tasks"), {
         title,
         description,
@@ -111,13 +131,13 @@ export default function ParentTaskPage({ navigation, route }) {
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: parentId,
-        childId: childId || null,
-        userId: childUserId,
+        childId: childId || null, // TODO: wire real childId if you have it
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
       });
 
+      // 2) Update parent's point summary (parentPoints collection)
       const parentPointsRef = doc(db, "parentPoints", parentId);
       await setDoc(
         parentPointsRef,
@@ -164,6 +184,26 @@ export default function ParentTaskPage({ navigation, route }) {
           contentContainerStyle={{ paddingBottom: 60 }}
         >
           <Text style={styles.header}>Task Management</Text>
+
+          {/* Dropdown for stockpile of tasks */}
+          <Text style={styles.label}>Select Existing Task</Text>
+          <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 5 }}>
+            <Picker
+              selectedValue={selectedTaskId}
+              onValueChange={setSelectedTaskId}
+              style={{ color: '#222' }} // Ensure text is visible
+            >
+              <Picker.Item label="-- Select a task --" value="" color="#888" />
+              {taskList.map(task => (
+                <Picker.Item
+                  key={task.id}
+                  label={task.title ? String(task.title) : `Untitled Task (${task.id.slice(-4)})`}
+                  value={task.id}
+                  color="#222"
+                />
+              ))}
+            </Picker>
+          </View>
 
           {/* Task Title */}
           <Text style={styles.label}>Task Title</Text>
