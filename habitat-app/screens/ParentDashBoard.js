@@ -121,12 +121,12 @@ export default function ParentDashBoard({ navigation, route }) {
         </View>
         <TouchableOpacity style={styles.balanceContent}>
         <Text style={[styles.starCount, { color: colors.text }]}>
-  {childPoints.loading ? "--" : childPoints.points}
-</Text>
-<Text style={[styles.starLabel, { color: colors.text }]}>Star Points</Text>
-<Text style={[styles.points, { color: colors.muted }]}>
-  {childPoints.loading ? "Loading..." : "Current Balance"}
-</Text>
+          {childPoints.loading ? "--" : childPoints.points}
+        </Text>
+        <Text style={[styles.starLabel, { color: colors.text }]}>Star Points</Text>
+        <Text style={[styles.points, { color: colors.muted }]}>
+          {childPoints.loading ? "Loading..." : "Current Balance"}
+        </Text>
 
         </TouchableOpacity>
       </View>
@@ -139,13 +139,15 @@ export default function ParentDashBoard({ navigation, route }) {
            source={require("../assets/reading.jpeg")} 
             style={styles.milestoneImage}
           />
-          <View>
-            <Text style={[styles.milestoneTitle, { color: colors.text }]}>Completed 'Read 5 Books' Challenge</Text>
-            <Text style={[styles.milestoneDesc, { color: colors.muted }]}>
-              Leo earned a virtual trophy for diligently reading 5 books.
-            </Text>
-            <Text style={[styles.milestoneDate, { color: colors.muted }]}>Achieved on August 15, 2024</Text>
+        <View>
+          <View style={styles.milestoneText}>
+          <Text style={[styles.milestoneTitle, { color: colors.text }]}>Completed 'Read 5 Books' Challenge</Text>
+          <Text style={[styles.milestoneDesc, { color: colors.muted }]}>
+            Leo earned a virtual trophy for diligently reading 5 books.
+          </Text>
+          <Text style={[styles.milestoneDate, { color: colors.muted }]}>Achieved on August 15, 2024</Text>
           </View>
+        </View>
         </View>
       </View>
 
@@ -168,26 +170,26 @@ export default function ParentDashBoard({ navigation, route }) {
           onPress={() => navigation.navigate("ParentTaskPage")}
           >
             <Ionicons name="list-outline" size={24} color={colors.text} />
-            <Text style={{ color: colors.text }}>Task Management</Text>
+            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Task Management</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
           //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
              onPress={() => navigation.navigate("parentReward")}
              >
             <Ionicons name="gift-outline" size={24} color={colors.text} />
-            <Text style={{ color: colors.text }}>Create Reward</Text>
+            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Create Reward</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
           onPress={() => navigation.navigate("parentReviewTask")}
           >
             <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
-            <Text style={{ color: colors.text }}>Review Task</Text>
+            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Review Task</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
           onPress={() => navigation.navigate("AccountSetting")}
           >
             <Ionicons name="settings-outline" size={24} color={colors.text} />
-            <Text style={{ color: colors.text }}>Settings</Text>
+            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Settings</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -201,13 +203,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    padding: 50,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   header: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "600",
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 10,
   },
   card: {
     backgroundColor: "#EAF5E4",
@@ -218,14 +221,14 @@ const styles = StyleSheet.create({
   balanceHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 10,
   },
   balanceTitle: {
-    width: "80%",
     textAlign: "center",
     fontWeight: "500",
     fontSize: 16,
-    marginLeft: 1,
+    marginLeft: 8,
   },
   balanceContent: {
     alignItems: "center",
@@ -255,7 +258,8 @@ const styles = StyleSheet.create({
   milestoneCard: {
     backgroundColor: "#ffffffff",
     borderRadius: 12,
-    border: "1px solid #ddd",
+    borderWidth: 0.25,   
+    borderColor: "#ddd",
     padding: 16,
     marginBottom: 16,
     elevation: 2,
@@ -265,8 +269,8 @@ const styles = StyleSheet.create({
   milestoneContent: {
     flexDirection: "row",
     alignItems: "flex-start",
-    textAlign:"center",
-    border: "1px solid #ddd",
+    textAlign:"center",  
+    borderColor: "#ddd",
     padding: 10,
     borderRadius: 8,
     
@@ -276,23 +280,32 @@ const styles = StyleSheet.create({
     height: 50,
     marginRight: 12,
   },
+  milestoneText: {
+    flex: 1,
+  },
   milestoneTitle: {
     fontWeight: "600",
     fontSize: 14,
+    flexWrap: "wrap",
   },
   milestoneDesc: {
     color: "gray",
+    flexWrap: "wrap",
   },
   milestoneDate: {
     fontSize: 12,
     color: "#777",
     marginTop: 4,
+    flexWrap: "wrap",
   },
   taskCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
+    borderWidth: 0.25,
+    borderColor: "#ddd",
     padding: 16,
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 16,
     elevation: 2,
   },
@@ -300,10 +313,16 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#C19A00",
+    textAlign: "center",
+    flexWrap: "wrap",
+    width: "100%",
   },
   pendingText: {
     color: "gray",
     marginBottom: 8,
+    textAlign: "center",
+    flexWrap: "wrap",
+    width: "100%",
   },
   button: {
     backgroundColor: "#C19A00",
@@ -314,6 +333,9 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontWeight: "600",
+    textAlign: "center",
+    flexWrap: "wrap",
+    width: "100%",
   },
   manageContainer: {
     marginBottom: 20,
@@ -328,11 +350,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
     paddingVertical: 20,
+    paddingHorizontal: 12,
     alignItems: "center",
     marginBottom: 10,
   },
   manageText: {
-    width: "100%",
     textAlign: "center",
+    fontSize: 12,
+    marginTop: 8,
+    paddingHorizontal: 2,
   },
 });
