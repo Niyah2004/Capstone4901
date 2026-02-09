@@ -1,8 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image} from "react-native";
 import React, {useState} from "react";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { db } from "../firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
+
 
 export default function AvatarSelection({navigation, route}) {
   const [selectedAvatar, setSelected] = useState(null);
@@ -36,10 +37,13 @@ export default function AvatarSelection({navigation, route}) {
 
   return (
     <SafeAreaView>
-      <Text style={styles.title}>Select Your Avatar</Text>
-
         {/* View Avatars */}
-        <View style={styles.avatarContainer}>
+        <Text style={styles.title}>Select Your Avatar</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.avatarContainer}
+        >
             {avatars.map((avatar) => (
             <TouchableOpacity
               key={avatar.id}
@@ -54,7 +58,7 @@ export default function AvatarSelection({navigation, route}) {
               />
             </TouchableOpacity>
             ))}
-        </View>
+        </ScrollView>
 
         {/* Get started button */}
         <TouchableOpacity style={[styles.button]} onPress={handleGetStarted}>
@@ -66,10 +70,10 @@ export default function AvatarSelection({navigation, route}) {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#2d2d2d", textAlign: "center" },
-  avatarContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginBottom: 5 },
-  avatar: { width: 200, height: 200, borderRadius: 15, borderWidth: 2, borderColor: "#cccbcbff", backgroundColor: "#ffffffff" },
-  selectedAvatar: { borderColor: "#4CAF50", borderWidth: 2 },
-  button: { backgroundColor: "#4CAF50", padding: 15, borderRadius: 8, alignItems: "center", marginVertical: 15 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, marginTop: 150, color: "#2d2d2d", textAlign: "center" },
+  avatarContainer: { justifyContent: "center", alignItems: "center", paddingHorizontal: "10%", marginBottom: 5, marginTop: "5%"  },
+  avatar: { width: 250, height: 250, marginHorizontal: 10 },
+  selectedAvatar: { borderColor: "#4CAF50", borderWidth: 3 },
+  button: { width: "50%", backgroundColor: "#4CAF50", padding: 15, borderRadius: 8, alignItems: "center", marginHorizontal: "25%", marginTop: 20 },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });
