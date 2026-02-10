@@ -31,7 +31,7 @@ export default function GenericTaskLibrary({ onSelectTask }) {
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                     <TouchableOpacity style={styles.taskCard} onPress={() => onSelectTask(item)}>
-                        <Text style={styles.title}>{item.title}</Text>
+                        <Text style={styles.title}>{item["Task title"] || "Unknown Task"}</Text>
                         <Text style={styles.desc}>{item.description}</Text>
                         {item.points !== undefined && (
                             <Text style={styles.points}>{item.points} pts</Text>
