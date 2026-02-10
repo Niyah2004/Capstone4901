@@ -136,18 +136,16 @@ export default function ParentDashBoard({ navigation, route }) {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Milestone</Text>
         <View style={styles.milestoneContent}>
           <Image
-           source={require("../assets/reading.jpeg")} 
+            source={require("../assets/reading.jpeg")} 
             style={styles.milestoneImage}
           />
-        <View>
           <View style={styles.milestoneText}>
-          <Text style={[styles.milestoneTitle, { color: colors.text }]}>Completed 'Read 5 Books' Challenge</Text>
-          <Text style={[styles.milestoneDesc, { color: colors.muted }]}>
-            Leo earned a virtual trophy for diligently reading 5 books.
-          </Text>
-          <Text style={[styles.milestoneDate, { color: colors.muted }]}>Achieved on August 15, 2024</Text>
+            <Text style={[styles.milestoneTitle, { color: colors.text }]}>Completed 'Read 5 Books' Challenge</Text>
+            <Text style={[styles.milestoneDesc, { color: colors.muted }]}>
+              Leo earned a virtual trophy for diligently reading 5 books.
+            </Text>
+            <Text style={[styles.milestoneDate, { color: colors.muted }]}>Achieved on August 15, 2024</Text>
           </View>
-        </View>
         </View>
       </View>
 
@@ -170,26 +168,26 @@ export default function ParentDashBoard({ navigation, route }) {
           onPress={() => navigation.navigate("ParentTaskPage")}
           >
             <Ionicons name="list-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Task Management</Text>
+            <Text style={[styles.manageText, { color: colors.text }]}>Task Management</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
           //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
              onPress={() => navigation.navigate("parentReward")}
              >
             <Ionicons name="gift-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Create Reward</Text>
+            <Text style={[styles.manageText, { color: colors.text }]}>Create Reward</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
           onPress={() => navigation.navigate("parentReviewTask")}
           >
             <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Review Task</Text>
+            <Text style={[styles.manageText, { color: colors.text }]}>Review Task</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
           onPress={() => navigation.navigate("AccountSetting")}
           >
             <Ionicons name="settings-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]} numberOfLines={2} adjustsFontSizeToFit>Settings</Text>
+            <Text style={[styles.manageText, { color: colors.text }]}>Settings</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -273,7 +271,7 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     padding: 10,
     borderRadius: 8,
-    
+    flexWrap: "nowrap",
   },
   milestoneImage: {
     width: 50,
@@ -282,21 +280,28 @@ const styles = StyleSheet.create({
   },
   milestoneText: {
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   milestoneTitle: {
     fontWeight: "600",
     fontSize: 14,
     flexWrap: "wrap",
+    flexShrink: 1,
+    
   },
   milestoneDesc: {
     color: "gray",
     flexWrap: "wrap",
+    flexShrink: 1,
+    
   },
   milestoneDate: {
     fontSize: 12,
     color: "#777",
     marginTop: 4,
     flexWrap: "wrap",
+    flexShrink: 1,
   },
   taskCard: {
     backgroundColor: "#fff",
@@ -350,7 +355,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
     paddingVertical: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     alignItems: "center",
     marginBottom: 10,
   },
@@ -359,5 +364,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
     paddingHorizontal: 2,
+    width: "100%",
+    flexShrink: 1,
+    flexWrap: "wrap",
   },
 });
