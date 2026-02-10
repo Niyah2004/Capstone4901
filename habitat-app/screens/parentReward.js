@@ -7,7 +7,6 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-
 import { arrayRemove } from "firebase/firestore";
 
 export default function ParentReward({navigation}) {
