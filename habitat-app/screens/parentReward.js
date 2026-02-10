@@ -1,5 +1,5 @@
 // Comfort page for parents to create and manage rewards for their children
-import { collection, addDoc, updateDoc, getDoc, doc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc } from "firebase/firestore";
 import { db, storage } from "../firebaseConfig";
 import React, { useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
@@ -7,7 +7,7 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-
+import { arrayRemove } from "firebase/firestore";
 
 export default function ParentReward({navigation}) {
   const auth = getAuth();
@@ -83,6 +83,31 @@ const uploadImageAsync = async (uri) => {
     }
   };
   
+  const removeReward = async (rewardId) => {
+  try {
+    await deleteDoc(doc(db, "rewards", rewardId));
+    Alert.alert("Deleted", "Reward removed successfully.");
+  } catch (error) {
+    console.log("Error removing reward:", error);
+    Alert.alert("Error", "Could not remove reward.");
+  }
+};
+
+//confirm before deleting reward?
+{/*}
+const confirmRemoveReward = (rewardId) => {
+  Alert.alert(
+    "Remove Reward",
+    "Are you sure you want to delete this reward?",
+    [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => removeReward(rewardId) }
+    ]
+  );
+};
+*/}
+
+
   return (
     <ScrollView
   contentContainerStyle={styles.container}
@@ -153,6 +178,21 @@ const uploadImageAsync = async (uri) => {
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
 
+    {rewards.map((reward) => (
+  <View key={reward.id} style={styles.rewardCard}>
+    <Text style={styles.rewardTitle}>{reward.title}</Text>
+
+    <TouchableOpacity
+      onPress={() => removeReward(reward.id)}
+      style={styles.deleteButton}
+    >
+
+      
+      <Text style={styles.deleteText}>Remove</Text>
+    </TouchableOpacity>
+  </View>
+))}
+
 
 
 {rewardImage && (
@@ -175,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
@@ -202,8 +242,8 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: "#ccc",
       borderRadius: 10,
-      padding: 14,
-      marginBottom: 18,
+      padding: 10,
+      marginBottom: 5,
       backgroundColor: "#fafafa",  
       shadowColor: "#000",            
       shadowOpacity: 0.08,
@@ -243,6 +283,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   saveButtonText: {
+    textAlign: "center",
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
@@ -254,7 +295,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#4CAF50",
     fontWeight: "bold",
   },
