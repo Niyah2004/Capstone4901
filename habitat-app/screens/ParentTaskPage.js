@@ -155,16 +155,16 @@ export default function ParentTaskPage({ navigation, route }) {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{"← Back"}</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
         <ScrollView
-          style={styles.container}
-          contentContainerStyle={{ paddingBottom: 60 }}
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
         >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
           <Text style={styles.header}>Task Management</Text>
-
+          <View style={styles.formWrapper}>
           {/* Task Title */}
           <Text style={styles.label}>Task Title</Text>
           <TextInput
@@ -263,6 +263,7 @@ export default function ParentTaskPage({ navigation, route }) {
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -270,17 +271,54 @@ export default function ParentTaskPage({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  header: { fontSize: 22, fontWeight: "600", textAlign: "center", marginVertical: 10 },
-  label: { fontSize: 16, fontWeight: "500", marginTop: 15 },
+  container: { 
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  header: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    textAlign: "center", 
+    marginBottom: 20,
+    color: "#333", 
+  },
+  formWrapper: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+    marginBottom: 30,
+  },
+  label: { 
+    fontSize: 16, 
+    fontWeight: "500", 
+    marginTop: 15,
+    color: "#333", 
+  },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 5,
+      borderColor: "#ccc",
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 5,
+      backgroundColor: "#fafafa",  
+      shadowColor: "#000",            
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,       
   },
-  stepRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+  stepRow: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginTop: 5 
+  },
   addStep: {
     flexDirection: "row",
     alignItems: "center",
@@ -300,8 +338,8 @@ const styles = StyleSheet.create({
   saveButtonText: {
     textAlign: "center",
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   backButton: {
     alignSelf: "flex-start",
@@ -310,7 +348,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#4CAF50",
     fontWeight: "bold",
   },
