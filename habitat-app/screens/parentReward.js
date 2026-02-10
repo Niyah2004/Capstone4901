@@ -56,31 +56,57 @@ const uploadImageAsync = async (uri) => {
       Alert.alert("Missing info", "Please fill in both Reward Name and Points.");
       return;
     }
-  
+
     try {
       let imageURL = null;
 
-      if(rewardImage){
-        imageURL = await uploadImageAsync(rewardImage);
+      // Try to upload image, but don't block if it fails
+      if (rewardImage) {
+        try {
+          imageURL = await uploadImageAsync(rewardImage);
+        } catch (imageError) {
+          console.warn("Image upload failed, saving reward without image:", imageError);
+          Alert.alert(
+            "Image Upload Failed",
+            "The image couldn't be uploaded, but we'll save your reward without it. Continue?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Save Without Image",
+                onPress: async () => {
+                  await saveRewardToFirestore(null);
+                }
+              }
+            ]
+          );
+          return;
+        }
       }
-      await addDoc(collection(db, "rewards"), {
-        parentId: auth.currentUser.uid,
-        name: rewardName,
-        description: description,
-        points: parseInt(points),
-        frequency: frequency,
-        image: imageURL,
-        createdAt: new Date(),
-      });
-  
-      Alert.alert("Success!", "Reward has been added.");
-      navigation.goBack(); // sends you back after saving
+
+      await saveRewardToFirestore(imageURL);
     } catch (error) {
       console.error("Error saving reward:", error);
-      Alert.alert("Error", "Could not save reward, try again later.");
-      console.error("Firestore write error:", error);
-      Alert.alert("Firestore Error", error.message);
+      Alert.alert("Error", "Could not save reward. Please try again.");
     }
+  };
+
+  const saveRewardToFirestore = async (imageURL) => {
+    await addDoc(collection(db, "rewards"), {
+      parentId: auth.currentUser.uid,
+      name: rewardName,
+      description: description,
+      points: parseInt(points),
+      frequency: frequency,
+      image: imageURL,
+      createdAt: new Date(),
+    });
+
+    Alert.alert("Success!", "Reward has been added.");
+    setRewardName("");
+    setDescription("");
+    setPoints("");
+    setRewardImage(null);
+    navigation.goBack();
   };
   
   const removeReward = async (rewardId) => {
@@ -196,10 +222,18 @@ const confirmRemoveReward = (rewardId) => {
 
 
 {rewardImage && (
-  <Image
-    source={{ uri: rewardImage }}
-    style={{ width: 100, height: 100, marginTop: 10, borderRadius: 10 }}
-  />
+  <View style={styles.imagePreviewContainer}>
+    <Image
+      source={{ uri: rewardImage }}
+      style={styles.imagePreview}
+    />
+    <TouchableOpacity
+      style={styles.removeImageButton}
+      onPress={() => setRewardImage(null)}
+    >
+      <Text style={styles.removeImageText}>✕</Text>
+    </TouchableOpacity>
+  </View>
 )}
 
   </View>
@@ -309,6 +343,37 @@ const styles = StyleSheet.create({
 },
 addImageButtonText: {
   color: "#fff",
+  fontWeight: "bold",
+},
+imagePreviewContainer: {
+  position: "relative",
+  marginTop: 10,
+  alignSelf: "center",
+},
+imagePreview: {
+  width: 100,
+  height: 100,
+  borderRadius: 10,
+},
+removeImageButton: {
+  position: "absolute",
+  top: -8,
+  right: -8,
+  backgroundColor: "#FF4444",
+  width: 28,
+  height: 28,
+  borderRadius: 14,
+  justifyContent: "center",
+  alignItems: "center",
+  shadowColor: "#000",
+  shadowOpacity: 0.3,
+  shadowRadius: 3,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 3,
+},
+removeImageText: {
+  color: "#fff",
+  fontSize: 16,
   fontWeight: "bold",
 },
 

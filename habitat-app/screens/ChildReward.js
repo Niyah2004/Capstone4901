@@ -5,7 +5,7 @@ import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -20,40 +20,41 @@ export default function ChildReward() {
     const [avatar, setAvatar] = useState("panda");
     const confettiRef = useRef(null);
     
+    // Fetch rewards in real-time (instant updates!)
     useEffect(() => {
         if (!parentId) return;
-        
-        const fetchRewards = async () => {
-            try {
-                const q = query(
-                    collection(db, "rewards"),
-                    where("parentId", "==", parentId)
-                  );
-                  
-                  const querySnapshot = await getDocs(q);                const gradientPresets = [
-                    ["#FF9A9E", "#FAD0C4"],
-                    ["#A1C4FD", "#C2E9FB"],
-                    ["#FBC2EB", "#A6C1EE"],
-                    ["#FFDEE9", "#B5FFFC"],
-                    ["#FBD786", "#f7797d"],
-                    ["#84FAB0", "#8FD3F4"],
-                ];
 
-                const rewardList = querySnapshot.docs.map((doc, index) => ({
-                    id: doc.id,
-                    title: doc.data().name || "Unnamed Reward",
-                    cost: doc.data().points || 0,
-                    description: doc.data().description || "",
-                    gradient: gradientPresets[index % gradientPresets.length],
-                }));
-                setRewards(rewardList);
-            } catch (error) {
-                console.error("Error fetching rewards: ", error);
-            }
-        };
+        const q = query(
+            collection(db, "rewards"),
+            where("parentId", "==", parentId)
+            // orderBy("createdAt", "desc") temporarily disabled - needs Firebase index
+        );
 
-        fetchRewards();
-    }, []);
+        const gradientPresets = [
+            ["#FF9A9E", "#FAD0C4"],
+            ["#A1C4FD", "#C2E9FB"],
+            ["#FBC2EB", "#A6C1EE"],
+            ["#FFDEE9", "#B5FFFC"],
+            ["#FBD786", "#f7797d"],
+            ["#84FAB0", "#8FD3F4"],
+        ];
+
+        // Real-time listener - updates instantly when parent creates rewards!
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const rewardList = querySnapshot.docs.map((doc, index) => ({
+                id: doc.id,
+                title: doc.data().name || "Unnamed Reward",
+                cost: doc.data().points || 0,
+                description: doc.data().description || "",
+                gradient: gradientPresets[index % gradientPresets.length],
+            }));
+            setRewards(rewardList);
+        }, (error) => {
+            console.error("Error fetching rewards: ", error);
+        });
+
+        return () => unsubscribe();
+    }, [parentId]);
 
     // Fetch child's stars from childPoints collection
     useEffect(() => {
@@ -107,6 +108,9 @@ export default function ChildReward() {
             return;
         }
 
+        // 🎉 Trigger confetti immediately for instant gratification!
+        confettiRef.current?.start();
+
         try {
             // Update childPoints collection
             const childPointsRef = doc(db, "childPoints", auth.currentUser.uid);
@@ -114,18 +118,21 @@ export default function ChildReward() {
                 points: totalStars - selectedReward.cost,
             });
 
-            // Record the claim
-            await addDoc(collection(db, "claims"), {
-                item_id: selectedReward.id,
-                rewardName: selectedReward.title,
-                status: "claimed",
-                user_id: auth.currentUser.uid,
-                claimedAt: new Date(),
-            });
+            // Record the claim (note: may need Firebase security rules updated)
+            try {
+                await addDoc(collection(db, "claims"), {
+                    item_id: selectedReward.id,
+                    rewardName: selectedReward.title,
+                    status: "claimed",
+                    user_id: auth.currentUser.uid,
+                    claimedAt: new Date(),
+                });
+            } catch (claimError) {
+                // Claim recording failed but stars were deducted - log but don't block
+                console.warn("Could not record claim (check Firebase security rules):", claimError);
+            }
 
-            confettiRef.current?.start();
-
-            Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
+            Alert.alert("Success! 🎉", `You claimed: ${selectedReward.title}`);
             console.log("Reward claimed: ", selectedReward.title);
         }
         catch (error) {
@@ -133,7 +140,8 @@ export default function ChildReward() {
             Alert.alert("Error", "Something went wrong while claiming the reward.");
         }
         finally {
-            setModalVisible(false);
+            // Close modal after a delay so confetti is visible
+            setTimeout(() => setModalVisible(false), 2500);
         }
     };
     // Map avatar id to image
@@ -158,10 +166,13 @@ export default function ChildReward() {
 
                         <ConfettiCannon
                             ref={confettiRef}
-                            count={60}
-                            origin={{ x: 200, y: -20 }}
+                            count={200}
+                            origin={{ x: 0, y: 0 }}
+                            explosionSpeed={450}
+                            fallSpeed={2500}
                             autoStart={false}
                             fadeOut={true}
+                            colors={['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']}
                         />
 
                         <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
