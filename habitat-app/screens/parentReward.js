@@ -6,6 +6,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { arrayRemove } from "firebase/firestore";
+
 
 
 export default function ParentReward({navigation}) {
