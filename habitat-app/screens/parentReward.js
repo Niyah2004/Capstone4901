@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
@@ -242,8 +242,8 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: "#ccc",
       borderRadius: 10,
-      padding: 14,
-      marginBottom: 18,
+      padding: 10,
+      marginBottom: 5,
       backgroundColor: "#fafafa",  
       shadowColor: "#000",            
       shadowOpacity: 0.08,
@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   saveButtonText: {
+    textAlign: "center",
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#4CAF50",
     fontWeight: "bold",
   },
