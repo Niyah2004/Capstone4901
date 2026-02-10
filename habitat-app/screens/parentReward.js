@@ -1,13 +1,11 @@
 // Comfort page for parents to create and manage rewards for their children
-import { collection, addDoc, updateDoc, getDoc, doc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc } from "firebase/firestore";
 import { db, storage } from "../firebaseConfig";
 import React, { useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, deleteDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
 
 
 export default function ParentReward({navigation}) {
