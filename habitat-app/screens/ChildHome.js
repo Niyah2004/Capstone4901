@@ -12,6 +12,7 @@ import { useTheme } from "../theme/ThemeContext";
 
 export default function ChildHome() {
     const [childName, setChildName] = useState("");
+    const [childPreferredName, setChildPreferredName] = useState("");
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
@@ -38,15 +39,18 @@ export default function ChildHome() {
                 if (!querySnapshot.empty) {
                     const data = querySnapshot.docs[0].data();
                     setChildName(data.fullName || "");
+                    setChildPreferredName(data.preferredName || "");
                     setAvatar(data.avatar || "panda");
                 } else {
                     setChildName("");
+                    setChildPreferredName("");
                     setAvatar("panda");
                 }
                 setLoading(false);
             } catch (error) {
                 console.error("Error fetching child profile:", error);
                 setChildName("");
+                setChildPreferredName("");
                 setAvatar("panda");
                 setLoading(false);
             }
@@ -110,7 +114,9 @@ export default function ChildHome() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Top Section: Greeting and Progress Bar */}
             <View style={styles.topSection}>
-                    {childName ? (
+                    {childPreferredName?.trim() ? (
+                        <Text style={[styles.title, { color: colors.text }]}>Hello {childPreferredName}!</Text>
+                    ) : childName ? (
                         <Text style={[styles.title, { color: colors.text }]}>Hello {childName}!</Text>
                     ) : (
                         <Text style={[styles.title, { color: colors.text }]}>Hello Child!</Text>
