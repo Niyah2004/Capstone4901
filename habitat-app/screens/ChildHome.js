@@ -114,7 +114,7 @@ export default function ChildHome() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Top Section: Greeting and Progress Bar */}
             <View style={styles.topSection}>
-                    {childPreferredName?.trim() ? (
+                    {childPreferredName && childPreferredName.trim() ? (
                         <Text style={[styles.title, { color: colors.text }]}>Hello {childPreferredName}!</Text>
                     ) : childName ? (
                         <Text style={[styles.title, { color: colors.text }]}>Hello {childName}!</Text>
@@ -216,10 +216,10 @@ const styles = StyleSheet.create({
     progressBarContainer: {  height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
     progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
-    avatarContainer: { alignItems: "center", marginVertical: 20 },
+    avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center" },
     avatarWrapper: { position: "relative" },
     scrollContent: { paddingBottom: 30 },
-    avatar: { width: 300, height: 300, borderRadius: 10},
+    avatar: { width: 300, height: 300, borderRadius: 10 },
     hatOverlay: { position: "absolute", top: -65, left: 70 },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
