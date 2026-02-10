@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     progressBarContainer: {  height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
     progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
-    avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center" },
+    avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative" },
     scrollContent: { paddingBottom: 30 },
     avatar: { width: 300, height: 300, borderRadius: 10 },
