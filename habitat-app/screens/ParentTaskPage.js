@@ -304,10 +304,9 @@ export default function ParentTaskPage({ navigation, route }) {
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-    </SafeAreaProvider >
+        </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

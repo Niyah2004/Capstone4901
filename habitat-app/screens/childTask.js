@@ -156,6 +156,9 @@ export default function ChildTask({ route, navigation }) {
     setLoadingTasks(true);
     taskBucketsRef.current = { dateUser: [], dateChild: [], recUser: [], recChild: [] };
 
+    // Fix: define unsubscribers array
+    let unsubscribers = [];
+
     const start = Timestamp.fromDate(startOfDay(selectedDate));
     const end = Timestamp.fromDate(endOfDay(selectedDate));
 
@@ -212,7 +215,8 @@ export default function ChildTask({ route, navigation }) {
       }
     );
 
-    let unsubRecurring = () => { };
+    unsubscribers.push(unsubDate);
+
     if (childId) {
       const qRec = query(
         collection(db, "tasks"),
@@ -278,8 +282,9 @@ export default function ChildTask({ route, navigation }) {
     }
 
     return () => {
-      try { unsubDate(); } catch { }
-      try { unsubRecurring(); } catch { }
+      unsubscribers.forEach((unsub) => {
+        try { if (typeof unsub === 'function') unsub(); } catch { }
+      });
     };
   }, [selectedDate, childId, currentChildUid, childDocId, occursOnDate, recomputeTasksForDate]);
 
