@@ -1,13 +1,14 @@
 // this is the account setting file may need to be updated later place holder code for now 
-import React, { useState, useCallback} from "react"
+import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { Alert, View, Text, TextInput, StyleSheet, TouchableOpacity, Switch, ScrollView} from "react-native";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth, signOut } from "firebase/auth";
-import { collection, query, where, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function AccountSetting({navigation}) {
   const[parentName, setParentName] = useState("");
@@ -19,6 +20,8 @@ export default function AccountSetting({navigation}) {
   const [pin, setPin]= useState("****");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
+  const { theme, mode, setMode } = useTheme();
+  const colors = theme.colors;
    
   const handleLogOut = async() => {
     try {
@@ -154,16 +157,16 @@ export default function AccountSetting({navigation}) {
 
     return ( 
       <SafeAreaProvider>
-        <SafeAreaView style={styles.container}
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}
         edges ={['top']}>
           <ScrollView style={styles.ScrollView}>
             
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons style={styles.backButton} name="arrow-back" />
+              <Ionicons style={[styles.backButton, { color: colors.text }]} name="arrow-back" />
             </TouchableOpacity>
 
-            <Text style={styles.title}>Our Profile</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Our Profile</Text>
 
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
               <Text style={styles.logoutButtonText}>Log Out</Text>
@@ -172,95 +175,142 @@ export default function AccountSetting({navigation}) {
             
           <View style={styles.row}>
             <View style={styles.column}>
-              <Text style={styles.label}>Parent's Name:</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Parent's Name:</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
-                  style={[styles.input, { width: "100%", marginRight: 0 }]}
+                  style={[
+                    styles.input,
+                    { width: "100%", marginRight: 0, backgroundColor: colors.card, borderColor: colors.border, color: colors.text },
+                  ]}
                   value={parentName}
                   onChangeText={setParentName}
                   placeholder={"Parent Name"}
+                  placeholderTextColor={colors.muted}
                 />
 
               <View style={styles.iconWrapper}>
-                <MaterialCommunityIcons name="pencil-outline" size={18} color="#555" />
+                <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.muted} />
               </View>
               
               </View>
             </View>
             <View style={styles.column}>
-              <Text style={styles.label}>Child's Name:</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Child's Name:</Text>
               <TextInput
-                style={[styles.input, { width: "100%", marginRight: 0 }]}
+                style={[
+                  styles.input,
+                  { width: "100%", marginRight: 0, backgroundColor: colors.card, borderColor: colors.border, color: colors.text },
+                ]}
                 value={childsName}
                 onChangeText={setChildName}
                 placeholder={"Child Name"}
+                placeholderTextColor={colors.muted}
                 editable={false}
               />
-              <Text style={[styles.label, { marginTop: 8 }]}>Preferred Name:</Text>
+              <Text style={[styles.label, { marginTop: 8, color: colors.text }]}>Preferred Name:</Text>
               <TextInput
-                style={[styles.prefInput, { width: "100%", marginRight: 0 }]}
+                style={[
+                  styles.prefInput,
+                  { width: "100%", marginRight: 0, backgroundColor: colors.card, borderColor: colors.border, color: colors.text },
+                ]}
                 value={childsPreferredName}
                 onChangeText={setChildPreferredName}
                 placeholder="Preferred Name"
-                placeholderTextColor="#333"
+                placeholderTextColor={colors.muted}
                 editable={false}
               />
             </View>
           </View>
 
           <View>  
-            <Text style={styles.label}>Phone</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Phone</Text>
             <View style={styles.inputWrapper}>
-              <TextInput style={styles.input} value={phoneNum} placeholder="123-456-7890" onChangeText={setPhone} keyboardType="phone-pad"/>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                value={phoneNum}
+                placeholder="123-456-7890"
+                placeholderTextColor={colors.muted}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
             <View style={styles.iconWrapper}>
-                <MaterialCommunityIcons name="pencil-outline" size={18} color="#555" />
+                <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.muted} />
               </View>
             </View>
 
             <View style={styles.changeRow}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Email</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ChangeEmail")}>
                 <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change Email</Text>
               </TouchableOpacity>
             </View> 
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
               value={userEmail}
               placeholder="example@email.com"
+              placeholderTextColor={colors.muted}
               onChangeText={setEmail}
               keyboardType="email-address"
               editable={false}
             />
             <View style={styles.changeRow}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ChangePassword")}>
                 <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change Password</Text>
               </TouchableOpacity>
             </View>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
               value={password}
               onChangeText={setPassword}
               editable={false}
             />
             <View style={styles.changeRow}>
-              <Text style={styles.label}>PIN</Text>
+              <Text style={[styles.label, { color: colors.text }]}>PIN</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ChangePin")}> 
                 <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change PIN</Text>
               </TouchableOpacity>
             </View>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
               value={pin}
               onChangeText={setPin}
               editable={false}
             />
 
+            <View style={styles.sectionRow}>
+              <Text style={[styles.label, { color: colors.text }]}>Appearance</Text>
+            </View>
+            <View style={styles.themeRow}>
+              {["system", "light", "dark"].map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[
+                    styles.themeOption,
+                    { borderColor: colors.border },
+                    mode === opt && { backgroundColor: colors.primary, borderColor: colors.primary },
+                  ]}
+                  onPress={() => setMode(opt)}
+                >
+                  <Text
+                    style={[
+                      styles.themeOptionText,
+                      { color: mode === opt ? "#fff" : colors.text },
+                    ]}
+                  >
+                    {opt === "system" ? "System" : opt === "light" ? "Light" : "Dark"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <View style={styles.switchRow}>
-              <Text style={styles.label}>Enable Notifications</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Enable Notifications</Text>
               <Switch
                 value={notificationsEnabled}
                 onValueChange={setNotificationsEnabled}
+                thumbColor={notificationsEnabled ? colors.primary : undefined}
+                trackColor={{ false: colors.border, true: colors.primary }}
               />
             </View>
 
@@ -371,6 +421,26 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginVertical: 10,
+  },
+  sectionRow: {
+    marginTop: 8,
+  },
+  themeRow: {
+    flexDirection: "row",
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  themeOption: {
+    flex: 1,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  themeOptionText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   saveButton: {
     width: "50%",

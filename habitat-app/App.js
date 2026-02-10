@@ -28,6 +28,7 @@ import ForgotPassword from "./screens/ForgotPassword";
 
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
+import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 
 
 const Stack = createNativeStackNavigator();
@@ -89,13 +90,14 @@ function ParentStackScreen() {
 
 function ChildTabs() {
   const { lockParent } = useParentLock();
+  const { theme } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#fff5f5ff" },
-        tabBarActiveTintColor: "#4CAF50",
-        tabBarInactiveTintColor: "#999",
+        tabBarStyle: { backgroundColor: theme.colors.tabBar, borderTopColor: theme.colors.border },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.muted,
         tabBarIcon: ({ color, size }) => {
           let iconName;
           switch (route.name) {
@@ -134,8 +136,9 @@ function ChildTabs() {
 /**
  * Main app navigation stack
  */
-export default function App() {
+function AppNavigator() {
   const [orientation, setOrientation] = useState();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const getOrientation = async () => {
@@ -162,4 +165,12 @@ export default function App() {
   );
 }
 
-registerRootComponent(App);
+export default function AppWithProviders() {
+  return (
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
+  );
+}
+
+registerRootComponent(AppWithProviders);
