@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   backButton: {
     alignSelf: "flex-start",
     marginLeft: 20,
-    marginTop: 40,
+    marginTop: 15,
     marginBottom: 10,
   },
   backText: {
