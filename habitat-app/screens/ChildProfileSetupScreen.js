@@ -15,12 +15,53 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
   const [age, setAge] = useState("");
   const [grade, setGrade] = useState("");
   const [notes, setNotes] = useState("");
-  
-  const save = async () => {
+  const [children, setChildren] = useState([]);
+
+    const addChild = () => {
+    if (children.length >= 3) {
+      Alert.alert("Limit Reached", "You can add up to 3 children.");
+      return;
+    }
+
+    if (!fullName) {
+      Alert.alert("Missing Info", "Please enter the child's name.");
+      return;
+    }
+
+    const newChild = {
+      fullName,
+      preferredName,
+      age,
+      grade,
+      notes,
+    };
+
+    setChildren([...children, newChild]);
+
+    setFullName("");
+    setPreferredName("");
+    setAge("");
+    setGrade("");
+    setNotes("");
+  };
+
+  const removeChild = (index) => {
+    const updated = [...children];
+    updated.splice(index, 1);
+    setChildren(updated);
+  };
+
+  const saveAll = async () => {
     if (pin.length !== 4 || pin !== confirmPin) {
       Alert.alert("PIN Error", "PIN must be 4 digits and match confirmation.");
       return;
     }
+
+    if (children.length === 0) {
+      Alert.alert("No Children", "Please add at least one child.");
+      return;
+    }
+
     if (!fullName) {
       Alert.alert("Missing Info", "Please enter the child's name.");
       return;
@@ -35,8 +76,14 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
         createdAt: new Date().toISOString(),
       });
       console.log("Parent pin saved with Parent Id:", userId);
+
+      for (const child of children) {
+        await addDoc(collection(db, "children"), {
+          ...child,
+          userId,
+        });
+      }
       
-    
       const docRef = await addDoc(collection(db, "children"), {
         fullName,
         preferredName,
@@ -45,7 +92,7 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
         notes,
         userId,
       });
-      Alert.alert("Saved", "Child profile saved.");
+      Alert.alert("Saved", "Child profiles saved.");
      // console.log("Parent pin saved with Parent Id:", parentRef.id);
       console.log("Navigating to AvatarSelection with childId:", docRef.id);
       navigation.navigate("AvatarSelection", { childId: docRef.id });
@@ -69,8 +116,21 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
         <TextInput style={styles.input} placeholder="Grade Level" value={grade} onChangeText={setGrade} />
         <TextInput style={[styles.input, { height: 80 }]} placeholder="Special Needs or Preferences (Optional)" multiline value={notes} onChangeText={setNotes} />
 
-        <TouchableOpacity style={styles.button} onPress={save}>
-          <Text style={styles.buttonText}>Save Details</Text>
+        <TouchableOpacity style={styles.button} onPress={addChild}>
+          <Text style={styles.buttonText}>Add Child</Text>
+        </TouchableOpacity>
+
+        {children.map((child, index) => (
+          <View key={index} style={styles.childCard}>
+            <Text>{child.fullName}</Text>
+            <TouchableOpacity onPress={() => removeChild(index)}>
+              <Text style={{ color: "red" }}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity style={styles.button} onPress={saveAll}>
+          <Text style={styles.buttonText}>Finish Setup</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
