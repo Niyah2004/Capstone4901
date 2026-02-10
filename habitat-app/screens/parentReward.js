@@ -6,6 +6,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 
 export default function ParentReward({navigation}) {
@@ -80,6 +82,31 @@ const uploadImageAsync = async (uri) => {
     }
   };
   
+  const removeReward = async (rewardId) => {
+  try {
+    await deleteDoc(doc(db, "rewards", rewardId));
+    Alert.alert("Deleted", "Reward removed successfully.");
+  } catch (error) {
+    console.log("Error removing reward:", error);
+    Alert.alert("Error", "Could not remove reward.");
+  }
+};
+
+//confirm before deleting reward?
+{/*}
+const confirmRemoveReward = (rewardId) => {
+  Alert.alert(
+    "Remove Reward",
+    "Are you sure you want to delete this reward?",
+    [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => removeReward(rewardId) }
+    ]
+  );
+};
+*/}
+
+
   return (
     <ScrollView
   contentContainerStyle={styles.container}
@@ -149,6 +176,21 @@ const uploadImageAsync = async (uri) => {
     <TouchableOpacity style={styles.saveButton} onPress={saveReward}>
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
+
+    {rewards.map((reward) => (
+  <View key={reward.id} style={styles.rewardCard}>
+    <Text style={styles.rewardTitle}>{reward.title}</Text>
+
+    <TouchableOpacity
+      onPress={() => removeReward(reward.id)}
+      style={styles.deleteButton}
+    >
+
+      
+      <Text style={styles.deleteText}>Remove</Text>
+    </TouchableOpacity>
+  </View>
+))}
 
 
 
