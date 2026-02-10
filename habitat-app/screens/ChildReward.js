@@ -141,6 +141,7 @@ export default function ChildReward() {
         panda: require("../assets/panda.png"),
         turtle: require("../assets/turtle.jpg"),
         giraffe: require("../assets/giraffe.jpg"),
+    };
 
     return (
         <ScrollView>
@@ -204,7 +205,6 @@ export default function ChildReward() {
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image */}
                     <Image
-                        source={
                             source={avatarImages[avatar] || avatarImages["panda"]}
                             style={styles.avatar}
                         />
