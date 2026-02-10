@@ -144,8 +144,15 @@ export default function ChildReward() {
             setTimeout(() => setModalVisible(false), 2500);
         }
     };
+    // Map avatar id to image
+    const avatarImages = {
+        panda: require("../assets/panda.png"),
+        turtle: require("../assets/turtle.jpg"),
+        giraffe: require("../assets/giraffe.jpg"),
+    };
 
     return (
+        <ScrollView>
         <View style={styles.container}>
             <ScrollView style={styles.ScrollView}>
             <Modal
@@ -209,21 +216,11 @@ export default function ChildReward() {
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image */}
                     <Image
-                        source={
-                            avatar === "panda" ? require("../assets/panda.png") :
-                            avatar === "turtle" ? require("../assets/turtle.jpg") :
-                            avatar === "giraffe" ? require("../assets/giraffe.jpg") :
-                            require("../assets/panda.png")
-                        }
-                        style={styles.avatar}
-                    />
-                </View>
+                            source={avatarImages[avatar] || avatarImages["panda"]}
+                            style={styles.avatar}
+                        />
 
-                {/*
-                <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.placeholderText}>Image</Text>
                 </View>
-                    */}
 
                 <View style={styles.pointsRow}>
                     <Text style={styles.starIcon}>⭐</Text>
@@ -296,6 +293,7 @@ export default function ChildReward() {
             </ScrollView>
    </ScrollView>
         </View>
+        </ScrollView>
     );
 }
 
@@ -322,17 +320,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 4, height: 4 },
         shadowRadius: 3,
         elevation: 1,
-    },
-
-    avatarPlaceholder: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: "#EDEDED",
-        justifyContent: "center",
-        alignItems: "center",
-        marginLeft: 50,
-        marginBottom: 100,
     },
     placeholderText: {
         fontSize: 10,
@@ -445,27 +432,19 @@ const styles = StyleSheet.create({
         height: 140,
         borderRadius: 70,
     },
-    avatarContainer: {
-        width: "100%",
-        backgroundColor: "rgba(255, 223, 186, 0.35)",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 30,
-        borderRadius: 20,
-        marginBottom: 10
-    },
+    
     //missing modal styles that control the reward popup layout
 
     modalClaimButton: {
         backgroundColor: "#4CAF50",
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadious: 10,
+        borderRadius: 10,
         marginTop: 10,
         shadowColor: "#000",
         shadowOpacity: 0.2,
         shadowOffset: { width: 0, height: 2 },
-        shadowRadious: 4,
+        shadowRadius: 4,
         elevation: 3,
     },
 

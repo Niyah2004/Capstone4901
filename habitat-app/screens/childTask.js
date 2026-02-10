@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import WeekCalendar from "./WeekCalendar";
 import { addDays, startOfDay } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   runTransaction,
   increment,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
@@ -29,11 +30,27 @@ export default function ChildTask({ route, navigation }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasksForDate, setTasksForDate] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const [childDocId, setChildDocId] = useState(null);
   const { theme } = useTheme();
   const colors = theme.colors;
 
   // store child points locally (and keep it in sync with Firestore)
   const [childPoints, setChildPoints] = useState(0);
+  const taskBucketsRef = useRef({
+    dateUser: [],
+    dateChild: [],
+    recUser: [],
+    recChild: [],
+  });
+
+  const recomputeTasksForDate = useCallback(() => {
+    const buckets = taskBucketsRef.current;
+    const map = new Map();
+    [buckets.dateUser, buckets.dateChild, buckets.recUser, buckets.recChild].forEach(
+      (list) => (list || []).forEach((t) => map.set(t.id, t))
+    );
+    setTasksForDate(Array.from(map.values()));
+  }, []);
 
 
   const occursOnDate = useCallback((task, date) => {
@@ -112,55 +129,122 @@ export default function ChildTask({ route, navigation }) {
     return () => unsub();
   }, [pointsChildId]);
 
+  // Resolve child document id when running as the child user
+  useEffect(() => {
+    if (!currentChildUid || childId) return;
+
+    let cancelled = false;
+    const q = query(collection(db, "children"), where("userId", "==", currentChildUid));
+    getDocs(q)
+      .then((snap) => {
+        if (cancelled) return;
+        const docMatch = snap.docs[0];
+        setChildDocId(docMatch ? docMatch.id : null);
+      })
+      .catch((err) => console.error("child doc lookup error", err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentChildUid, childId]);
+
   // Load tasks (date-specific + recurring)
   useEffect(() => {
     if (!selectedDate) return;
     if (!childId && !currentChildUid) return;
     setLoadingTasks(true);
+    taskBucketsRef.current = { dateUser: [], dateChild: [], recUser: [], recChild: [] };
 
     const start = startOfDay(selectedDate);
     const end = addDays(start, 1);
 
-    const constraints = [
+    const rangeFilters = [
       where("dateTimestamp", ">=", Timestamp.fromDate(start)),
       where("dateTimestamp", "<", Timestamp.fromDate(end)),
     ];
+
+    const makeList = (snapshot) =>
+      snapshot.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          // ensure progressPercent is always defined for UI
+          progressPercent:
+            typeof data.progressPercent === "number"
+              ? data.progressPercent
+              : data.completed
+              ? 100
+              : 0,
+        };
+      });
+
+    const unsubscribers = [];
+
     if (childId) {
-      constraints.unshift(where("childId", "==", childId));
+      const qDate = query(
+        collection(db, "tasks"),
+        where("childId", "==", childId),
+        ...rangeFilters
+      );
+      unsubscribers.push(
+        onSnapshot(
+          qDate,
+          (snapshot) => {
+            taskBucketsRef.current.dateChild = makeList(snapshot);
+            recomputeTasksForDate();
+            setLoadingTasks(false);
+          },
+          (err) => {
+            console.error("tasks onSnapshot error", err);
+            setLoadingTasks(false);
+          }
+        )
+      );
     } else if (currentChildUid) {
-      constraints.unshift(where("userId", "==", currentChildUid));
+      const qDateUser = query(
+        collection(db, "tasks"),
+        where("userId", "==", currentChildUid),
+        ...rangeFilters
+      );
+      unsubscribers.push(
+        onSnapshot(
+          qDateUser,
+          (snapshot) => {
+            taskBucketsRef.current.dateUser = makeList(snapshot);
+            recomputeTasksForDate();
+            setLoadingTasks(false);
+          },
+          (err) => {
+            console.error("tasks onSnapshot error", err);
+            setLoadingTasks(false);
+          }
+        )
+      );
+
+      if (childDocId) {
+        const qDateChild = query(
+          collection(db, "tasks"),
+          where("childId", "==", childDocId),
+          ...rangeFilters
+        );
+        unsubscribers.push(
+          onSnapshot(
+            qDateChild,
+            (snapshot) => {
+              taskBucketsRef.current.dateChild = makeList(snapshot);
+              recomputeTasksForDate();
+              setLoadingTasks(false);
+            },
+            (err) => {
+              console.error("tasks onSnapshot error", err);
+              setLoadingTasks(false);
+            }
+          )
+        );
+      }
     }
 
-    const qDate = query(collection(db, "tasks"), ...constraints);
-
-    const unsubDate = onSnapshot(
-      qDate,
-      (snapshot) => {
-        const list = snapshot.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            ...data,
-            // ensure progressPercent is always defined for UI
-            progressPercent:
-              typeof data.progressPercent === "number"
-                ? data.progressPercent
-                : data.completed
-                ? 100
-                : 0,
-          };
-        });
-
-        setTasksForDate(list);
-        setLoadingTasks(false);
-      },
-      (err) => {
-        console.error("tasks onSnapshot error", err);
-        setLoadingTasks(false);
-      }
-    );
-
-    let unsubRecurring = () => {};
     if (childId) {
       const qRec = query(
         collection(db, "tasks"),
@@ -168,54 +252,71 @@ export default function ChildTask({ route, navigation }) {
         where("isRecurring", "==", true)
       );
 
-      unsubRecurring = onSnapshot(qRec, (snap) => {
-        const recs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const occurs = recs
-          .filter((r) => occursOnDate(r, selectedDate))
-          .map((r) => ({
-            ...r,
-            progressPercent:
-              typeof r.progressPercent === "number" ? r.progressPercent : r.completed ? 100 : 0,
-          }));
-
-        setTasksForDate((prev) => {
-          const map = new Map();
-          (prev || []).forEach((t) => map.set(t.id, t));
-          occurs.forEach((t) => map.set(t.id, t));
-          return Array.from(map.values());
-        });
-      });
+      unsubscribers.push(
+        onSnapshot(qRec, (snap) => {
+          const recs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          taskBucketsRef.current.recChild = recs
+            .filter((r) => occursOnDate(r, selectedDate))
+            .map((r) => ({
+              ...r,
+              progressPercent:
+                typeof r.progressPercent === "number" ? r.progressPercent : r.completed ? 100 : 0,
+            }));
+          recomputeTasksForDate();
+        })
+      );
     } else if (currentChildUid) {
-      const qRec = query(
+      const qRecUser = query(
         collection(db, "tasks"),
         where("userId", "==", currentChildUid),
         where("isRecurring", "==", true)
       );
 
-      unsubRecurring = onSnapshot(qRec, (snap) => {
-        const recs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const occurs = recs
-          .filter((r) => occursOnDate(r, selectedDate))
-          .map((r) => ({
-            ...r,
-            progressPercent:
-              typeof r.progressPercent === "number" ? r.progressPercent : r.completed ? 100 : 0,
-          }));
+      unsubscribers.push(
+        onSnapshot(qRecUser, (snap) => {
+          const recs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          taskBucketsRef.current.recUser = recs
+            .filter((r) => occursOnDate(r, selectedDate))
+            .map((r) => ({
+              ...r,
+              progressPercent:
+                typeof r.progressPercent === "number" ? r.progressPercent : r.completed ? 100 : 0,
+            }));
+          recomputeTasksForDate();
+        })
+      );
 
-        setTasksForDate((prev) => {
-          const map = new Map();
-          (prev || []).forEach((t) => map.set(t.id, t));
-          occurs.forEach((t) => map.set(t.id, t));
-          return Array.from(map.values());
-        });
-      });
+      if (childDocId) {
+        const qRecChild = query(
+          collection(db, "tasks"),
+          where("childId", "==", childDocId),
+          where("isRecurring", "==", true)
+        );
+
+        unsubscribers.push(
+          onSnapshot(qRecChild, (snap) => {
+            const recs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            taskBucketsRef.current.recChild = recs
+              .filter((r) => occursOnDate(r, selectedDate))
+              .map((r) => ({
+                ...r,
+                progressPercent:
+                  typeof r.progressPercent === "number" ? r.progressPercent : r.completed ? 100 : 0,
+              }));
+            recomputeTasksForDate();
+          })
+        );
+      }
     }
 
     return () => {
-      try { unsubDate(); } catch {}
-      try { unsubRecurring(); } catch {}
+      unsubscribers.forEach((unsub) => {
+        try {
+          unsub();
+        } catch {}
+      });
     };
-  }, [selectedDate, childId, currentChildUid, occursOnDate]);
+  }, [selectedDate, childId, currentChildUid, childDocId, occursOnDate, recomputeTasksForDate]);
 
   // UI-only live update while sliding (no Firestore spam)
   const updateProgressLocal = (taskId, value) => {

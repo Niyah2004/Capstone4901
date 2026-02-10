@@ -4,6 +4,7 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { updateDoc } from "firebase/firestore";
 import { useParentLock } from "../ParentLockContext";
 
@@ -48,18 +49,24 @@ const ParentPinScreen = ({ navigation,route  }) => {
   
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Parent Access</Text>
-
-      <Text style={styles.label}>Enter Your PIN</Text>
-      <TextInput
-        style={styles.input}
-        value={pin}
-        onChangeText={setPin}
-        keyboardType="numeric"
-        secureTextEntry
-        maxLength={4}
-      />
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" style={styles.backButton} />
+          </TouchableOpacity>
+          
+          <Text style={styles.header}>Parent Access</Text>
+      </View> 
+        <Text style={styles.label}>Enter Your Pin</Text>
+        <TextInput
+          style={styles.input}
+          value={pin}
+          onChangeText={setPin}
+          keyboardType="numeric"
+          secureTextEntry
+          maxLength={4}
+        />
 
       <TouchableOpacity style={styles.button} onPress={correctPin}>
         <Text style={styles.buttonText}>Submit PIN</Text>
@@ -71,26 +78,41 @@ const ParentPinScreen = ({ navigation,route  }) => {
       >
         <Text style={styles.forgotText}>Forgot PIN?</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "#fff",
-    paddingHorizontal: 20,
+    padding: 20,
   },
   header: {
-    fontSize: 18,
+    flex: 1,
+    textAlign: "center",
+    fontSize: 20,
     fontWeight: "600",
-    marginBottom: 40,
+    marginBottom: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+  },
+  backButton: {
+    fontSize: 20,
+    marginTop: 5,
   },
   label: {
     fontSize: 16,
+    marginTop: 150,
     marginBottom: 10,
+    width: "100%",
+    textAlign: "center",
+    alignSelf: "center",
+    flexWrap: "wrap",
   },
   input: {
     width: "60%",
@@ -100,15 +122,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     textAlign: "center",
     fontSize: 20,
+    alignSelf: "center",
     marginBottom: 20,
   },
   button: {
+    alignSelf: "center",
+    width: "50%",
     backgroundColor: "#4CAF50",
     paddingVertical: 12,
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
     borderRadius: 8,
   },
   buttonText: {
+    textAlign: "center",
     color: "#fff",
     fontWeight: "bold",
   },
@@ -118,6 +144,7 @@ const styles = StyleSheet.create({
   forgotText: {
     color: "#4CAF50",
     fontWeight: "500",
+    alignSelf: "center",
   },
 });
 

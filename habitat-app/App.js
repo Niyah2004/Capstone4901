@@ -24,6 +24,8 @@ import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
+import ForgotPassword from "./screens/ForgotPassword";
+
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
@@ -80,6 +82,7 @@ function ParentStackScreen() {
         name="ChangePin" 
         component={ChangePin} 
       />
+
     </ParentStack.Navigator>
   );
 }
@@ -146,17 +149,18 @@ function AppNavigator() {
   }, []);
 
   return (
-    <ParentLockProvider>
-      <NavigationContainer theme={theme}>
-        <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="LoginScreen" component={LoginScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-          <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-          <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-          <Stack.Screen name="ChildHome" component={ChildHome} />
-          <Stack.Screen name="ChildTabs" component={ChildTabs} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <ParentLockProvider>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+        <Stack.Screen name="ChildHome" component={ChildHome} />
+        <Stack.Screen name="ChildTabs" component={ChildTabs} />
+      </Stack.Navigator>
+    </NavigationContainer>
     </ParentLockProvider>
   );
 }

@@ -163,8 +163,8 @@ export default function AccountSetting({navigation}) {
             
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons style={[styles.backButton, { color: colors.text }]} name="arrow-back" />
-            </TouchableOpacity>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity> 
 
             <Text style={[styles.title, { color: colors.text }]}>Our Profile</Text>
 
@@ -359,6 +359,11 @@ const styles = StyleSheet.create({
     fontSize: 20, 
     marginRight: 10 
   },
+  backText: {
+    fontSize: 16,
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
   title: { 
     marginLeft: 10,
     fontSize: 22, 
@@ -400,8 +405,8 @@ const styles = StyleSheet.create({
   iconWrapper: {
     position: "absolute",
     right: 10,
-    top: "50%",
-    transform: [{ translateY: -12 }],
+    top: 0,
+    bottom: 10,
     justifyContent: "center",
     alignItems: "center",
   },
