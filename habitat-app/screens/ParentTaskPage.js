@@ -48,15 +48,16 @@ export default function ParentTaskPage({ navigation, route }) {
 
   // Fetch generic tasks from the stockpile (genericTasks collection)
   useEffect(() => {
-    const auth = getAuth();
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-
-    const q = query(collection(db, "children"), where("userId", "==", uid));
-    getDocs(q).then((snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setChildrenList(list);
-    });
+    const fetchGenericTasks = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "genericTasks"));
+        const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setTaskList(tasks);
+      } catch (err) {
+        console.error("Error fetching generic tasks:", err);
+      }
+    };
+    fetchGenericTasks();
   }, []);
 
   // When a generic task is selected, populate fields
@@ -122,12 +123,7 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
-      let childUserId = parentId; // Default to parent's uid so all children can see the task
-      if (childId) {
-        const childObj = childrenList?.find((c) => c.id === childId);
-        if (childObj) childUserId = childObj.userId || parentId;
-      }
-
+      // 1) Save task with points + status
       const taskRef = await addDoc(collection(db, "tasks"), {
         title,
         description,
