@@ -19,15 +19,18 @@ import {
   doc,
   setDoc,
   increment,
+  getDocs,
   query,
   where,
-  getDocs,
 } from "firebase/firestore";
 import { startOfDay } from "date-fns";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { getAuth } from "firebase/auth";
 
+import { Picker } from "@react-native-picker/picker";
+
 export default function ParentTaskPage({ navigation, route }) {
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date());
@@ -36,22 +39,43 @@ export default function ParentTaskPage({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [points, setPoints] = useState("");
-  const [childrenList, setChildrenList] = useState([]);
+  // No childId requirement. Tasks are for the logged-in user.
 
-  const childId = route?.params?.childId || null;
 
+  // Dropdown state for generic tasks
+  const [taskList, setTaskList] = useState([]);
+  const [selectedTaskId, setSelectedTaskId] = useState("");
+
+  // Fetch generic tasks from the stockpile (genericTasks collection)
   useEffect(() => {
-    const auth = getAuth();
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-
-    const q = query(collection(db, "children"), where("userId", "==", uid));
-    getDocs(q).then((snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setChildrenList(list);
-    });
+    const fetchGenericTasks = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "genericTasks"));
+        const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setTaskList(tasks);
+      } catch (err) {
+        console.error("Error fetching generic tasks:", err);
+      }
+    };
+    fetchGenericTasks();
   }, []);
 
+  // When a generic task is selected, populate fields
+  useEffect(() => {
+    if (!selectedTaskId) return;
+    const task = taskList.find(t => t.id === selectedTaskId);
+    if (task) {
+      setTitle(task.title || "");
+      setDescription(task.description || "");
+      setPoints(task.points ? String(task.points) : "");
+      setSteps(Array.isArray(task.steps) ? task.steps : [""]);
+      // Use today's date and time for new task
+      setDate(new Date());
+      setTime(new Date());
+    }
+  }, [selectedTaskId]);
+
+  // --- Step Handlers ---
   const handleAddStep = () => setSteps([...steps, ""]);
 
   const handleRemoveStep = (index) => {
@@ -65,11 +89,13 @@ export default function ParentTaskPage({ navigation, route }) {
     setSteps(updated);
   };
 
+  // --- Save Task ---
   const handleSaveTask = async () => {
     if (!title.trim() || !description.trim()) {
       Alert.alert("Missing Info", "Please fill in both task title and description.");
       return;
     }
+
 
     const parsedPoints = parseInt(points, 10);
     if (isNaN(parsedPoints) || parsedPoints < 0) {
@@ -97,12 +123,7 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
-      let childUserId = parentId; // Default to parent's uid so all children can see the task
-      if (childId) {
-        const childObj = childrenList?.find((c) => c.id === childId);
-        if (childObj) childUserId = childObj.userId || parentId;
-      }
-
+      // 1) Save task with points + status
       const taskRef = await addDoc(collection(db, "tasks"), {
         title,
         description,
@@ -111,13 +132,13 @@ export default function ParentTaskPage({ navigation, route }) {
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: parentId,
-        childId: childId || null,
-        userId: childUserId,
+        userId: user.uid, // Always set userId to the currently logged-in user's UID
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
       });
 
+      // 2) Update parent's point summary (parentPoints collection)
       const parentPointsRef = doc(db, "parentPoints", parentId);
       await setDoc(
         parentPointsRef,
@@ -155,15 +176,35 @@ export default function ParentTaskPage({ navigation, route }) {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{"← Back"}</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
         <ScrollView
-          style={styles.container}
-          contentContainerStyle={{ paddingBottom: 60 }}
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
         >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
           <Text style={styles.header}>Task Management</Text>
+
+          {/* Dropdown for stockpile of tasks */}
+          <Text style={styles.label}>Select Existing Task</Text>
+          <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 5 }}>
+            <Picker
+              selectedValue={selectedTaskId}
+              onValueChange={setSelectedTaskId}
+              style={{ color: '#222' }} // Ensure text is visible
+            >
+              <Picker.Item label="-- Select a task --" value="" color="#888" />
+              {taskList.map(task => (
+                <Picker.Item
+                  key={task.id}
+                  label={task.title ? String(task.title) : `Untitled Task (${task.id.slice(-4)})`}
+                  value={task.id}
+                  color="#222"
+                />
+              ))}
+            </Picker>
+          </View>
 
           {/* Task Title */}
           <Text style={styles.label}>Task Title</Text>
@@ -270,17 +311,54 @@ export default function ParentTaskPage({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  header: { fontSize: 22, fontWeight: "600", textAlign: "center", marginVertical: 10 },
-  label: { fontSize: 16, fontWeight: "500", marginTop: 15 },
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#333",
+  },
+  formWrapper: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+    marginBottom: 30,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginTop: 15,
+    color: "#333",
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 10,
-    marginTop: 5,
+    marginBottom: 5,
+    backgroundColor: "#fafafa",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  stepRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 5
+  },
   addStep: {
     flexDirection: "row",
     alignItems: "center",
@@ -300,17 +378,17 @@ const styles = StyleSheet.create({
   saveButtonText: {
     textAlign: "center",
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   backButton: {
     alignSelf: "flex-start",
     marginLeft: 20,
-    marginTop: 40,
+    marginTop: 15,
     marginBottom: 10,
   },
   backText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#4CAF50",
     fontWeight: "bold",
   },

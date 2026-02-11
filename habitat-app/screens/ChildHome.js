@@ -12,6 +12,7 @@ import { useTheme } from "../theme/ThemeContext";
 
 export default function ChildHome() {
     const [childName, setChildName] = useState("");
+    const [childPreferredName, setChildPreferredName] = useState("");
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
@@ -38,15 +39,18 @@ export default function ChildHome() {
                 if (!querySnapshot.empty) {
                     const data = querySnapshot.docs[0].data();
                     setChildName(data.fullName || "");
+                    setChildPreferredName(data.preferredName || "");
                     setAvatar(data.avatar || "panda");
                 } else {
                     setChildName("");
+                    setChildPreferredName("");
                     setAvatar("panda");
                 }
                 setLoading(false);
             } catch (error) {
                 console.error("Error fetching child profile:", error);
                 setChildName("");
+                setChildPreferredName("");
                 setAvatar("panda");
                 setLoading(false);
             }
@@ -110,7 +114,9 @@ export default function ChildHome() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Top Section: Greeting and Progress Bar */}
             <View style={styles.topSection}>
-                    {childName ? (
+                    {childPreferredName && childPreferredName.trim() ? (
+                        <Text style={[styles.title, { color: colors.text }]}>Hello {childPreferredName}!</Text>
+                    ) : childName ? (
                         <Text style={[styles.title, { color: colors.text }]}>Hello {childName}!</Text>
                     ) : (
                         <Text style={[styles.title, { color: colors.text }]}>Hello Child!</Text>
@@ -200,21 +206,20 @@ export default function ChildHome() {
             </SafeAreaView>
         );
     }
-// ...existing code...
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
     topSection: { marginTop: 20, alignItems: "center" },
     title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5,textAlign: "center" },
-    date: { fontSize: 14, color: "#666", textAlign: "center" },
+    date: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
     progressBarContainer: {  height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
     progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
-    avatarContainer: { alignItems: "center", marginVertical: 20 },
+    avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative" },
     scrollContent: { paddingBottom: 30 },
-    avatar: { width: 300, height: 300, borderRadius: 10},
+    avatar: { width: 300, height: 300, borderRadius: 10 },
     hatOverlay: { position: "absolute", top: -65, left: 70 },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
