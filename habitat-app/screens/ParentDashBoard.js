@@ -39,42 +39,83 @@ export default function ParentDashBoard({ navigation, route }) {
       return;
     }
 
-    // Decide which childId to use
-    // If you're passing childId in navigation params, use that:
     const childIdFromRoute = route?.params?.childId;
-    const childId = childIdFromRoute || user?.uid; // adjust this depending on your schema
+    let pointsUnsub = () => {};
 
-    if (!childId) {
-      setChildPoints({ points: 0, loading: false });
-      return;
-    }
-
-    const childPointsRef = doc(db, "childPoints", childId);
-
-    const pointsUnsub = onSnapshot(
-      childPointsRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          // support either "points" or "stars" as the field name
-          const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
-
-          setChildPoints({
-            points: balance,
-            loading: false,
-          });
-        } else {
-          setChildPoints({
-            points: 0,
-            loading: false,
-          });
+    if (childIdFromRoute) {
+      const childPointsRef = doc(db, "childPoints", childIdFromRoute);
+      pointsUnsub = onSnapshot(
+        childPointsRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
+            setChildPoints({ points: balance, loading: false });
+          } else {
+            setChildPoints({ points: 0, loading: false });
+          }
+        },
+        (error) => {
+          console.error("Error listening to childPoints:", error);
+          setChildPoints((prev) => ({ ...prev, loading: false }));
         }
-      },
-      (error) => {
-        console.error("Error listening to childPoints:", error);
-        setChildPoints((prev) => ({ ...prev, loading: false }));
-      }
-    );
+      );
+    } else {
+      // Parent dashboard default: aggregate balances for this parent's children.
+      const parentChildPointsQuery = query(
+        collection(db, "childPoints"),
+        where("parentId", "==", user.uid)
+      );
+      let fallbackUnsub = () => {};
+      let isFallbackActive = false;
+      pointsUnsub = onSnapshot(
+        parentChildPointsQuery,
+        (snap) => {
+          if (!snap.empty) {
+            try { fallbackUnsub(); } catch {}
+            fallbackUnsub = () => {};
+            isFallbackActive = false;
+            const total = snap.docs.reduce((sum, d) => {
+              const data = d.data() || {};
+              return sum + Number(data.points ?? data.stars ?? data.totalPoints ?? 0);
+            }, 0);
+            setChildPoints({ points: total, loading: false });
+            return;
+          }
+
+          // Backward compatibility if older docs don't have parentId.
+          if (!isFallbackActive) {
+            const fallbackRef = doc(db, "childPoints", user.uid);
+            fallbackUnsub = onSnapshot(
+              fallbackRef,
+              (fallbackSnap) => {
+                if (fallbackSnap.exists()) {
+                  const data = fallbackSnap.data();
+                  const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
+                  setChildPoints({ points: balance, loading: false });
+                } else {
+                  setChildPoints({ points: 0, loading: false });
+                }
+              },
+              (fallbackErr) => {
+                console.error("Error listening to fallback childPoints:", fallbackErr);
+                setChildPoints((prev) => ({ ...prev, loading: false }));
+              }
+            );
+            isFallbackActive = true;
+          }
+        },
+        (err) => {
+          console.error("Error listening to parent childPoints:", err);
+          setChildPoints((prev) => ({ ...prev, loading: false }));
+        }
+      );
+      const parentPointsUnsub = pointsUnsub;
+      pointsUnsub = () => {
+        try { parentPointsUnsub(); } catch {}
+        try { fallbackUnsub(); } catch {}
+      };
+    }
 
     let pendingUnsub = () => {};
     if (user?.uid) {
@@ -109,10 +150,14 @@ export default function ParentDashBoard({ navigation, route }) {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <ScrollView style={styles.ScrollView}>
+       <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Header */}
           <Text style={[styles.header, { color: colors.text }]}>Parent Dashboard</Text>
-
       {/* Current Balance Card */}
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.balanceHeader}>
@@ -203,6 +248,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+    scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
   },
   header: {
     fontSize: 24,

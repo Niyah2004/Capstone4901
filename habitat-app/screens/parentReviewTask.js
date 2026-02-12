@@ -95,7 +95,15 @@ export default function ParentReviewTask({ navigation }) {
       // award points
       tx.set(
         childPointsRef,
-        { childId: childUid, totalPoints: increment(points), updatedAt: serverTimestamp() },
+        {
+          childId: childUid,
+          parentId: t.ownerId || getAuth().currentUser?.uid || null,
+          // current balance
+          points: increment(points),
+          // lifetime earned
+          totalPoints: increment(points),
+          updatedAt: serverTimestamp(),
+        },
         { merge: true }
       );
 

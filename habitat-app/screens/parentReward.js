@@ -1,13 +1,12 @@
 // Comfort page for parents to create and manage rewards for their children
-import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
 import { db, storage } from "../firebaseConfig";
-import React, { useState } from 'react'; 
+import React, { useEffect, useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-import { arrayRemove } from "firebase/firestore";
 
 export default function ParentReward({navigation}) {
   const auth = getAuth();
@@ -18,6 +17,37 @@ export default function ParentReward({navigation}) {
   const [rewardImage, setRewardImage] = useState (null);
   const [imageUri, setImageUri] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [rewards, setRewards] = useState([]);
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setRewards([]);
+      return;
+    }
+
+    const rewardsQuery = query(
+      collection(db, "rewards"),
+      where("parentId", "==", uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      rewardsQuery,
+      (snap) => {
+        const list = snap.docs.map((rewardDoc) => ({
+          id: rewardDoc.id,
+          ...rewardDoc.data(),
+        }));
+        setRewards(list);
+      },
+      (error) => {
+        console.error("Error loading rewards:", error);
+        setRewards([]);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [auth.currentUser?.uid]);
 
   
   //adding the picture to the reward
@@ -206,7 +236,7 @@ const confirmRemoveReward = (rewardId) => {
 
     {rewards.map((reward) => (
   <View key={reward.id} style={styles.rewardCard}>
-    <Text style={styles.rewardTitle}>{reward.title}</Text>
+    <Text style={styles.rewardTitle}>{reward.name || reward.title || "Untitled Reward"}</Text>
 
     <TouchableOpacity
       onPress={() => removeReward(reward.id)}
