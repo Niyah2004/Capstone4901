@@ -2,6 +2,7 @@
   "expo": {
     "name": "habitat-app",
     "slug": "habitat-app",
+    "scheme": "phiktionhabitat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,9 +17,16 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "phiktion.habitat.ios",
+      "googleServicesFile": "./GoogleService-Info(1).plist",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "phiktion.Habitat.android",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#008000"
@@ -28,7 +36,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      "@react-native-firebase/app"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "efc97838-1ba1-40a1-9f48-0aef6433ff78"
+      }
+    }
   }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "294477577859",
+    "project_id": "habitat-71bbc",
+    "storage_bucket": "habitat-71bbc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:294477577859:android:3513a797f1f4622fbe65b6",
+        "android_client_info": {
+          "package_name": "phiktion.Habitat.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASXuxcsdX-zKgvK9YZi9qIIOVgI-LDyl0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

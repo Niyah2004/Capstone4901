@@ -9,6 +9,7 @@ import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/fir
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
+import analytics from "@react-native-firebase/analytics";
 
 export default function ChildHome() {
     const [childName, setChildName] = useState("");
@@ -16,7 +17,11 @@ export default function ChildHome() {
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
+    const [lifetimeStars, setLifetimeStars] = useState(0);
+    const [completedTaskCount, setCompletedTaskCount] = useState(0);
+    const [childDocId, setChildDocId] = useState(null);
     const [hatEquipped, setHatEquipped] = useState(false);
+    const achievedMilestonesRef = useRef({ firstTask: false, stars50: false });
     const progress = useRef(new Animated.Value(0)).current;
     const MAX_POINTS = 300;
     const { theme } = useTheme();
@@ -41,10 +46,12 @@ export default function ChildHome() {
                     setChildName(data.fullName || "");
                     setChildPreferredName(data.preferredName || "");
                     setAvatar(data.avatar || "panda");
+                    setChildDocId(querySnapshot.docs[0].id);
                 } else {
                     setChildName("");
                     setChildPreferredName("");
                     setAvatar("panda");
+                    setChildDocId(null);
                 }
                 setLoading(false);
             } catch (error) {
@@ -52,6 +59,7 @@ export default function ChildHome() {
                 setChildName("");
                 setChildPreferredName("");
                 setAvatar("panda");
+                setChildDocId(null);
                 setLoading(false);
             }
         };
@@ -74,9 +82,11 @@ export default function ChildHome() {
         const childPointsRef = doc(db, "childPoints", user.uid);
         const unsub = onSnapshot(childPointsRef, (snap) => {
             const data = snap.exists() ? snap.data() : {};
-            const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
-            setChildPoints(points);
-            const clamped = Math.max(0, Math.min(MAX_POINTS, points));
+            const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
+            const totalCollected = data.totalPoints ?? balance;
+            setChildPoints(balance);
+            setLifetimeStars(totalCollected);
+            const clamped = Math.max(0, Math.min(MAX_POINTS, balance));
             Animated.timing(progress, {
                 toValue: clamped,
                 duration: 600,
@@ -86,6 +96,87 @@ export default function ChildHome() {
 
         return () => unsub();
     }, [progress]);
+
+    useEffect(() => {
+        const user = getAuth().currentUser;
+        if (!user) {
+            setCompletedTaskCount(0);
+            return;
+        }
+
+        let completedByUidIds = new Set();
+        let completedByChildDocIds = new Set();
+        const unsubs = [];
+
+        const syncCompletedCount = () => {
+            const merged = new Set([...completedByUidIds, ...completedByChildDocIds]);
+            setCompletedTaskCount(merged.size);
+        };
+
+        const completedByUidQuery = query(
+            collection(db, "tasks"),
+            where("completedByChildId", "==", user.uid),
+            where("verified", "==", true)
+        );
+
+        unsubs.push(
+            onSnapshot(completedByUidQuery, (snap) => {
+                completedByUidIds = new Set(snap.docs.map((taskDoc) => taskDoc.id));
+                syncCompletedCount();
+            })
+        );
+
+        if (childDocId) {
+            const completedByChildDocQuery = query(
+                collection(db, "tasks"),
+                where("childId", "==", childDocId),
+                where("verified", "==", true)
+            );
+
+            unsubs.push(
+                onSnapshot(completedByChildDocQuery, (snap) => {
+                    completedByChildDocIds = new Set(snap.docs.map((taskDoc) => taskDoc.id));
+                    syncCompletedCount();
+                })
+            );
+        } else {
+            completedByChildDocIds = new Set();
+            syncCompletedCount();
+        }
+
+        return () => {
+            unsubs.forEach((unsub) => {
+                try { if (typeof unsub === "function") unsub(); } catch {}
+            });
+        };
+    }, [childDocId]);
+
+    const firstTaskAchieved = completedTaskCount >= 1;
+    const stars50Achieved = lifetimeStars >= 50;
+
+    useEffect(() => {
+        const logMilestone = async (milestoneId) => {
+            try {
+                await analytics().logEvent("milestone_achieved", {
+                    milestone_id: milestoneId,
+                    tasks_completed: completedTaskCount,
+                    stars_collected: lifetimeStars,
+                });
+            } catch (error) {
+                console.warn("Analytics milestone logging skipped:", error?.message || error);
+            }
+        };
+
+        if (firstTaskAchieved && !achievedMilestonesRef.current.firstTask) {
+            achievedMilestonesRef.current.firstTask = true;
+            logMilestone("first_task_completed");
+        }
+
+        if (stars50Achieved && !achievedMilestonesRef.current.stars50) {
+            achievedMilestonesRef.current.stars50 = true;
+            logMilestone("stars_50_collected");
+        }
+    }, [firstTaskAchieved, stars50Achieved, completedTaskCount, lifetimeStars]);
     // Map avatar id to image
     const avatarImages = {
         panda: require("../assets/panda.png"),
@@ -164,14 +255,24 @@ export default function ChildHome() {
                         <Ionicons name="trophy-outline" style={{ color: "#ffd700", fontSize: 30 }} />
                         <View style={{ marginLeft: 2 }}>
                             <Text style={[styles.milestoneText, { color: colors.text }]}>First Task Completed!</Text>
-                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>Achieved</Text>
+                            <Text style={[styles.milestoneSubtext, { color: colors.muted }]}>
+                                Tasks completed: {completedTaskCount}
+                            </Text>
+                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>
+                                {firstTaskAchieved ? "Achieved" : `${Math.min(completedTaskCount, 1)}/1`}
+                            </Text>
                         </View>
                     </View>
                     <View style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
                         <Ionicons name="star-outline" style={{ color: "#ffd700", fontSize: 30 }} />
                         <View style={{ marginLeft: 2 }}>
                             <Text style={[styles.milestoneText, { color: colors.text }]}>Collected 50 Stars!</Text>
-                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>Achieved</Text>
+                            <Text style={[styles.milestoneSubtext, { color: colors.muted }]}>
+                                Stars collected: {lifetimeStars}
+                            </Text>
+                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>
+                                {stars50Achieved ? "Achieved" : `${Math.min(lifetimeStars, 50)}/50`}
+                            </Text>
                         </View>
                     </View>
 
@@ -225,6 +326,7 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
+    milestoneSubtext: { marginLeft: 10, marginTop: 2, fontSize: 12, color: "#666" },
     milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
     wardrobeRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 6 },
     wardrobeItem: { width: "23%", aspectRatio: 1, borderRadius: 999, alignItems: "center", justifyContent: "center", marginBottom: 10 },
