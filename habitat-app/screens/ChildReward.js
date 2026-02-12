@@ -148,7 +148,7 @@ export default function ChildReward() {
     const avatarImages = {
         panda: require("../assets/panda.png"),
         turtle: require("../assets/turtle.jpg"),
-        giraffe: require("../assets/giraffe.jpg"),
+        giraffe: require("../assets/giraffe.png"),
     };
 
     return (

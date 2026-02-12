@@ -12,7 +12,7 @@ export default function AvatarSelection({navigation, route}) {
   const avatars = [
     { id: "panda", image: require("../assets/panda.png") },
     { id: "turtle", image: require("../assets/turtle.jpg")},
-    { id: "giraffe", image: require("../assets/giraffe.jpg") },
+    { id: "giraffe", image: require("../assets/giraffe.png") },
   ];
 
   const handleAvatarSelect = (avatarId) => {
