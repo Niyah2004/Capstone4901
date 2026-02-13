@@ -213,7 +213,7 @@ export default function ParentDashBoard({ navigation, route }) {
           onPress={() => navigation.navigate("ParentTaskPage")}
           >
             <Ionicons name="list-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]}>Task Management</Text>
+            <Text style={[styles.manageText, { color: colors.text }]}> Create Task</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
           //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
