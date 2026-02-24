@@ -90,7 +90,7 @@ export default function ChildHome() {
     const avatarImages = {
         panda: require("../assets/panda.png"),
         turtle: require("../assets/turtle.jpg"),
-        giraffe: require("../assets/giraffe.jpg"),
+        giraffe: require("../assets/giraffe.png"),
     };
 
     const currentDate = new Date();

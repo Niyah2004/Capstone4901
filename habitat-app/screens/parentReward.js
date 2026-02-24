@@ -1,13 +1,12 @@
 // Comfort page for parents to create and manage rewards for their children
-import { collection, addDoc, updateDoc, getDoc, doc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
 import { db, storage } from "../firebaseConfig";
-import React, { useState } from 'react'; 
+import React, { useEffect, useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-
 
 export default function ParentReward({navigation}) {
   const auth = getAuth();
@@ -18,6 +17,37 @@ export default function ParentReward({navigation}) {
   const [rewardImage, setRewardImage] = useState (null);
   const [imageUri, setImageUri] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [rewards, setRewards] = useState([]);
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setRewards([]);
+      return;
+    }
+
+    const rewardsQuery = query(
+      collection(db, "rewards"),
+      where("parentId", "==", uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      rewardsQuery,
+      (snap) => {
+        const list = snap.docs.map((rewardDoc) => ({
+          id: rewardDoc.id,
+          ...rewardDoc.data(),
+        }));
+        setRewards(list);
+      },
+      (error) => {
+        console.error("Error loading rewards:", error);
+        setRewards([]);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [auth.currentUser?.uid]);
 
   
   //adding the picture to the reward
@@ -56,33 +86,84 @@ const uploadImageAsync = async (uri) => {
       Alert.alert("Missing info", "Please fill in both Reward Name and Points.");
       return;
     }
-  
+
     try {
       let imageURL = null;
 
-      if(rewardImage){
-        imageURL = await uploadImageAsync(rewardImage);
+      // Try to upload image, but don't block if it fails
+      if (rewardImage) {
+        try {
+          imageURL = await uploadImageAsync(rewardImage);
+        } catch (imageError) {
+          console.warn("Image upload failed, saving reward without image:", imageError);
+          Alert.alert(
+            "Image Upload Failed",
+            "The image couldn't be uploaded, but we'll save your reward without it. Continue?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Save Without Image",
+                onPress: async () => {
+                  await saveRewardToFirestore(null);
+                }
+              }
+            ]
+          );
+          return;
+        }
       }
-      await addDoc(collection(db, "rewards"), {
-        parentId: auth.currentUser.uid,
-        name: rewardName,
-        description: description,
-        points: parseInt(points),
-        frequency: frequency,
-        image: imageURL,
-        createdAt: new Date(),
-      });
-  
-      Alert.alert("Success!", "Reward has been added.");
-      navigation.goBack(); // sends you back after saving
+
+      await saveRewardToFirestore(imageURL);
     } catch (error) {
       console.error("Error saving reward:", error);
-      Alert.alert("Error", "Could not save reward, try again later.");
-      console.error("Firestore write error:", error);
-      Alert.alert("Firestore Error", error.message);
+      Alert.alert("Error", "Could not save reward. Please try again.");
     }
   };
+
+  const saveRewardToFirestore = async (imageURL) => {
+    await addDoc(collection(db, "rewards"), {
+      parentId: auth.currentUser.uid,
+      name: rewardName,
+      description: description,
+      points: parseInt(points),
+      frequency: frequency,
+      image: imageURL,
+      createdAt: new Date(),
+    });
+
+    Alert.alert("Success!", "Reward has been added.");
+    setRewardName("");
+    setDescription("");
+    setPoints("");
+    setRewardImage(null);
+    navigation.goBack();
+  };
   
+  const removeReward = async (rewardId) => {
+  try {
+    await deleteDoc(doc(db, "rewards", rewardId));
+    Alert.alert("Deleted", "Reward removed successfully.");
+  } catch (error) {
+    console.log("Error removing reward:", error);
+    Alert.alert("Error", "Could not remove reward.");
+  }
+};
+
+//confirm before deleting reward?
+{/*}
+const confirmRemoveReward = (rewardId) => {
+  Alert.alert(
+    "Remove Reward",
+    "Are you sure you want to delete this reward?",
+    [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => removeReward(rewardId) }
+    ]
+  );
+};
+*/}
+
+
   return (
     <ScrollView
   contentContainerStyle={styles.container}
@@ -153,13 +234,36 @@ const uploadImageAsync = async (uri) => {
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
 
+    {rewards.map((reward) => (
+  <View key={reward.id} style={styles.rewardCard}>
+    <Text style={styles.rewardTitle}>{reward.name || reward.title || "Untitled Reward"}</Text>
+
+    <TouchableOpacity
+      onPress={() => removeReward(reward.id)}
+      style={styles.deleteButton}
+    >
+
+      
+      <Text style={styles.deleteText}>Remove</Text>
+    </TouchableOpacity>
+  </View>
+))}
+
 
 
 {rewardImage && (
-  <Image
-    source={{ uri: rewardImage }}
-    style={{ width: 100, height: 100, marginTop: 10, borderRadius: 10 }}
-  />
+  <View style={styles.imagePreviewContainer}>
+    <Image
+      source={{ uri: rewardImage }}
+      style={styles.imagePreview}
+    />
+    <TouchableOpacity
+      style={styles.removeImageButton}
+      onPress={() => setRewardImage(null)}
+    >
+      <Text style={styles.removeImageText}>✕</Text>
+    </TouchableOpacity>
+  </View>
 )}
 
   </View>
@@ -269,6 +373,37 @@ const styles = StyleSheet.create({
 },
 addImageButtonText: {
   color: "#fff",
+  fontWeight: "bold",
+},
+imagePreviewContainer: {
+  position: "relative",
+  marginTop: 10,
+  alignSelf: "center",
+},
+imagePreview: {
+  width: 100,
+  height: 100,
+  borderRadius: 10,
+},
+removeImageButton: {
+  position: "absolute",
+  top: -8,
+  right: -8,
+  backgroundColor: "#FF4444",
+  width: 28,
+  height: 28,
+  borderRadius: 14,
+  justifyContent: "center",
+  alignItems: "center",
+  shadowColor: "#000",
+  shadowOpacity: 0.3,
+  shadowRadius: 3,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 3,
+},
+removeImageText: {
+  color: "#fff",
+  fontSize: 16,
   fontWeight: "bold",
 },
 
