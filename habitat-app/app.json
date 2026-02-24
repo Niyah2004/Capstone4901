@@ -18,7 +18,7 @@
     ],
     "ios": {
       "bundleIdentifier": "phiktion.habitat.ios",
-      "googleServicesFile": "./GoogleService-Info(1).plist",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "supportsTablet": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
