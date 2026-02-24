@@ -206,7 +206,13 @@ export default function ChildTask({ route, navigation }) {
         // DEBUG: Log fetched tasks
         console.log("[DEBUG] Tasks fetched for date:", selectedDate.toISOString(), list);
 
-        setTasksForDate(list);
+        // Store in appropriate bucket based on who owns the task
+        if (childId) {
+          taskBucketsRef.current.dateChild = list;
+        } else {
+          taskBucketsRef.current.dateUser = list;
+        }
+        recomputeTasksForDate();
         setLoadingTasks(false);
       },
       (err) => {
