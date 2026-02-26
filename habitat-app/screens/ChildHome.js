@@ -89,8 +89,10 @@ export default function ChildHome() {
     // Map avatar id to image
     const avatarImages = {
         panda: require("../assets/panda.png"),
-        turtle: require("../assets/turtle.jpg"),
-        giraffe: require("../assets/giraffe.png"),
+        turtle: require("../assets/turtle.png"),
+        dino: require("../assets/dino.png"),
+        lion: require("../assets/lion.png"),
+        penguin: require("../assets/penguin.png"),
     };
 
     const currentDate = new Date();

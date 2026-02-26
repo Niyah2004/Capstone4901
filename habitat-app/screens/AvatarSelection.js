@@ -11,8 +11,10 @@ export default function AvatarSelection({navigation, route}) {
 
   const avatars = [
     { id: "panda", image: require("../assets/panda.png") },
-    { id: "turtle", image: require("../assets/turtle.jpg")},
-    { id: "giraffe", image: require("../assets/giraffe.png") },
+    { id: "turtle", image: require("../assets/turtle.png")},
+    { id: "dino", image: require("../assets/dino.png") },
+    { id: "lion", image: require("../assets/lion.png") },
+    { id: "penguin", image: require("../assets/penguin.png") },
   ];
 
   const handleAvatarSelect = (avatarId) => {
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, marginTop: 150, color: "#2d2d2d", textAlign: "center" },
   avatarContainer: { justifyContent: "center", alignItems: "center", paddingHorizontal: "10%", marginBottom: 5, marginTop: "5%"  },
-  avatar: { width: 250, height: 250, marginHorizontal: 10 },
+  avatar: { width: 300, height: 300, marginHorizontal: 10},
   selectedAvatar: { borderColor: "#4CAF50", borderWidth: 3 },
   button: { width: "50%", backgroundColor: "#4CAF50", padding: 15, borderRadius: 8, alignItems: "center", marginHorizontal: "25%", marginTop: 20 },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
