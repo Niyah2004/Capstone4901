@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Image, TouchableOpacity, ScrollView } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -16,7 +15,12 @@ export default function ChildHome() {
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
-    const [hatEquipped, setHatEquipped] = useState(false);
+    const [equippedItems, setEquippedItems] = useState({
+        dinoHat: false,
+        dinoScarf: false,
+        dinoSkates: false,
+        dinoDog: false,
+    });
     const progress = useRef(new Animated.Value(0)).current;
     const MAX_POINTS = 300;
     const { theme } = useTheme();
@@ -88,9 +92,21 @@ export default function ChildHome() {
     }, [progress]);
     // Map avatar id to image
     const avatarImages = {
-        panda: require("../assets/panda.png"),
-        turtle: require("../assets/turtle.jpg"),
-        giraffe: require("../assets/giraffe.jpg"),
+        panda:require("../assets/panda.png"),
+        turtle: require("../assets/turtle.png"),
+        dino: require("../assets/dino.png"),
+        lion: require("../assets/lion.png"),
+        penguin: require("../assets/penguin.png"),
+    };
+    const wardrobeItems = [
+        { id: "dinoHat", label: "Hat", image: require("../assets/dinoHat.png") },
+        { id: "dinoScarf", label: "Scarf", image: require("../assets/dinoScarf.png") },
+        { id: "dinoSkates", label: "Skates", image: require("../assets/dinoSkates.png") },
+        { id: "dinoDog", label: "Dog", image: require("../assets/dinoDog.png") },
+    ];
+
+    const toggleWardrobeItem = (itemId) => {
+        setEquippedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
     };
 
     const currentDate = new Date();
@@ -147,13 +163,10 @@ export default function ChildHome() {
                             source={avatarImages[avatar] || avatarImages["panda"]}
                             style={styles.avatar}
                         />
-                        {hatEquipped && (
-                            <FontAwesome5
-                                name="hat-cowboy"
-                                size={120}
-                                color="#7a4a12"
-                                style={styles.hatOverlay}
-                            />
+                        {wardrobeItems.map((item) =>
+                            equippedItems[item.id] ? (
+                                <Image key={item.id} source={item.image} style={styles.avatarOverlay} />
+                            ) : null
                         )}
                     </View>
                 </View>
@@ -177,28 +190,21 @@ export default function ChildHome() {
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
                     <View style={styles.wardrobeRow}>
-                        <TouchableOpacity
-                            style={[styles.wardrobeItem, { backgroundColor: "#f3d17a" }]}
-                            onPress={() => setHatEquipped((prev) => !prev)}
-                        >
-                            <FontAwesome5 name="hat-cowboy" size={26} color="#7a4a12" />
-                            <Text style={[styles.wardrobeLabel, { color: colors.text }]}>
-                                {/*Hat {hatEquipped ? "On" : "Off"}*/}
-                            </Text>
-                        </TouchableOpacity>
-                        {["Shoes", "Makeup", "Fruit"].map((label) => (
-                            <View
-                                key={label}
+                        {wardrobeItems.map((item) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                onPress={() => toggleWardrobeItem(item.id)}
                                 style={[
                                     styles.wardrobeItem,
-                                    { backgroundColor: colors.border, opacity: 0.6 },
+                                    { backgroundColor: colors.card, borderColor: colors.border },
+                                    equippedItems[item.id] && styles.wardrobeItemSelected,
                                 ]}
                             >
-                                <Ionicons name="lock-closed" size={22} color={colors.muted} />
-                                <Text style={[styles.wardrobeLabel, { color: colors.muted }]}>
-                                    Locked
+                                <Image source={item.image} style={styles.wardrobeIcon} resizeMode="contain" />
+                                <Text style={[styles.wardrobeLabel, { color: colors.text }]}>
+                                    {item.label}
                                 </Text>
-                            </View>
+                            </TouchableOpacity>
                         ))}
                     </View>
                 </View>
@@ -220,13 +226,15 @@ const styles = StyleSheet.create({
     avatarWrapper: { position: "relative" },
     scrollContent: { paddingBottom: 30 },
     avatar: { width: 300, height: 300, borderRadius: 10 },
-    hatOverlay: { position: "absolute", top: -65, left: 70 },
+    avatarOverlay: { position: "absolute", top: 0, left: 0, width: 300, height: 300 },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
     milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
     wardrobeRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 6 },
-    wardrobeItem: { width: "23%", aspectRatio: 1, borderRadius: 999, alignItems: "center", justifyContent: "center", marginBottom: 10 },
+    wardrobeItem: { width: "23%", aspectRatio: 1, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 10, borderWidth: 1, padding: 6 },
+    wardrobeItemSelected: { borderColor: "#4CAF50", borderWidth: 2, backgroundColor: "#ECF9ED" },
+    wardrobeIcon: { width: 34, height: 34 },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
 });

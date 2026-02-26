@@ -147,8 +147,10 @@ export default function ChildReward() {
     // Map avatar id to image
     const avatarImages = {
         panda: require("../assets/panda.png"),
-        turtle: require("../assets/turtle.jpg"),
-        giraffe: require("../assets/giraffe.jpg"),
+        turtle: require("../assets/turtle.png"),
+        dino: require("../assets/dino.png"),
+        lion: require("../assets/lion.png"),
+        penguin: require("../assets/penguin.png"),
     };
 
     return (

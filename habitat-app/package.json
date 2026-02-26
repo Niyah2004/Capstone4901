@@ -16,7 +16,6 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@expo/cli": "^54.0.8",
     "baseline-browser-mapping": "^2.9.18"
   },
   "dependencies": {
@@ -25,19 +24,19 @@
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
-    "@react-native-community/slider": "^5.1.2",
+    "@react-native-community/slider": "5.0.1",
     "@react-native-firebase/analytics": "^23.4.1",
     "@react-native-firebase/app": "^23.4.1",
     "@react-native-firebase/auth": "^23.4.1",
     "@react-native-firebase/firestore": "^23.4.1",
     "@react-native-firebase/storage": "^23.4.1",
-    "@react-native-masked-view/masked-view": "^0.3.2",
+    "@react-native-masked-view/masked-view": "0.3.2",
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/bottom-tabs": "^7.4.8",
     "@react-navigation/native": "^7.1.18",
     "@react-navigation/native-stack": "^7.3.28",
     "date-fns": "^4.1.0",
-    "expo": "~54.0.33",
+    "expo": "^54.0.33",
     "expo-font": "~14.0.11",
     "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",
@@ -46,7 +45,7 @@
     "firebase": "^12.4.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-native": "^0.81.5",
+    "react-native": "0.81.5",
     "react-native-confetti-cannon": "^1.5.2",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-linear-gradient": "^2.8.3",
@@ -55,6 +54,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0",
+    "react-native-worklets": "0.5.1",
     "semver": "^7.7.4"
   }
 }

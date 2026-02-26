@@ -19,6 +19,15 @@ export default function ParentDashBoard({ navigation, route }) {
     loading: true,
   });
   const [pendingCount, setPendingCount] = useState(0);
+  const [milestoneAvatar, setMilestoneAvatar] = useState("panda");
+
+  const avatarImages = {
+    panda: require("../assets/panda.png"),
+    turtle: require("../assets/turtle.png"),
+    dino: require("../assets/dino.png"),
+    lion: require("../assets/lion.png"),
+    penguin: require("../assets/penguin.png"),
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -146,6 +155,60 @@ export default function ParentDashBoard({ navigation, route }) {
     };
   }, [route]));
 
+  useFocusEffect(
+    useCallback(() => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const childIdFromRoute = route?.params?.childId;
+      let childProfileUnsub = () => {};
+
+      if (childIdFromRoute) {
+        const childRef = doc(db, "children", childIdFromRoute);
+        childProfileUnsub = onSnapshot(
+          childRef,
+          (snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.data() || {};
+              setMilestoneAvatar(data.avatar || "panda");
+            } else {
+              setMilestoneAvatar("panda");
+            }
+          },
+          (error) => {
+            console.error("Error listening to child profile:", error);
+            setMilestoneAvatar("panda");
+          }
+        );
+      } else if (user?.uid) {
+        const childrenQuery = query(
+          collection(db, "children"),
+          where("userId", "==", user.uid)
+        );
+        childProfileUnsub = onSnapshot(
+          childrenQuery,
+          (snap) => {
+            if (!snap.empty) {
+              const firstChild = snap.docs[0].data() || {};
+              setMilestoneAvatar(firstChild.avatar || "panda");
+            } else {
+              setMilestoneAvatar("panda");
+            }
+          },
+          (error) => {
+            console.error("Error listening to children profile:", error);
+            setMilestoneAvatar("panda");
+          }
+        );
+      } else {
+        setMilestoneAvatar("panda");
+      }
+
+      return () => {
+        try { childProfileUnsub(); } catch {}
+      };
+    }, [route?.params?.childId])
+  );
+
 
   return (
     <SafeAreaProvider>
@@ -181,7 +244,7 @@ export default function ParentDashBoard({ navigation, route }) {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Milestone</Text>
         <View style={styles.milestoneContent}>
           <Image
-            source={require("../assets/reading.jpeg")} 
+            source={avatarImages[milestoneAvatar] || avatarImages.panda}
             style={styles.milestoneImage}
           />
           <View style={styles.milestoneText}>
