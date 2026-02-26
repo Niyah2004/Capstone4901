@@ -123,6 +123,7 @@ export default function ChildHome() {
         { id: "dinoScarf", label: "Scarf", image: require("../assets/dinoScarf.png") },
         { id: "dinoSkates", label: "Skates", image: require("../assets/dinoSkates.png") },
         { id: "dinoDog", label: "Dog", image: require("../assets/dinoDog.png") },
+        { id: "SpaceBackground", label: "Space Background", image: require("../assets/SpaceBackground.png") },
     ];
 
     const toggleWardrobeItem = (itemId) => {
