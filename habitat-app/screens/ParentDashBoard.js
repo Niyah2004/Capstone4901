@@ -20,6 +20,8 @@ export default function ParentDashBoard({ navigation, route }) {
   });
   const [pendingCount, setPendingCount] = useState(0);
   const [milestoneAvatar, setMilestoneAvatar] = useState("panda");
+  const [recentMilestone, setRecentMilestone] = useState(null);
+  const [verifiedCount, setVerifiedCount] = useState(0);
 
   const avatarImages = {
     panda: require("../assets/panda.png"),
@@ -209,6 +211,41 @@ export default function ParentDashBoard({ navigation, route }) {
     }, [route?.params?.childId])
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        setRecentMilestone(null);
+        setVerifiedCount(0);
+        return;
+      }
+
+      const q = query(
+        collection(db, "tasks"),
+        where("ownerId", "==", user.uid),
+        where("verified", "==", true)
+      );
+
+      const unsub = onSnapshot(q, (snap) => {
+        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        docs.sort((a, b) => {
+          const aTime = a.verifiedAt?.toDate ? a.verifiedAt.toDate().getTime() : 0;
+          const bTime = b.verifiedAt?.toDate ? b.verifiedAt.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+        setRecentMilestone(docs[0] || null);
+        setVerifiedCount(docs.length);
+      }, (err) => {
+        console.error("Error fetching milestones:", err);
+        setRecentMilestone(null);
+        setVerifiedCount(0);
+      });
+
+      return () => { try { unsub(); } catch {} };
+    }, [])
+  );
+
 
   return (
     <SafeAreaProvider>
@@ -241,20 +278,34 @@ export default function ParentDashBoard({ navigation, route }) {
 
       {/* Recent Milestone */}
       <View style={[styles.milestoneCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Milestone</Text>
-        <View style={styles.milestoneContent}>
-          <Image
-            source={avatarImages[milestoneAvatar] || avatarImages.panda}
-            style={styles.milestoneImage}
-          />
-          <View style={styles.milestoneText}>
-            <Text style={[styles.milestoneTitle, { color: colors.text }]}>Completed 'Read 5 Books' Challenge</Text>
-            <Text style={[styles.milestoneDesc, { color: colors.muted }]}>
-              Leo earned a virtual trophy for diligently reading 5 books.
-            </Text>
-            <Text style={[styles.milestoneDate, { color: colors.muted }]}>Achieved on August 15, 2024</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Recent Milestone{verifiedCount > 0 ? `  ·  ${verifiedCount} completed` : ""}
+        </Text>
+        {recentMilestone ? (
+          <View style={styles.milestoneContent}>
+            <Image
+              source={avatarImages[milestoneAvatar] || avatarImages.panda}
+              style={styles.milestoneImage}
+            />
+            <View style={styles.milestoneText}>
+              <Text style={[styles.milestoneTitle, { color: colors.text }]}>
+                Completed '{recentMilestone.title}'
+              </Text>
+              <Text style={[styles.milestoneDesc, { color: colors.muted }]}>
+                {recentMilestone.description || "Task completed and verified!"}
+              </Text>
+              <Text style={[styles.milestoneDate, { color: colors.muted }]}>
+                {recentMilestone.verifiedAt?.toDate
+                  ? `Achieved on ${recentMilestone.verifiedAt.toDate().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`
+                  : "Recently completed"}
+              </Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <Text style={[styles.milestoneDesc, { color: colors.muted, textAlign: "center", paddingVertical: 10 }]}>
+            No milestones yet. Complete and verify tasks to see them here!
+          </Text>
+        )}
       </View>
 
       {/* Tasks Awaiting Approval */}

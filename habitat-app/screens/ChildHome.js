@@ -15,6 +15,8 @@ export default function ChildHome() {
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
+    const [totalPointsEarned, setTotalPointsEarned] = useState(0);
+    const [verifiedTaskCount, setVerifiedTaskCount] = useState(0);
     const [equippedItems, setEquippedItems] = useState({
         dinoHat: false,
         dinoScarf: false,
@@ -79,7 +81,9 @@ export default function ChildHome() {
         const unsub = onSnapshot(childPointsRef, (snap) => {
             const data = snap.exists() ? snap.data() : {};
             const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
+            const totalEarned = data.totalPoints ?? data.points ?? data.stars ?? 0;
             setChildPoints(points);
+            setTotalPointsEarned(totalEarned);
             const clamped = Math.max(0, Math.min(MAX_POINTS, points));
             Animated.timing(progress, {
                 toValue: clamped,
@@ -90,6 +94,22 @@ export default function ChildHome() {
 
         return () => unsub();
     }, [progress]);
+
+    useEffect(() => {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return;
+        const q = query(
+            collection(db, "tasks"),
+            where("userId", "==", user.uid),
+            where("verified", "==", true)
+        );
+        const unsub = onSnapshot(q, (snap) => {
+            setVerifiedTaskCount(snap.docs.length);
+        }, (err) => console.error("Error fetching verified tasks:", err));
+        return () => unsub();
+    }, []);
+
     // Map avatar id to image
     const avatarImages = {
         panda:require("../assets/panda.png"),
@@ -108,6 +128,13 @@ export default function ChildHome() {
     const toggleWardrobeItem = (itemId) => {
         setEquippedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
     };
+
+    const milestones = [
+        { id: "first_task", icon: "trophy-outline", label: "First Task Completed!", achieved: verifiedTaskCount >= 1 },
+        { id: "five_tasks", icon: "ribbon-outline", label: "Completed 5 Tasks!", achieved: verifiedTaskCount >= 5 },
+        { id: "fifty_stars", icon: "star-outline", label: "Collected 50 Stars!", achieved: totalPointsEarned >= 50 },
+        { id: "hundred_stars", icon: "star", label: "Collected 100 Stars!", achieved: totalPointsEarned >= 100 },
+    ];
 
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -170,23 +197,23 @@ export default function ChildHome() {
                         )}
                     </View>
                 </View>
-                {/* Bottom Section: Milestone Celebrations/task view?*/}
+                {/* Bottom Section: Milestone Celebrations */}
                 <View style={styles.bottomSection}>
                     <Text style={[styles.subtitle, { color: colors.text }]}>Milestone Celebrations</Text>
-                    <View style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                        <Ionicons name="trophy-outline" style={{ color: "#ffd700", fontSize: 30 }} />
-                        <View style={{ marginLeft: 2 }}>
-                            <Text style={[styles.milestoneText, { color: colors.text }]}>First Task Completed!</Text>
-                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>Achieved</Text>
+                    {milestones.map((m) => (
+                        <View key={m.id} style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                            <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : "#ccc", fontSize: 30 }} />
+                            <View style={{ marginLeft: 2 }}>
+                                <Text style={[styles.milestoneText, { color: m.achieved ? colors.text : colors.muted }]}>{m.label}</Text>
+                                <Text style={[styles.milestoneStatus, {
+                                    backgroundColor: m.achieved ? "#e7ffd7ff" : "#f0f0f0",
+                                    color: m.achieved ? "#2d7a2d" : "#999"
+                                }]}>
+                                    {m.achieved ? "Achieved" : "Not Yet"}
+                                </Text>
+                            </View>
                         </View>
-                    </View>
-                    <View style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                        <Ionicons name="star-outline" style={{ color: "#ffd700", fontSize: 30 }} />
-                        <View style={{ marginLeft: 2 }}>
-                            <Text style={[styles.milestoneText, { color: colors.text }]}>Collected 50 Stars!</Text>
-                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>Achieved</Text>
-                        </View>
-                    </View>
+                    ))}
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
                     <View style={styles.wardrobeRow}>
