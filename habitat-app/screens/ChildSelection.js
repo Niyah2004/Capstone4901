@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -10,48 +11,68 @@ export default function ChildSelectScreen({ navigation }) {
 
   const [children, setChildren] = useState([]);
 
-  useEffect(() => {
-    if (!userId) return;
+useEffect(() => {
+  if (!userId) {
+    console.log("ChildSelect: userId is null (not logged in yet)");
+    return;
+  }
 
-    const q = query(collection(db, "children"), where("userId", "==", auth.currentUser.uid));
-    const unsub = onSnapshot(q, (snap) => {
-      setChildren(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+  console.log("ChildSelect: querying children for userId:", userId);
 
-    return unsub;
-  }, [userId]);
+  const q = query(collection(db, "children"), where("userId", "==", userId));
+
+  const unsub = onSnapshot(
+    q,
+    (snap) => {
+      console.log("ChildSelect: docs found:", snap.size);
+      setChildren(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    },
+    (err) => {
+      console.log("ChildSelect snapshot error:", err);
+    }
+  );
+
+  return unsub;
+}, [userId]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-    <View style={styles.container}>
-      <Text style={styles.title}>Who’s playing?</Text>
+      <Text style={styles.title}>Who's Playing?</Text>
+<Text style={{ marginBottom: 10, opacity: 0.6 }}>
+  Logged in as: {userId || "NO USER"}
+</Text>
 
-      <FlatList
-        data={children}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.name}>{item.preferredName || item.fullName}</Text>
+<FlatList
+  data={children}
+  keyExtractor={(item) => item.id}
+  ListEmptyComponent={
+    <Text style={{ opacity: 0.7 }}>
+      No children found. If you definitely created one, the child docs may not have `userId`
+      matching this account, or Firestore rules are blocking reads.
+    </Text>
+  }
+  renderItem={({ item }) => (
+    <View style={styles.card}>
+      <Text style={styles.name}>{item.preferredName || item.fullName}</Text>
 
-            <View style={styles.row}>
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                onPress={() => navigation.navigate("ChildHome", { childId: item.id })}
-              >
-                <Text style={styles.btnText}>Open</Text>
-              </TouchableOpacity>
+      <View style={styles.row}>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          onPress={() => navigation.navigate("ChildHome", { childId: item.id })}
+        >
+          <Text style={styles.btnText}>Open</Text>
+        </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
-              >
-                <Text style={styles.btnText}>Edit Avatar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
+        <TouchableOpacity
+          style={styles.secondaryBtn}
+          onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
+        >
+          <Text style={styles.btnText}>Edit Avatar</Text>
+        </TouchableOpacity>
+      </View>
     </View>
+  )}
+/>
     </SafeAreaView>
   );
 }
@@ -100,5 +121,9 @@ const styles = StyleSheet.create({
   btnText: { 
     color: "#fff", 
     fontWeight: "700" 
+  },
+  safe: {
+    flex: 1,
+    backgroundColor: "#fff" 
   },
 });
