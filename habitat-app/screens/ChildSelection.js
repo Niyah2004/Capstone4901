@@ -55,12 +55,48 @@ export default function ChildSelectScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 14 },
-  card: { borderWidth: 1, borderColor: "#ddd", padding: 14, borderRadius: 12, marginBottom: 12 },
-  name: { fontSize: 18, fontWeight: "700", marginBottom: 10 },
-  row: { flexDirection: "row", gap: 10 },
-  primaryBtn: { backgroundColor: "#4CAF50", padding: 12, borderRadius: 10, flex: 1, alignItems: "center" },
-  secondaryBtn: { backgroundColor: "#2D8CFF", padding: 12, borderRadius: 10, flex: 1, alignItems: "center" },
-  btnText: { color: "#fff", fontWeight: "700" },
+  container: {
+     flex: 1, 
+     padding: 20, 
+     backgroundColor: "#fff" 
+    },
+  title: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    marginBottom: 14 
+  },
+  card: { 
+    borderWidth: 1, 
+    borderColor: "#ddd", 
+    padding: 14, 
+    borderRadius: 12, 
+    marginBottom: 12 
+  },
+  name: { 
+    fontSize: 18, 
+    fontWeight: "700", 
+    marginBottom: 10 
+  },
+  row: { 
+    flexDirection: "row", 
+    gap: 10 
+  },
+  primaryBtn: { 
+    backgroundColor: "#4CAF50", 
+    padding: 12, 
+    borderRadius: 10, 
+    flex: 1, 
+    alignItems: "center" 
+  },
+  secondaryBtn: { 
+    backgroundColor: "#2D8CFF", 
+    padding: 12, 
+    borderRadius: 10, 
+    flex: 1, 
+    alignItems: "center" 
+  },
+  btnText: { 
+    color: "#fff", 
+    fontWeight: "700" 
+  },
 });

@@ -109,7 +109,7 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
      // console.log("Parent pin saved with Parent Id:", parentRef.id);
      // console.log("Navigating to AvatarSelection with childId:", docRef.id);
     //  navigation.navigate("AvatarSelection", { childId: docRef.id });
-    navigation.navigate("ChildSelect", { childIds: createdChildIds });
+    navigation.navigate("ChildSelection", { childIds: createdChildIds });
     } catch (e) {
       console.log("Error adding document: ", e);
       Alert.alert("Error", "Could not save profile.");
