@@ -184,8 +184,9 @@ export default function ParentTaskPage({ navigation, route }) {
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.header}>Task Management</Text>
+          <Text style={styles.header}>Create Task</Text>
 
+          <View style={styles.formWrapper}>
           {/* Dropdown for stockpile of tasks */}
           <Text style={styles.label}>Select Existing Task</Text>
           <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 5 }}>
@@ -304,6 +305,7 @@ export default function ParentTaskPage({ navigation, route }) {
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -384,7 +386,7 @@ const styles = StyleSheet.create({
   backButton: {
     alignSelf: "flex-start",
     marginLeft: 20,
-    marginTop: 15,
+    marginTop: 10,
     marginBottom: 10,
   },
   backText: {
