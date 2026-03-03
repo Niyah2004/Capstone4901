@@ -92,7 +92,7 @@ export default function ParentReviewTask({ navigation }) {
       const points = Number(t.points || 0);
       const childPointsRef = doc(db, "childPoints", childUid);
 
-      // award points
+      // award points - increment both spendable balance (points) and lifetime counter (totalPoints)
       tx.set(
         childPointsRef,
         {

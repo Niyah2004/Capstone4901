@@ -19,6 +19,7 @@ export default function ParentDashBoard({ navigation, route }) {
     loading: true,
   });
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingClaimsCount, setPendingClaimsCount] = useState(0);
   const [milestoneAvatar, setMilestoneAvatar] = useState("panda");
   const [recentMilestone, setRecentMilestone] = useState(null);
   const [verifiedCount, setVerifiedCount] = useState(0);
@@ -151,9 +152,29 @@ export default function ParentDashBoard({ navigation, route }) {
       setPendingCount(0);
     }
 
+    let claimsUnsub = () => {};
+    if (user?.uid) {
+      const claimsQuery = query(
+        collection(db, "claims"),
+        where("parentId", "==", user.uid),
+        where("status", "==", "claimed")
+      );
+      claimsUnsub = onSnapshot(
+        claimsQuery,
+        (snap) => setPendingClaimsCount(snap.docs.length),
+        (err) => {
+          console.error("Error listening to claims:", err);
+          setPendingClaimsCount(0);
+        }
+      );
+    } else {
+      setPendingClaimsCount(0);
+    }
+
     return () => {
       try { pointsUnsub(); } catch {}
       try { pendingUnsub(); } catch {}
+      try { claimsUnsub(); } catch {}
     };
   }, [route]));
 
@@ -315,6 +336,21 @@ export default function ParentDashBoard({ navigation, route }) {
         <Text style={[styles.pendingText, { color: colors.muted }]}>pending tasks</Text>
         <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate("parentReviewTask")}>
           <Text style={styles.buttonText}>Review Tasks →</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Rewards Claimed by Child */}
+      <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>🎁 Rewards to Give Out</Text>
+        <Text style={styles.pendingCount}>{pendingClaimsCount}</Text>
+        <Text style={[styles.pendingText, { color: colors.muted }]}>
+          {pendingClaimsCount === 1 ? "reward waiting" : "rewards waiting"}
+        </Text>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#C19A00" }]}
+          onPress={() => navigation.navigate("parentReviewRewards")}
+        >
+          <Text style={styles.buttonText}>Review Rewards →</Text>
         </TouchableOpacity>
       </View>
 

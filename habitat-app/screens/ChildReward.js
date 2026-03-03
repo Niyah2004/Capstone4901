@@ -8,6 +8,21 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// Character roster - starters are free, others unlock at milestone thresholds
+const CHARACTER_ROSTER = [
+    { id: "panda", name: "Panda", emoji: "🐼", milestone: 0, image: require("../assets/panda.png") },
+    { id: "turtle", name: "Turtle", emoji: "🐢", milestone: 0, image: require("../assets/turtle.jpg") },
+    { id: "giraffe", name: "Giraffe", emoji: "🦒", milestone: 0, image: require("../assets/giraffe.jpg") },
+    { id: "cat", name: "Cat", emoji: "🐱", milestone: 50, image: null },
+    { id: "dog", name: "Dog", emoji: "🐶", milestone: 100, image: null },
+    { id: "bunny", name: "Bunny", emoji: "🐰", milestone: 200, image: null },
+    { id: "owl", name: "Owl", emoji: "🦉", milestone: 350, image: null },
+    { id: "dragon", name: "Dragon", emoji: "🐉", milestone: 500, image: null },
+];
+
+const STARTER_IDS = CHARACTER_ROSTER.filter(c => c.milestone === 0).map(c => c.id);
 
 export default function ChildReward() {
     const auth = getAuth();
@@ -19,6 +34,12 @@ export default function ChildReward() {
     const [childName, setChildName] = useState("Lea");
     const [avatar, setAvatar] = useState("panda");
     const confettiRef = useRef(null);
+
+    // Character unlock state
+    const [characterModalVisible, setCharacterModalVisible] = useState(false);
+    const [lifetimeStars, setLifetimeStars] = useState(0);
+    const [unlockedAvatars, setUnlockedAvatars] = useState([...STARTER_IDS]);
+    const [childDocId, setChildDocId] = useState(null);
     
     // Fetch rewards in real-time (instant updates!)
     useEffect(() => {
@@ -47,6 +68,7 @@ export default function ChildReward() {
                 cost: doc.data().points || 0,
                 description: doc.data().description || "",
                 gradient: gradientPresets[index % gradientPresets.length],
+                parentId: doc.data().parentId || null,
             }));
             setRewards(rewardList);
         }, (error) => {
@@ -56,7 +78,7 @@ export default function ChildReward() {
         return () => unsubscribe();
     }, [parentId]);
 
-    // Fetch child's stars from childPoints collection
+    // Fetch child's stars from childPoints collection (current balance + lifetime total)
     useEffect(() => {
         if (!auth.currentUser) return;
 
@@ -66,15 +88,19 @@ export default function ChildReward() {
                 const data = snap.data();
                 const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
                 setTotalStars(points);
+                // totalPoints only goes up (incremented when parent awards stars) - use as lifetime counter
+                const lifetime = data.totalPoints ?? data.points ?? 0;
+                setLifetimeStars(lifetime);
             } else {
                 setTotalStars(0);
+                setLifetimeStars(0);
             }
         });
 
         return () => unsubscribe();
     }, []);
 
-    // Fetch child's profile (name and avatar)
+    // Fetch child's profile (name, avatar, and unlocked characters)
     useEffect(() => {
         const fetchChildProfile = async () => {
             if (!auth.currentUser) return;
@@ -87,9 +113,15 @@ export default function ChildReward() {
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
-                    const data = querySnapshot.docs[0].data();
+                    const docSnap = querySnapshot.docs[0];
+                    const data = docSnap.data();
+                    setChildDocId(docSnap.id);
                     setChildName(data.preferredName || data.fullName || "Lea");
                     setAvatar(data.avatar || "panda");
+                    // Load previously unlocked avatars (starters are always included)
+                    const saved = data.unlockedAvatars || [];
+                    const merged = [...new Set([...STARTER_IDS, ...saved])];
+                    setUnlockedAvatars(merged);
                 }
             } catch (error) {
                 console.error("Error fetching child profile:", error);
@@ -98,6 +130,49 @@ export default function ChildReward() {
 
         fetchChildProfile();
     }, []);
+
+    // Check milestones and unlock new characters when modal opens
+    const checkAndUnlockCharacters = async () => {
+        if (!childDocId) return;
+
+        const newUnlocks = CHARACTER_ROSTER
+            .filter(c => c.milestone > 0 && lifetimeStars >= c.milestone && !unlockedAvatars.includes(c.id))
+            .map(c => c.id);
+
+        if (newUnlocks.length > 0) {
+            const updated = [...unlockedAvatars, ...newUnlocks];
+            setUnlockedAvatars(updated);
+            try {
+                const childRef = doc(db, "children", childDocId);
+                await updateDoc(childRef, { unlockedAvatars: updated });
+            } catch (error) {
+                console.warn("Could not save unlocked avatars:", error);
+            }
+            // Let the child know they unlocked something new!
+            const names = newUnlocks.map(id => CHARACTER_ROSTER.find(c => c.id === id)?.name).join(", ");
+            Alert.alert("New Character Unlocked! 🎉", `You unlocked: ${names}!`);
+        }
+    };
+
+    // Open the character selection modal
+    const openCharacterModal = async () => {
+        await checkAndUnlockCharacters();
+        setCharacterModalVisible(true);
+    };
+
+    // Switch active avatar
+    const handleSwitchAvatar = async (characterId) => {
+        if (!childDocId || !unlockedAvatars.includes(characterId)) return;
+
+        setAvatar(characterId);
+        try {
+            const childRef = doc(db, "children", childDocId);
+            await updateDoc(childRef, { avatar: characterId });
+        } catch (error) {
+            console.error("Error switching avatar:", error);
+            Alert.alert("Error", "Could not switch character. Try again.");
+        }
+    };
 
     const handleClaimReward = async () => {
         if (!selectedReward || !auth.currentUser) return;
@@ -123,8 +198,10 @@ export default function ChildReward() {
                 await addDoc(collection(db, "claims"), {
                     item_id: selectedReward.id,
                     rewardName: selectedReward.title,
+                    cost: selectedReward.cost,
                     status: "claimed",
                     user_id: auth.currentUser.uid,
+                    parentId: selectedReward.parentId || auth.currentUser.uid,
                     claimedAt: new Date(),
                 });
             } catch (claimError) {
@@ -212,6 +289,81 @@ export default function ChildReward() {
                 </View>
             </Modal>
 
+            {/* Character Selection Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={characterModalVisible}
+                onRequestClose={() => setCharacterModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContainer, { width: "90%" }]}>
+                        <Text style={styles.modalTitle}>Choose Your Character</Text>
+                        <Text style={styles.charModalSubtitle}>
+                            Earn more stars to unlock new characters!
+                        </Text>
+                        <Text style={styles.charModalStars}>
+                            Lifetime Stars Earned: ⭐ {lifetimeStars}
+                        </Text>
+
+                        <View style={styles.characterGrid}>
+                            {CHARACTER_ROSTER.map((character) => {
+                                const isUnlocked = unlockedAvatars.includes(character.id);
+                                const isActive = avatar === character.id;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={character.id}
+                                        style={[
+                                            styles.characterCard,
+                                            isActive && styles.characterCardActive,
+                                            !isUnlocked && styles.characterCardLocked,
+                                        ]}
+                                        onPress={() => {
+                                            if (isUnlocked) handleSwitchAvatar(character.id);
+                                        }}
+                                        disabled={!isUnlocked}
+                                    >
+                                        {character.image ? (
+                                            <Image source={character.image} style={styles.characterImage} />
+                                        ) : (
+                                            <Text style={styles.characterEmoji}>{character.emoji}</Text>
+                                        )}
+
+                                        <Text style={[
+                                            styles.characterName,
+                                            !isUnlocked && { color: "#aaa" }
+                                        ]}>
+                                            {character.name}
+                                        </Text>
+
+                                        {!isUnlocked && (
+                                            <View style={styles.lockBadge}>
+                                                <Ionicons name="lock-closed" size={12} color="#fff" />
+                                                <Text style={styles.lockBadgeText}>{character.milestone} ⭐</Text>
+                                            </View>
+                                        )}
+
+                                        {isActive && (
+                                            <View style={styles.activeBadge}>
+                                                <Text style={styles.activeBadgeText}>Active</Text>
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.modalCloseButton, { marginTop: 16 }]}
+                            onPress={() => setCharacterModalVisible(false)}
+                        >
+                            <Text style={styles.modalCloseText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
 
@@ -221,7 +373,6 @@ export default function ChildReward() {
                             source={avatarImages[avatar] || avatarImages["panda"]}
                             style={styles.avatar}
                         />
-
                 </View>
 
                 <View style={styles.pointsRow}>
@@ -252,12 +403,17 @@ export default function ChildReward() {
                 <Text style={styles.heartsText}>❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</Text>
             </View>
 
-            <TouchableOpacity style={styles.characterButton}>
+            <TouchableOpacity style={styles.characterButton} onPress={openCharacterModal}>
                 <Text style={styles.characterButtonText}>Get different Character →</Text>
             </TouchableOpacity>
 
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
+            {rewards.length === 0 && (
+                <Text style={{ textAlign: "center", color: "#999", marginVertical: 16, fontSize: 14 }}>
+                    No rewards yet. Ask your parent to create some!
+                </Text>
+            )}
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
                 {rewards.map((reward) => (
@@ -274,7 +430,7 @@ export default function ChildReward() {
                                 <Text style={styles.placeholderText}>Icon</Text>
                             </View>
 
-                            <Text style={styles.rewardTitle}>{reward.title}</Text>
+                            <Text style={styles.rewardTitle} numberOfLines={2}>{reward.title}</Text>
                             <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
 
 
@@ -365,7 +521,7 @@ const styles = StyleSheet.create({
     },
     rewardCard: {
         width: 150,
-        height: 185,
+        minHeight: 185,
         borderRadius: 16,
         padding: 10,
         marginBottom: 10,
@@ -376,6 +532,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 3,
         elevation: 2,
+        overflow: "hidden",
     },
     rewardIconPlaceholder: {
         width: 120,
@@ -388,10 +545,12 @@ const styles = StyleSheet.create({
     },
     rewardTitle: {
         fontWeight: "700",
-        fontSize: 18,
+        fontSize: 14,
         textAlign: "center",
         marginBottom: 6,
         color: "#000",
+        maxHeight: 36,
+        overflow: "hidden",
     },
     rewardCost: {
         fontSize: 14,
@@ -453,7 +612,7 @@ const styles = StyleSheet.create({
 
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5",
+        backgroundColor: "rgba(0,0,0,0.5)",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -504,7 +663,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#ccc",
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadious: 10,
+        borderRadius: 10,
         marginTop: 8,
         color: "#4CAF50",
     },
@@ -569,5 +728,94 @@ const styles = StyleSheet.create({
     },
     unlockItemIcon: {
         fontSize: 42,
+    },
+
+    // Character modal styles
+    charModalSubtitle: {
+        fontSize: 14,
+        color: "#666",
+        textAlign: "center",
+        marginBottom: 6,
+    },
+    charModalStars: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#333",
+        marginBottom: 16,
+    },
+    characterGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: 10,
+    },
+    characterCard: {
+        width: 90,
+        height: 110,
+        borderRadius: 16,
+        backgroundColor: "#f9f9f9",
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 2,
+        borderColor: "#e0e0e0",
+        padding: 6,
+    },
+    characterCardActive: {
+        borderColor: "#4CAF50",
+        backgroundColor: "#e8f5e9",
+    },
+    characterCardLocked: {
+        opacity: 0.5,
+        backgroundColor: "#eee",
+    },
+    characterImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+    },
+    characterEmoji: {
+        fontSize: 36,
+    },
+    characterName: {
+        fontSize: 11,
+        fontWeight: "600",
+        marginTop: 4,
+        color: "#333",
+        textAlign: "center",
+    },
+    lockBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#999",
+        borderRadius: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        marginTop: 2,
+        gap: 3,
+    },
+    lockBadgeText: {
+        fontSize: 9,
+        color: "#fff",
+        fontWeight: "600",
+    },
+    activeBadge: {
+        backgroundColor: "#4CAF50",
+        borderRadius: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        marginTop: 2,
+    },
+    activeBadgeText: {
+        fontSize: 9,
+        color: "#fff",
+        fontWeight: "700",
+    },
+    emojiAvatarContainer: {
+        backgroundColor: "#FFF3E0",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    emojiAvatarText: {
+        fontSize: 70,
     },
 });

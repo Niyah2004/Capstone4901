@@ -27,6 +27,8 @@ import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
 import ForgotPassword from "./screens/ForgotPassword";
+import ParentReviewRewards from "./screens/parentReviewRewards";
+import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
 
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
@@ -83,6 +85,10 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="ChangePin"
         component={ChangePin}
+      />
+      <ParentStack.Screen
+        name="parentReviewRewards"
+        component={ParentReviewRewards}
       />
 
     </ParentStack.Navigator>
@@ -161,6 +167,7 @@ function AppNavigator() {
         <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
         <Stack.Screen name="ChildHome" component={ChildHome} />
         <Stack.Screen name="ChildTabs" component={ChildTabs} />
+        <Stack.Screen name="SelectAvatars" component={SelectAvatarsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
     </ParentLockProvider>

@@ -236,20 +236,41 @@ const confirmRemoveReward = (rewardId) => {
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
 
-    {rewards.map((reward) => (
-  <View key={reward.id} style={styles.rewardCard}>
-    <Text style={styles.rewardTitle}>{reward.name || reward.title || "Untitled Reward"}</Text>
-
-    <TouchableOpacity
-      onPress={() => removeReward(reward.id)}
-      style={styles.deleteButton}
-    >
-
-      
-      <Text style={styles.deleteText}>Remove</Text>
-    </TouchableOpacity>
-  </View>
-))}
+    {rewards.length > 0 && (
+      <View style={styles.existingRewardsSection}>
+        <Text style={styles.existingRewardsTitle}>Available Rewards 🎁 (visible to your child)</Text>
+        {rewards.map((reward) => (
+          <View key={reward.id} style={styles.rewardCard}>
+            <View style={styles.rewardCardLeft}>
+              <Text style={styles.rewardCardEmoji}>🎁</Text>
+              <View style={styles.rewardCardInfo}>
+                <Text style={styles.rewardCardName}>{reward.name || "Untitled Reward"}</Text>
+                <View style={styles.rewardCardBadges}>
+                  <View style={styles.pointsBadge}>
+                    <Text style={styles.pointsBadgeText}>⭐ {reward.points ?? 0} pts</Text>
+                  </View>
+                  <View style={[styles.freqBadge,
+                    reward.frequency === "One-Time" && { backgroundColor: "#FFE0E0" },
+                    reward.frequency === "Daily" && { backgroundColor: "#E0F0FF" },
+                    reward.frequency === "Weekly" && { backgroundColor: "#E8F5E9" },
+                    reward.frequency === "Monthly" && { backgroundColor: "#FFF3E0" },
+                    reward.frequency === "Milestone" && { backgroundColor: "#F3E5F5" },
+                  ]}>
+                    <Text style={styles.freqBadgeText}>{reward.frequency || "One-Time"}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => removeReward(reward.id)}
+              style={styles.deleteButton}
+            >
+              <Text style={styles.deleteText}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    )}
 
 
 
@@ -408,5 +429,81 @@ removeImageText: {
   fontSize: 16,
   fontWeight: "bold",
 },
-
+existingRewardsSection: {
+  marginTop: 24,
+},
+existingRewardsTitle: {
+  fontSize: 16,
+  fontWeight: "700",
+  color: "#333",
+  marginBottom: 10,
+},
+rewardCard: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  backgroundColor: "#F9F9F9",
+  borderRadius: 14,
+  padding: 12,
+  marginBottom: 10,
+  borderWidth: 1,
+  borderColor: "#ECECEC",
+  shadowColor: "#000",
+  shadowOpacity: 0.05,
+  shadowRadius: 4,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 1,
+},
+rewardCardLeft: {
+  flexDirection: "row",
+  alignItems: "center",
+  flex: 1,
+},
+rewardCardEmoji: {
+  fontSize: 28,
+  marginRight: 10,
+},
+rewardCardInfo: {
+  flex: 1,
+},
+rewardCardName: {
+  fontSize: 14,
+  fontWeight: "700",
+  color: "#222",
+  marginBottom: 5,
+},
+rewardCardBadges: {
+  flexDirection: "row",
+  gap: 6,
+  flexWrap: "wrap",
+},
+pointsBadge: {
+  backgroundColor: "#FFFDE7",
+  borderRadius: 10,
+  paddingHorizontal: 8,
+  paddingVertical: 3,
+},
+pointsBadgeText: {
+  fontSize: 11,
+  fontWeight: "600",
+  color: "#C19A00",
+},
+freqBadge: {
+  backgroundColor: "#E8F5E9",
+  borderRadius: 10,
+  paddingHorizontal: 8,
+  paddingVertical: 3,
+},
+freqBadgeText: {
+  fontSize: 11,
+  fontWeight: "600",
+  color: "#555",
+},
+deleteButton: {
+  padding: 6,
+  marginLeft: 8,
+},
+deleteText: {
+  fontSize: 20,
+},
 });

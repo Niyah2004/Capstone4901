@@ -1,14 +1,15 @@
 // this is the child home page import code here 
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Image, TouchableOpacity, ScrollView } from "react-native";
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 
-export default function ChildHome() {
+export default function ChildHome({ navigation }) {
     const [childName, setChildName] = useState("");
     const [childPreferredName, setChildPreferredName] = useState("");
     const [avatar, setAvatar] = useState("panda"); // default avatar
@@ -122,13 +123,11 @@ export default function ChildHome() {
         { id: "dinoScarf", label: "Scarf", image: require("../assets/dinoScarf.png") },
         { id: "dinoSkates", label: "Skates", image: require("../assets/dinoSkates.png") },
         { id: "dinoDog", label: "Dog", image: require("../assets/dinoDog.png") },
+        { id: "SpaceBackground", label: "Space Background", image: require("../assets/SpaceBackground.png") },
     ];
 
     const toggleWardrobeItem = (itemId) => {
-        setEquippedItems((prev) => {
-            const current = prev?.[itemId] ?? false;
-            return { ...(prev || {}), [itemId]: !current };
-        });
+        setEquippedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
     };
 
     const milestones = [
@@ -137,6 +136,15 @@ export default function ChildHome() {
         { id: "fifty_stars", icon: "star-outline", label: "Collected 50 Stars!", achieved: totalPointsEarned >= 50 },
         { id: "hundred_stars", icon: "star", label: "Collected 100 Stars!", achieved: totalPointsEarned >= 100 },
     ];
+
+    // Emoji fallback for characters that don't have image assets yet
+    const avatarEmojis = {
+        cat: "🐱",
+        dog: "🐶",
+        bunny: "🐰",
+        owl: "🦉",
+        dragon: "🐉",
+    };
 
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -168,7 +176,7 @@ export default function ChildHome() {
                     )}
                     <Text style={[styles.date, { color: colors.muted }]}>{formattedDate}</Text>
                     <View style={styles.progressBarRow}>
-                        <FontAwesome name="star" size={30} color="#ffea00" />
+                        <Icon name="star" style={{ color: "#ffea00", fontSize: 30 }} />
                         <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
                             <Animated.View
                                 style={[
@@ -184,27 +192,35 @@ export default function ChildHome() {
                         <Text style={[styles.progressText, { color: colors.text }]}>{childPoints}</Text>
                     </View>
                 </View>
-                {/* Middle Section: Avatar */}
+                {/* Middle Section: Avatar — tap to change character */}
                 <View style={styles.avatarContainer}>
-                    {/* Avatar Image */}
-                    <View style={styles.avatarWrapper}>
-                        <Image
-                            source={avatarImages[avatar] || avatarImages["panda"]}
-                            style={styles.avatar}
-                        />
-                        {wardrobeItems.map((item) =>
-                            equippedItems[item.id] ? (
-                                <Image key={item.id} source={item.image} style={styles.avatarOverlay} />
-                            ) : null
-                        )}
-                    </View>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate("SelectAvatars")}
+                        activeOpacity={0.85}
+                    >
+                        <View style={styles.avatarWrapper}>
+                            <Image
+                                source={avatarImages[avatar] || avatarImages["panda"]}
+                                style={styles.avatar}
+                            />
+                            {wardrobeItems.map((item) =>
+                                equippedItems[item.id] ? (
+                                    <Image key={item.id} source={item.image} style={styles.avatarOverlay} />
+                                ) : null
+                            )}
+                            {/* Tap hint badge */}
+                            <View style={styles.changeCharacterBadge}>
+                                <Text style={styles.changeCharacterText}>✏️ Change</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
                 </View>
                 {/* Bottom Section: Milestone Celebrations */}
                 <View style={styles.bottomSection}>
                     <Text style={[styles.subtitle, { color: colors.text }]}>Milestone Celebrations</Text>
                     {milestones.map((m) => (
                         <View key={m.id} style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                            <Ionicons name={m.icon} size={30} color={m.achieved ? "#ffd700" : "#ccc"} />
+                            <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : "#ccc", fontSize: 30 }} />
                             <View style={{ marginLeft: 2 }}>
                                 <Text style={[styles.milestoneText, { color: m.achieved ? colors.text : colors.muted }]}>{m.label}</Text>
                                 <Text style={[styles.milestoneStatus, {
@@ -256,6 +272,8 @@ const styles = StyleSheet.create({
     scrollContent: { paddingBottom: 30 },
     avatar: { width: 300, height: 300, borderRadius: 10 },
     avatarOverlay: { position: "absolute", top: 0, left: 0, width: 300, height: 300 },
+    changeCharacterBadge: { position: "absolute", bottom: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
+    changeCharacterText: { color: "#fff", fontSize: 12, fontWeight: "700" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
@@ -266,4 +284,6 @@ const styles = StyleSheet.create({
     wardrobeItemSelected: { borderColor: "#4CAF50", borderWidth: 2, backgroundColor: "#ECF9ED" },
     wardrobeIcon: { width: 34, height: 34 },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
+    emojiAvatarContainer: { backgroundColor: "#FFF3E0", justifyContent: "center", alignItems: "center" },
+    emojiAvatarText: { fontSize: 140 },
 });
