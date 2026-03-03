@@ -3,6 +3,7 @@ import WeekCalendar from "./WeekCalendar";
 import { addDays, startOfDay } from "date-fns";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
 import {
   collection,
   query,
@@ -342,11 +343,30 @@ export default function ChildTask({ route, navigation }) {
             fromChildId: currentChildUid,
             taskId: task.id,
             type: "completion_request",
+            title: "Task completed",
+            body: task.title
+              ? `${task.title} has been marked complete and is waiting for your review.`
+              : "A task has been marked complete and is waiting for your review.",
             createdAt: serverTimestamp(),
             read: false,
           });
         }
       });
+
+      // Local banner on the child device so they get feedback
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Nice work!",
+            body: task.title
+              ? `You marked "${task.title}" as complete. Waiting for parent to review.`
+              : "You marked a task as complete. Waiting for parent to review.",
+          },
+          trigger: null,
+        });
+      } catch (e) {
+        console.warn("Local child notification failed:", e);
+      }
     } catch (err) {
       console.error("Error requesting approval:", err);
     }

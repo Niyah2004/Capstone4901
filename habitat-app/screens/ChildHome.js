@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
@@ -17,11 +17,11 @@ export default function ChildHome() {
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
     const [hatEquipped, setHatEquipped] = useState(false);
+    const [childDocId, setChildDocId] = useState(null);
     const progress = useRef(new Animated.Value(0)).current;
     const MAX_POINTS = 300;
     const { theme } = useTheme();
     const colors = theme.colors;
-
     useEffect(() => {
         const fetchChildData = async () => {
             try {
@@ -37,14 +37,18 @@ export default function ChildHome() {
                 const q = query(collection(db, "children"), where("userId", "==", uid));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
-                    const data = querySnapshot.docs[0].data();
+                    const childDoc = querySnapshot.docs[0];
+                    const data = childDoc.data();
+                    setChildDocId(childDoc.id);
                     setChildName(data.fullName || "");
                     setChildPreferredName(data.preferredName || "");
                     setAvatar(data.avatar || "panda");
+                    setHatEquipped(Boolean(data.hatEquipped));
                 } else {
                     setChildName("");
                     setChildPreferredName("");
                     setAvatar("panda");
+                    setHatEquipped(false);
                 }
                 setLoading(false);
             } catch (error) {
@@ -93,6 +97,9 @@ export default function ChildHome() {
         giraffe: require("../assets/giraffe.jpg"),
     };
 
+    // Wardrobe accessory image
+    const turtleMask = require("../assets/turtle_mask.png");
+
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
         weekday: 'long', // "Monday"
@@ -109,11 +116,25 @@ export default function ChildHome() {
         );
     }
 
+    const toggleHat = async () => {
+        const newValue = !hatEquipped;
+        setHatEquipped(newValue);
+
+        if (!childDocId) return;
+
+        try {
+            const childRef = doc(db, "children", childDocId);
+            await updateDoc(childRef, { hatEquipped: newValue });
+        } catch (e) {
+            console.error("Error updating wardrobe (hatEquipped):", e);
+        }
+    };
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* Top Section: Greeting and Progress Bar */}
-            <View style={styles.topSection}>
+                {/* Top Section: Greeting and Progress Bar */}
+                <View style={styles.topSection}>
                     {childPreferredName && childPreferredName.trim() ? (
                         <Text style={[styles.title, { color: colors.text }]}>Hello {childPreferredName}!</Text>
                     ) : childName ? (
@@ -148,11 +169,9 @@ export default function ChildHome() {
                             style={styles.avatar}
                         />
                         {hatEquipped && (
-                            <FontAwesome5
-                                name="hat-cowboy"
-                                size={120}
-                                color="#7a4a12"
-                                style={styles.hatOverlay}
+                            <Image
+                                source={turtleMask}
+                                style={styles.maskOverlay}
                             />
                         )}
                     </View>
@@ -177,16 +196,19 @@ export default function ChildHome() {
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
                     <View style={styles.wardrobeRow}>
+                        {/* Turtle mask wardrobe item */}
                         <TouchableOpacity
                             style={[styles.wardrobeItem, { backgroundColor: "#f3d17a" }]}
-                            onPress={() => setHatEquipped((prev) => !prev)}
+                            onPress={toggleHat}
                         >
-                            <FontAwesome5 name="hat-cowboy" size={26} color="#7a4a12" />
+                            <Image source={turtleMask} style={styles.wardrobeIcon} />
                             <Text style={[styles.wardrobeLabel, { color: colors.text }]}>
-                                {/*Hat {hatEquipped ? "On" : "Off"}*/}
+                                {/*Mask {hatEquipped ? "On" : "Off"}*/}
                             </Text>
                         </TouchableOpacity>
-                        {["Shoes", "Makeup", "Fruit"].map((label) => (
+
+                        {/* Locked placeholder wardrobe items */}
+                        {['Shoes', 'Makeup', 'Fruit'].map((label) => (
                             <View
                                 key={label}
                                 style={[
@@ -203,30 +225,31 @@ export default function ChildHome() {
                     </View>
                 </View>
             </ScrollView>
-            </SafeAreaView>
-        );
-    }
+        </SafeAreaView>
+    );
+}
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
     topSection: { marginTop: 20, alignItems: "center" },
-    title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5,textAlign: "center" },
+    title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5, textAlign: "center" },
     date: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
-    progressBarContainer: {  height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
+    progressBarContainer: { height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
     progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative" },
     scrollContent: { paddingBottom: 30 },
     avatar: { width: 300, height: 300, borderRadius: 10 },
-    hatOverlay: { position: "absolute", top: -65, left: 70 },
+    maskOverlay: { position: "absolute", top: 0, left: 0, width: 300, height: 300, resizeMode: "contain" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
-    milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
+    milestoneStatus: { marginLeft: 10, fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
     wardrobeRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 6 },
     wardrobeItem: { width: "23%", aspectRatio: 1, borderRadius: 999, alignItems: "center", justifyContent: "center", marginBottom: 10 },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
+    wardrobeIcon: { width: 40, height: 40, resizeMode: "contain" },
 });

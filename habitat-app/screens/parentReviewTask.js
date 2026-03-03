@@ -27,6 +27,7 @@ import {
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
+import * as Notifications from "expo-notifications";
 
 export default function ParentReviewTask({ navigation }) {
   const [tasks, setTasks] = useState([]);
@@ -257,6 +258,21 @@ export default function ParentReviewTask({ navigation }) {
         } catch (err) {
           console.error("Error creating child notification:", err);
         }
+      }
+
+      // Local banner on the current device to confirm to the parent
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Task verified",
+            body: taskTitle
+              ? `You verified "${taskTitle}" and awarded points.`
+              : "You verified a task and awarded points.",
+          },
+          trigger: null,
+        });
+      } catch (e) {
+        console.warn("Local parent notification failed:", e);
       }
     } catch (err) {
       console.error("Error verifying task:", err);

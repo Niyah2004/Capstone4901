@@ -10,7 +10,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
-import * as ScreenOrientation from "expo-screen-orientation";
 
 
 // --- Screen Imports ---
@@ -160,18 +159,9 @@ function ChildTabs() {
  */
 
 function AppNavigator() {
-  const [orientation, setOrientation] = useState();
   const { theme } = useTheme();
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState(false);
-
-  useEffect(() => {
-    const getOrientation = async () => {
-      const current = await ScreenOrientation.getOrientationAsync();
-      setOrientation(current);
-    };
-    getOrientation();
-  }, []);
 
   useEffect(() => {
     let unsubAuth = () => { };
