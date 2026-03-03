@@ -23,11 +23,16 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       return;
     }
 
+    if (children.length == 0) {
+      Alert.alert("Add Child", "Please add at least one child profile.");
+      return;  
+    }
+/*
     if (!fullName) {
       Alert.alert("Missing Info", "Please enter the child's name.");
       return;
     }
-
+*/
     const newChild = {
       fullName,
       preferredName,
@@ -71,14 +76,13 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       const user = auth.currentUser;
       const userId = user ? user.uid : null;
 
-      if (!parentUid) {
+      if (!userId) {
         Alert.alert("Error", "No logged-in parent user found.");
         return;
       }
 
       await setDoc(doc(db, "parents", userId), {
         parentPin: pin,
-        parentUid,
         userId,
         createdAt: new Date().toISOString(),
       });
@@ -88,7 +92,7 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       for (const child of children) {
         await addDoc(collection(db, "children"), {
           ...child,
-          parentUid,
+          userId,
           points: 0,
           avatar: {base: "penguin_base_01", equipped: {} },
           createdAt: new Date().toISOString(),
@@ -96,7 +100,7 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
         createdChildIds.push(childDocRef.id);
       }
 
-      
+   /*   
       const docRef = await addDoc(collection(db, "children"), {
         fullName,
         preferredName,
@@ -105,6 +109,8 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
         notes,
         userId,
       });
+      */
+
       Alert.alert("Saved", "Child profiles saved.");
      // console.log("Parent pin saved with Parent Id:", parentRef.id);
      // console.log("Navigating to AvatarSelection with childId:", docRef.id);

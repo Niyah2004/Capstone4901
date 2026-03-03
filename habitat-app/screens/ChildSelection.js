@@ -6,20 +6,20 @@ import { db } from "../firebaseConfig";
 
 export default function ChildSelectScreen({ navigation }) {
   const auth = getAuth();
-  const parentUid = auth.currentUser?.uid;
+  const userId = auth.currentUser?.uid;
 
   const [children, setChildren] = useState([]);
 
   useEffect(() => {
-    if (!parentUid) return;
+    if (!userId) return;
 
-    const q = query(collection(db, "children"), where("parentUid", "==", parentUid));
+    const q = query(collection(db, "children"), where("userId", "==", auth.currentUser.uid));
     const unsub = onSnapshot(q, (snap) => {
       setChildren(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
     return unsub;
-  }, [parentUid]);
+  }, [userId]);
 
   return (
     <View style={styles.container}>

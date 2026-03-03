@@ -1,7 +1,7 @@
 // Comfort page for parents to create and manage rewards for their children
 import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc } from "firebase/firestore";
 import { db, storage } from "../firebaseConfig";
-import React, { useState } from 'react'; 
+import React, { useState, useEffect } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,8 +9,8 @@ import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { arrayRemove } from "firebase/firestore";
 
-export default function ParentReward({navigation}) {
-const childId = route?.params?.childId 
+export default function ParentReward({navigation, route}) {
+const childId = route?.params?.childId; 
   const auth = getAuth();
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
@@ -198,7 +198,9 @@ const uploadImageAsync = async (uri) => {
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
 
-    <Text style={styles.sectionHeader}>Rewards for this child</Text>
+    <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+  {childName ? `Rewards for ${childName}` : "Rewards"}
+</Text>
 
     {rewards.map((reward) => (
   <View key={reward.id} style={styles.rewardCard}>

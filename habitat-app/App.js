@@ -125,6 +125,8 @@ function ChildTabs() {
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
       <Tab.Screen name="Parent" component={ParentStackScreen}
+        components={ParentStackScreen}
+        initialParams={{childId}}
         listeners={{
           blur: () => {
             // whenever you leave the Parent tab, lock it
