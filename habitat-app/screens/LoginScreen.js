@@ -50,7 +50,7 @@ const handleLogin = async () => {
     if (childIds.length === 0) {
       navigation.replace("ChildProfileSetup");
     } else {
-      navigation.replace("ChildSelection", { childId });
+      navigation.replace("ChildSelection", { childIds });
     }
   } catch (error) {
     console.error("Login error:", error.message);

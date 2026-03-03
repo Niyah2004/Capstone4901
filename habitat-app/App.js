@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
+import { useRoute } from "@react-navigation/native";
 import * as ScreenOrientation from "expo-screen-orientation";
 
 
@@ -94,6 +95,9 @@ function ParentStackScreen() {
 function ChildTabs() {
   const { lockParent } = useParentLock();
   const { theme } = useTheme();
+
+  const route = useRoute();
+  const childId = route?.params?.childId;
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

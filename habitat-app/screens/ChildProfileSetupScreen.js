@@ -77,10 +77,15 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
     });
   }
 
-  if (childrenToSave.length === 0) {
-    Alert.alert("No Children", "Please add at least one child.");
-    return;
-  }
+  if (childIds.length === 0) {
+  navigation.replace("ChildProfileSetup");
+
+} else if (childIds.length === 1) {
+  navigation.replace("ChildTabs", { childId: childIds[0] });
+
+} else {
+  navigation.replace("ChildSelection", { childIds });
+}
 
     try {
      const firebaseAuth = getAuth();

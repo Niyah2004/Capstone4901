@@ -57,10 +57,9 @@ useEffect(() => {
 
       <View style={styles.row}>
         <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => navigation.navigate("ChildHome", { childId: item.id })}
-        >
-          <Text style={styles.btnText}>Open</Text>
+        style={styles.primaryBtn}
+         onPress={() => navigation.replace("ChildTabs", { childId: item.id })}>
+       <Text style={styles.btnText}>Open</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
