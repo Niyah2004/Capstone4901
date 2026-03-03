@@ -70,19 +70,32 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       const auth = getAuth();
       const user = auth.currentUser;
       const userId = user ? user.uid : null;
-      const parentRef = await setDoc(doc(db, "parents", userId), {
+
+      if (!parentUid) {
+        Alert.alert("Error", "No logged-in parent user found.");
+        return;
+      }
+
+      await setDoc(doc(db, "parents", userId), {
         parentPin: pin,
+        parentUid,
         userId,
         createdAt: new Date().toISOString(),
       });
       console.log("Parent pin saved with Parent Id:", userId);
 
+      const createdChildIds = [];
       for (const child of children) {
         await addDoc(collection(db, "children"), {
           ...child,
-          userId,
+          parentUid,
+          points: 0,
+          avatar: {base: "penguin_base_01", equipped: {} },
+          createdAt: new Date().toISOString(),
         });
+        createdChildIds.push(childDocRef.id);
       }
+
       
       const docRef = await addDoc(collection(db, "children"), {
         fullName,
@@ -94,8 +107,9 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       });
       Alert.alert("Saved", "Child profiles saved.");
      // console.log("Parent pin saved with Parent Id:", parentRef.id);
-      console.log("Navigating to AvatarSelection with childId:", docRef.id);
-      navigation.navigate("AvatarSelection", { childId: docRef.id });
+     // console.log("Navigating to AvatarSelection with childId:", docRef.id);
+    //  navigation.navigate("AvatarSelection", { childId: docRef.id });
+    navigation.navigate("ChildSelect", { childIds: createdChildIds });
     } catch (e) {
       console.log("Error adding document: ", e);
       Alert.alert("Error", "Could not save profile.");
