@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as ScreenOrientation from "expo-screen-orientation";
+
 
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";
@@ -14,8 +16,8 @@ import AvatarSelection from "./screens/AvatarSelection";
 import ChildHome from "./screens/ChildHome";
 import childTask from "./screens/childTask";
 import ChildReward from "./screens/ChildReward";
-import ParentPinScreen from "./screens/parentPinScreen"; 
-import ParentDashBoard from "./screens/ParentDashBoard";     
+import ParentPinScreen from "./screens/parentPinScreen";
+import ParentDashBoard from "./screens/ParentDashBoard";
 import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
@@ -24,6 +26,10 @@ import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
+import ForgotPassword from "./screens/ForgotPassword";
+import ParentReviewRewards from "./screens/parentReviewRewards";
+import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
+
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
@@ -38,14 +44,14 @@ function ParentStackScreen() {
   return (
     <ParentStack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="parentPinScreen"             
+      initialRouteName="parentPinScreen"
     >
       <ParentStack.Screen
         name="parentPinScreen"
         component={ParentPinScreen}
       />
       <ParentStack.Screen
-        name="ParentDashBoard"                        
+        name="ParentDashBoard"
         component={ParentDashBoard}
       />
       <ParentStack.Screen
@@ -68,18 +74,23 @@ function ParentStackScreen() {
         name="ForgotPin"
         component={ForgotPinScreen}
       />
-      <ParentStack.Screen 
-        name="ChangePassword" 
-        component={ChangePassword} 
-      />
-      <ParentStack.Screen 
-        name="ChangeEmail" 
-        component={ChangeEmail} 
+      <ParentStack.Screen
+        name="ChangePassword"
+        component={ChangePassword}
       />
       <ParentStack.Screen
-        name="ChangePin" 
-        component={ChangePin} 
+        name="ChangeEmail"
+        component={ChangeEmail}
       />
+      <ParentStack.Screen
+        name="ChangePin"
+        component={ChangePin}
+      />
+      <ParentStack.Screen
+        name="parentReviewRewards"
+        component={ParentReviewRewards}
+      />
+
     </ParentStack.Navigator>
   );
 }
@@ -118,14 +129,14 @@ function ChildTabs() {
       <Tab.Screen name="Home" component={ChildHome} />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen name="Parent" component={ParentStackScreen} 
-      listeners={{
+      <Tab.Screen name="Parent" component={ParentStackScreen}
+        listeners={{
           blur: () => {
             // whenever you leave the Parent tab, lock it
             lockParent();
           },
         }}
-        />
+      />
     </Tab.Navigator>
   );
 }
@@ -146,26 +157,31 @@ function AppNavigator() {
   }, []);
 
   return (
-    <ParentLockProvider>
-      <NavigationContainer theme={theme}>
-        <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="LoginScreen" component={LoginScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-          <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-          <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-          <Stack.Screen name="ChildHome" component={ChildHome} />
-          <Stack.Screen name="ChildTabs" component={ChildTabs} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <ParentLockProvider>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+        <Stack.Screen name="ChildHome" component={ChildHome} />
+        <Stack.Screen name="ChildTabs" component={ChildTabs} />
+        <Stack.Screen name="SelectAvatars" component={SelectAvatarsScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
     </ParentLockProvider>
   );
 }
 
+
 export default function AppWithProviders() {
   return (
-    <ThemeProvider>
-      <AppNavigator />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AppNavigator />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -26,7 +26,7 @@ import {
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 
-export default function ParentReviewTask() {
+export default function ParentReviewTask({ navigation }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [parentChecks, setParentChecks] = useState({});
@@ -92,10 +92,18 @@ export default function ParentReviewTask() {
       const points = Number(t.points || 0);
       const childPointsRef = doc(db, "childPoints", childUid);
 
-      // award points
+      // award points - increment both spendable balance (points) and lifetime counter (totalPoints)
       tx.set(
         childPointsRef,
-        { childId: childUid, totalPoints: increment(points), updatedAt: serverTimestamp() },
+        {
+          childId: childUid,
+          parentId: t.ownerId || getAuth().currentUser?.uid || null,
+          // current balance
+          points: increment(points),
+          // lifetime earned
+          totalPoints: increment(points),
+          updatedAt: serverTimestamp(),
+        },
         { merge: true }
       );
 
@@ -147,7 +155,13 @@ export default function ParentReviewTask() {
     <SafeAreaProvider>
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.view}>
-          <Text style={[styles.header, { color: colors.text }]}>Review Tasks</Text>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButtonInline}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={[styles.header, { color: colors.text }]}>Review Tasks</Text>
+            <View style={styles.headerSpacer} />
+          </View>
 
           <View style={styles.tabs}>
             <TouchableOpacity
@@ -328,11 +342,29 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   header: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "600",
     color: "#333",
     textAlign: "center",
+    marginBottom: 0,
+    flex: 1,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
+  },
+  backButtonInline: {
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+  },
+  headerSpacer: {
+    width: 54,
+  },
+  backText: {
+    fontSize: 16,
+    color: "#4CAF50",
+    fontWeight: "bold",
   },
   tabs: {
     flexDirection: "row",

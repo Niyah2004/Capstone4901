@@ -5,69 +5,211 @@ import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// Character roster - starters are free, others unlock at milestone thresholds
+const CHARACTER_ROSTER = [
+    { id: "panda", name: "Panda", emoji: "🐼", milestone: 0, image: require("../assets/panda.png") },
+    { id: "turtle", name: "Turtle", emoji: "🐢", milestone: 0, image: require("../assets/turtle.jpg") },
+    { id: "giraffe", name: "Giraffe", emoji: "🦒", milestone: 0, image: require("../assets/giraffe.jpg") },
+    { id: "cat", name: "Cat", emoji: "🐱", milestone: 50, image: null },
+    { id: "dog", name: "Dog", emoji: "🐶", milestone: 100, image: null },
+    { id: "bunny", name: "Bunny", emoji: "🐰", milestone: 200, image: null },
+    { id: "owl", name: "Owl", emoji: "🦉", milestone: 350, image: null },
+    { id: "dragon", name: "Dragon", emoji: "🐉", milestone: 500, image: null },
+];
+
+const STARTER_IDS = CHARACTER_ROSTER.filter(c => c.milestone === 0).map(c => c.id);
 
 export default function ChildReward() {
     const auth = getAuth();
-    // Temporary placeholder state (can be replaced with fetched data later)
-    const [totalStars, setTotalStars] = useState(257);
+    const parentId = auth.currentUser?.uid;
+    const [totalStars, setTotalStars] = useState(0);
     const [rewards, setRewards] = useState([]);
     const [selectedReward, setSelectedReward] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [childName, setChildName] = useState("Lea");
+    const [avatar, setAvatar] = useState("panda");
     const confettiRef = useRef(null);
 
+    // Character unlock state
+    const [characterModalVisible, setCharacterModalVisible] = useState(false);
+    const [lifetimeStars, setLifetimeStars] = useState(0);
+    const [unlockedAvatars, setUnlockedAvatars] = useState([...STARTER_IDS]);
+    const [childDocId, setChildDocId] = useState(null);
+    
+    // Fetch rewards in real-time (instant updates!)
     useEffect(() => {
-        const fetchRewards = async () => {
-            try {
-                const querySnapshot = await getDocs(collection(db, "rewards"));
-                const gradientPresets = [
-                    ["#FF9A9E", "#FAD0C4"],
-                    ["#A1C4FD", "#C2E9FB"],
-                    ["#FBC2EB", "#A6C1EE"],
-                    ["#FFDEE9", "#B5FFFC"],
-                    ["#FBD786", "#f7797d"],
-                    ["#84FAB0", "#8FD3F4"],
-                ];
+        if (!parentId) return;
 
-                const rewardList = querySnapshot.docs.map((doc, index) => ({
-                    id: doc.id,
-                    title: doc.data().name || "Unnamed Reward",
-                    cost: doc.data().points || 0,
-                    description: doc.data().description || "",
-                    gradient: gradientPresets[index % gradientPresets.length],
-                }));
-                setRewards(rewardList);
+        const q = query(
+            collection(db, "rewards"),
+            where("parentId", "==", parentId)
+            // orderBy("createdAt", "desc") temporarily disabled - needs Firebase index
+        );
+
+        const gradientPresets = [
+            ["#FF9A9E", "#FAD0C4"],
+            ["#A1C4FD", "#C2E9FB"],
+            ["#FBC2EB", "#A6C1EE"],
+            ["#FFDEE9", "#B5FFFC"],
+            ["#FBD786", "#f7797d"],
+            ["#84FAB0", "#8FD3F4"],
+        ];
+
+        // Real-time listener - updates instantly when parent creates rewards!
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const rewardList = querySnapshot.docs.map((doc, index) => ({
+                id: doc.id,
+                title: doc.data().name || "Unnamed Reward",
+                cost: doc.data().points || 0,
+                description: doc.data().description || "",
+                gradient: gradientPresets[index % gradientPresets.length],
+                parentId: doc.data().parentId || null,
+            }));
+            setRewards(rewardList);
+        }, (error) => {
+            console.error("Error fetching rewards: ", error);
+        });
+
+        return () => unsubscribe();
+    }, [parentId]);
+
+    // Fetch child's stars from childPoints collection (current balance + lifetime total)
+    useEffect(() => {
+        if (!auth.currentUser) return;
+
+        const childPointsRef = doc(db, "childPoints", auth.currentUser.uid);
+        const unsubscribe = onSnapshot(childPointsRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
+                setTotalStars(points);
+                // totalPoints only goes up (incremented when parent awards stars) - use as lifetime counter
+                const lifetime = data.totalPoints ?? data.points ?? 0;
+                setLifetimeStars(lifetime);
+            } else {
+                setTotalStars(0);
+                setLifetimeStars(0);
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // Fetch child's profile (name, avatar, and unlocked characters)
+    useEffect(() => {
+        const fetchChildProfile = async () => {
+            if (!auth.currentUser) return;
+
+            try {
+                const q = query(
+                    collection(db, "children"),
+                    where("userId", "==", auth.currentUser.uid)
+                );
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const docSnap = querySnapshot.docs[0];
+                    const data = docSnap.data();
+                    setChildDocId(docSnap.id);
+                    setChildName(data.preferredName || data.fullName || "Lea");
+                    setAvatar(data.avatar || "panda");
+                    // Load previously unlocked avatars (starters are always included)
+                    const saved = data.unlockedAvatars || [];
+                    const merged = [...new Set([...STARTER_IDS, ...saved])];
+                    setUnlockedAvatars(merged);
+                }
             } catch (error) {
-                console.error("Error fetching rewards: ", error);
+                console.error("Error fetching child profile:", error);
             }
         };
 
-        fetchRewards();
+        fetchChildProfile();
     }, []);
 
-    const handleClaimReward = async (childId, selectedReward) => {
-        //fetch points from backend to add them to the already earned points
-        //points are currently a placeholder
-        if (!selectedReward) return;
+    // Check milestones and unlock new characters when modal opens
+    const checkAndUnlockCharacters = async () => {
+        if (!childDocId) return;
+
+        const newUnlocks = CHARACTER_ROSTER
+            .filter(c => c.milestone > 0 && lifetimeStars >= c.milestone && !unlockedAvatars.includes(c.id))
+            .map(c => c.id);
+
+        if (newUnlocks.length > 0) {
+            const updated = [...unlockedAvatars, ...newUnlocks];
+            setUnlockedAvatars(updated);
+            try {
+                const childRef = doc(db, "children", childDocId);
+                await updateDoc(childRef, { unlockedAvatars: updated });
+            } catch (error) {
+                console.warn("Could not save unlocked avatars:", error);
+            }
+            // Let the child know they unlocked something new!
+            const names = newUnlocks.map(id => CHARACTER_ROSTER.find(c => c.id === id)?.name).join(", ");
+            Alert.alert("New Character Unlocked! 🎉", `You unlocked: ${names}!`);
+        }
+    };
+
+    // Open the character selection modal
+    const openCharacterModal = async () => {
+        await checkAndUnlockCharacters();
+        setCharacterModalVisible(true);
+    };
+
+    // Switch active avatar
+    const handleSwitchAvatar = async (characterId) => {
+        if (!childDocId || !unlockedAvatars.includes(characterId)) return;
+
+        setAvatar(characterId);
+        try {
+            const childRef = doc(db, "children", childDocId);
+            await updateDoc(childRef, { avatar: characterId });
+        } catch (error) {
+            console.error("Error switching avatar:", error);
+            Alert.alert("Error", "Could not switch character. Try again.");
+        }
+    };
+
+    const handleClaimReward = async () => {
+        if (!selectedReward || !auth.currentUser) return;
+
+        // Check if child has enough stars
+        if (totalStars < selectedReward.cost) {
+            Alert.alert("Not Enough Stars", `You need ${selectedReward.cost} stars but only have ${totalStars} stars.`);
+            return;
+        }
+
+        // 🎉 Trigger confetti immediately for instant gratification!
+        confettiRef.current?.start();
 
         try {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            await updateDoc(userRef, {
-                stars: totalStars - selectedReward.cost,
-            });
-            setTotalStars((prev) => prev - selectedReward.cost);
-
-            await addDoc(collection(db, "claims"), {
-                item_id: selectedReward.id,
-                status: "claimed",
-                user_id: childId,
+            // Update childPoints collection
+            const childPointsRef = doc(db, "childPoints", auth.currentUser.uid);
+            await updateDoc(childPointsRef, {
+                points: totalStars - selectedReward.cost,
             });
 
-            confettiRef.current?.start();
+            // Record the claim (note: may need Firebase security rules updated)
+            try {
+                await addDoc(collection(db, "claims"), {
+                    item_id: selectedReward.id,
+                    rewardName: selectedReward.title,
+                    cost: selectedReward.cost,
+                    status: "claimed",
+                    user_id: auth.currentUser.uid,
+                    parentId: selectedReward.parentId || auth.currentUser.uid,
+                    claimedAt: new Date(),
+                });
+            } catch (claimError) {
+                // Claim recording failed but stars were deducted - log but don't block
+                console.warn("Could not record claim (check Firebase security rules):", claimError);
+            }
 
-            Alert.alert("Success!", `You claimed: ${selectedReward.title}`);
+            Alert.alert("Success! 🎉", `You claimed: ${selectedReward.title}`);
             console.log("Reward claimed: ", selectedReward.title);
         }
         catch (error) {
@@ -75,11 +217,21 @@ export default function ChildReward() {
             Alert.alert("Error", "Something went wrong while claiming the reward.");
         }
         finally {
-            setModalVisible(false);
+            // Close modal after a delay so confetti is visible
+            setTimeout(() => setModalVisible(false), 2500);
         }
+    };
+    // Map avatar id to image
+    const avatarImages = {
+        panda: require("../assets/panda.png"),
+        turtle: require("../assets/turtle.png"),
+        dino: require("../assets/dino.png"),
+        lion: require("../assets/lion.png"),
+        penguin: require("../assets/penguin.png"),
     };
 
     return (
+        <ScrollView>
         <View style={styles.container}>
             <ScrollView style={styles.ScrollView}>
             <Modal
@@ -93,10 +245,13 @@ export default function ChildReward() {
 
                         <ConfettiCannon
                             ref={confettiRef}
-                            count={60}
-                            origin={{ x: 200, y: -20 }}
+                            count={200}
+                            origin={{ x: 0, y: 0 }}
+                            explosionSpeed={450}
+                            fallSpeed={2500}
                             autoStart={false}
                             fadeOut={true}
+                            colors={['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']}
                         />
 
                         <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
@@ -134,22 +289,91 @@ export default function ChildReward() {
                 </View>
             </Modal>
 
+            {/* Character Selection Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={characterModalVisible}
+                onRequestClose={() => setCharacterModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContainer, { width: "90%" }]}>
+                        <Text style={styles.modalTitle}>Choose Your Character</Text>
+                        <Text style={styles.charModalSubtitle}>
+                            Earn more stars to unlock new characters!
+                        </Text>
+                        <Text style={styles.charModalStars}>
+                            Lifetime Stars Earned: ⭐ {lifetimeStars}
+                        </Text>
+
+                        <View style={styles.characterGrid}>
+                            {CHARACTER_ROSTER.map((character) => {
+                                const isUnlocked = unlockedAvatars.includes(character.id);
+                                const isActive = avatar === character.id;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={character.id}
+                                        style={[
+                                            styles.characterCard,
+                                            isActive && styles.characterCardActive,
+                                            !isUnlocked && styles.characterCardLocked,
+                                        ]}
+                                        onPress={() => {
+                                            if (isUnlocked) handleSwitchAvatar(character.id);
+                                        }}
+                                        disabled={!isUnlocked}
+                                    >
+                                        {character.image ? (
+                                            <Image source={character.image} style={styles.characterImage} />
+                                        ) : (
+                                            <Text style={styles.characterEmoji}>{character.emoji}</Text>
+                                        )}
+
+                                        <Text style={[
+                                            styles.characterName,
+                                            !isUnlocked && { color: "#aaa" }
+                                        ]}>
+                                            {character.name}
+                                        </Text>
+
+                                        {!isUnlocked && (
+                                            <View style={styles.lockBadge}>
+                                                <Ionicons name="lock-closed" size={12} color="#fff" />
+                                                <Text style={styles.lockBadgeText}>{character.milestone} ⭐</Text>
+                                            </View>
+                                        )}
+
+                                        {isActive && (
+                                            <View style={styles.activeBadge}>
+                                                <Text style={styles.activeBadgeText}>Active</Text>
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.modalCloseButton, { marginTop: 16 }]}
+                            onPress={() => setCharacterModalVisible(false)}
+                        >
+                            <Text style={styles.modalCloseText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <Text style={styles.title}>Reward</Text>
             <View style={styles.RewardCard}>
 
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image */}
                     <Image
-                        source={require("../assets/panda.png")} //Avatar image path
-                        style={styles.avatar}
-                    />
+                            source={avatarImages[avatar] || avatarImages["panda"]}
+                            style={styles.avatar}
+                        />
                 </View>
-
-                {/*
-                <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.placeholderText}>Image</Text>
-                </View>
-                    */}
 
                 <View style={styles.pointsRow}>
                     <Text style={styles.starIcon}>⭐</Text>
@@ -159,7 +383,7 @@ export default function ChildReward() {
 
 
                 <View style={styles.greetingRow}>
-                    <Text style={styles.greetingTitle}>Amazing job, Lea! keep building those Habits</Text>
+                    <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits</Text>
                 </View>
             </View>
 
@@ -179,12 +403,17 @@ export default function ChildReward() {
                 <Text style={styles.heartsText}>❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</Text>
             </View>
 
-            <TouchableOpacity style={styles.characterButton}>
+            <TouchableOpacity style={styles.characterButton} onPress={openCharacterModal}>
                 <Text style={styles.characterButtonText}>Get different Character →</Text>
             </TouchableOpacity>
 
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
+            {rewards.length === 0 && (
+                <Text style={{ textAlign: "center", color: "#999", marginVertical: 16, fontSize: 14 }}>
+                    No rewards yet. Ask your parent to create some!
+                </Text>
+            )}
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
                 {rewards.map((reward) => (
@@ -201,7 +430,7 @@ export default function ChildReward() {
                                 <Text style={styles.placeholderText}>Icon</Text>
                             </View>
 
-                            <Text style={styles.rewardTitle}>{reward.title}</Text>
+                            <Text style={styles.rewardTitle} numberOfLines={2}>{reward.title}</Text>
                             <Text style={styles.rewardCost}>{reward.cost} Stars</Text>
 
 
@@ -222,6 +451,7 @@ export default function ChildReward() {
             </ScrollView>
    </ScrollView>
         </View>
+        </ScrollView>
     );
 }
 
@@ -248,17 +478,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 4, height: 4 },
         shadowRadius: 3,
         elevation: 1,
-    },
-
-    avatarPlaceholder: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: "#EDEDED",
-        justifyContent: "center",
-        alignItems: "center",
-        marginLeft: 50,
-        marginBottom: 100,
     },
     placeholderText: {
         fontSize: 10,
@@ -302,7 +521,7 @@ const styles = StyleSheet.create({
     },
     rewardCard: {
         width: 150,
-        height: 185,
+        minHeight: 185,
         borderRadius: 16,
         padding: 10,
         marginBottom: 10,
@@ -313,6 +532,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 3,
         elevation: 2,
+        overflow: "hidden",
     },
     rewardIconPlaceholder: {
         width: 120,
@@ -325,10 +545,12 @@ const styles = StyleSheet.create({
     },
     rewardTitle: {
         fontWeight: "700",
-        fontSize: 18,
+        fontSize: 14,
         textAlign: "center",
         marginBottom: 6,
         color: "#000",
+        maxHeight: 36,
+        overflow: "hidden",
     },
     rewardCost: {
         fontSize: 14,
@@ -371,34 +593,26 @@ const styles = StyleSheet.create({
         height: 140,
         borderRadius: 70,
     },
-    avatarContainer: {
-        width: "100%",
-        backgroundColor: "rgba(255, 223, 186, 0.35)",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 30,
-        borderRadius: 20,
-        marginBottom: 10
-    },
+    
     //missing modal styles that control the reward popup layout
 
     modalClaimButton: {
         backgroundColor: "#4CAF50",
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadious: 10,
+        borderRadius: 10,
         marginTop: 10,
         shadowColor: "#000",
         shadowOpacity: 0.2,
         shadowOffset: { width: 0, height: 2 },
-        shadowRadious: 4,
+        shadowRadius: 4,
         elevation: 3,
     },
 
 
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5",
+        backgroundColor: "rgba(0,0,0,0.5)",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -449,7 +663,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#ccc",
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadious: 10,
+        borderRadius: 10,
         marginTop: 8,
         color: "#4CAF50",
     },
@@ -514,5 +728,94 @@ const styles = StyleSheet.create({
     },
     unlockItemIcon: {
         fontSize: 42,
+    },
+
+    // Character modal styles
+    charModalSubtitle: {
+        fontSize: 14,
+        color: "#666",
+        textAlign: "center",
+        marginBottom: 6,
+    },
+    charModalStars: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#333",
+        marginBottom: 16,
+    },
+    characterGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: 10,
+    },
+    characterCard: {
+        width: 90,
+        height: 110,
+        borderRadius: 16,
+        backgroundColor: "#f9f9f9",
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 2,
+        borderColor: "#e0e0e0",
+        padding: 6,
+    },
+    characterCardActive: {
+        borderColor: "#4CAF50",
+        backgroundColor: "#e8f5e9",
+    },
+    characterCardLocked: {
+        opacity: 0.5,
+        backgroundColor: "#eee",
+    },
+    characterImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+    },
+    characterEmoji: {
+        fontSize: 36,
+    },
+    characterName: {
+        fontSize: 11,
+        fontWeight: "600",
+        marginTop: 4,
+        color: "#333",
+        textAlign: "center",
+    },
+    lockBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#999",
+        borderRadius: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        marginTop: 2,
+        gap: 3,
+    },
+    lockBadgeText: {
+        fontSize: 9,
+        color: "#fff",
+        fontWeight: "600",
+    },
+    activeBadge: {
+        backgroundColor: "#4CAF50",
+        borderRadius: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        marginTop: 2,
+    },
+    activeBadgeText: {
+        fontSize: 9,
+        color: "#fff",
+        fontWeight: "700",
+    },
+    emojiAvatarContainer: {
+        backgroundColor: "#FFF3E0",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    emojiAvatarText: {
+        fontSize: 70,
     },
 });
