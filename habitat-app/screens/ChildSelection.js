@@ -22,6 +22,7 @@ export default function ChildSelectScreen({ navigation }) {
   }, [userId]);
 
   return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
     <View style={styles.container}>
       <Text style={styles.title}>Who’s playing?</Text>
 
@@ -51,6 +52,7 @@ export default function ChildSelectScreen({ navigation }) {
         )}
       />
     </View>
+    </SafeAreaView>
   );
 }
 
