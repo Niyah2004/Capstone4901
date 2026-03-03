@@ -35,6 +35,7 @@ import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
+import ForgotPassword from "./screens/ForgotPassword";
 
 
 const Stack = createNativeStackNavigator();
@@ -99,6 +100,10 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="GenericTaskLibrary"
         component={GenericTaskLibrary}
+      />
+      <ParentStack.Screen
+        name="ForgotPassword"
+        component={ForgotPassword}
       />
     </ParentStack.Navigator>
   );
