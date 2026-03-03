@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { getAuth } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from "@react-navigation/native";
@@ -41,6 +41,14 @@ import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 
 function ParentStackScreen() {
@@ -159,23 +167,39 @@ function AppNavigator() {
   }, []);
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(async token => {
-      if (token) {
-        setExpoPushToken(token);
-        // Save token to Firestore for current user
-        const user = getAuth().currentUser;
-        if (user) {
-          // You may want to distinguish parent/child here
-          // Example: Save to "children" collection
-          const userRef = doc(db, 'children', user.uid);
-          await setDoc(userRef, { expoPushToken: token }, { merge: true });
+    let unsubAuth = () => { };
+    let receivedSub = null;
+
+    (async () => {
+      const token = await registerForPushNotificationsAsync();
+      if (token) setExpoPushToken(token);
+
+      unsubAuth = onAuthStateChanged(getAuth(), async (user) => {
+        if (!user || !token) return;
+        try {
+          const tokenRef = doc(db, 'userPushTokens', user.uid);
+          await setDoc(
+            tokenRef,
+            {
+              expoPushToken: token,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch (e) {
+          console.error('Error saving expoPushToken:', e);
         }
-      }
-    });
-    const subscription = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-    });
-    return () => subscription.remove();
+      });
+
+      receivedSub = Notifications.addNotificationReceivedListener((incoming) => {
+        setNotification(incoming);
+      });
+    })();
+
+    return () => {
+      try { if (typeof unsubAuth === 'function') unsubAuth(); } catch { }
+      try { receivedSub?.remove?.(); } catch { }
+    };
   }, []);
 
   return (
