@@ -1,12 +1,13 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image} from "react-native";
-import React, {useState} from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Alert} from "react-native";
+import React, {useState, useEffect} from "react";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { db } from "../firebaseConfig";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 
 
 export default function AvatarSelection({navigation, route}) {
   const [selectedAvatar, setSelected] = useState(null);
+  const [equipped, setEquipped] = useState({}); 
   const childId = route?.params?.childId;
 
   const avatars = [
@@ -15,24 +16,69 @@ export default function AvatarSelection({navigation, route}) {
     { id: "giraffe", image: require("../assets/giraffe.jpg") },
   ];
 
-  const handleAvatarSelect = (avatarId) => {
-        setSelected(avatarId); //Update selected avatar
-    };
-  
-  {/* Add avatar to database->navigate to ChildHome screen */}
-  const handleGetStarted = async () => {
-    try {
-      if (selectedAvatar && childId) {
-      const docRef = doc(db, "children", childId);
-      await updateDoc(docRef, {avatar: selectedAvatar});
-      navigation.navigate("ChildTabs");
+  useEffect(() => {
+    const loadChildAvatar = async () => {
+      if (!childId) {
+        setLoading(false);
+        return;
       }
+
+      try {
+        const snap = await getDoc(doc(db, "children", childId));
+        if (snap.exists()) {
+          const child = snap.data();
+
+          const currentBase =
+            typeof child.avatar === "string" ? child.avatar : child.avatar?.base;
+
+          if (currentBase) setSelectedAvatar(currentBase);
+        }
+      } catch (e) {
+        console.log("Error loading child avatar:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadChildAvatar();
+  }, [childId]);
+
+  const handleAvatarSelect = (avatarId) => {
+    setSelectedAvatar(avatarId);
+  };
+
+  const handleSave = async () => {
+    if (!childId) {
+      Alert.alert("Error", "Missing childId.");
+      return;
     }
-    catch (e) {
-      console.error("Error saving avatar: ", e);
+
+    if (!selectedAvatar) {
+      Alert.alert("Select an avatar", "Please choose an avatar first.");
+      return;
     }
-    // Navigate to ChildTabs screen
-    navigation.navigate("ChildTabs");
+
+    try {
+      const childRef = doc(db, "children", childId);
+
+      await setDoc(
+        childRef,
+        {
+          avatar: {
+            base: selectedAvatar,
+            equipped: {}, 
+          },
+        },
+        { merge: true }
+      );
+
+      navigation.goBack();
+
+
+    } catch (e) {
+      console.error("Error saving avatar:", e);
+      Alert.alert("Error", "Could not save avatar.");
+    }
   };
 
   return (
