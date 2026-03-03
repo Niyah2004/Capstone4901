@@ -17,39 +17,39 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
   const [notes, setNotes] = useState("");
   const [children, setChildren] = useState([]);
 
-    const addChild = () => {
-    if (children.length >= 3) {
-      Alert.alert("Limit Reached", "You can add up to 3 children.");
-      return;
-    }
+   const addChild = () => {
+  if (children.length >= 3) {
+    Alert.alert("Limit Reached", "You can add up to 3 children.");
+    return;
+  }
 
-    if (children.length == 0) {
-      Alert.alert("Add Child", "Please add at least one child profile.");
-      return;  
-    }
+  if (!fullName || fullName.trim().length === 0) {
+    Alert.alert("Missing Info", "Please enter the child's full name.");
+    return;
+  }
+
+  const newChild = {
+    fullName: fullName.trim(),
+    preferredName: preferredName?.trim() || "",
+    age: age ? Number(age) : null,
+    grade: grade?.trim() || "",
+    notes: notes?.trim() || "",
+  };
+
+  setChildren((prev) => [...prev, newChild]);
+
+  setFullName("");
+  setPreferredName("");
+  setAge("");
+  setGrade("");
+  setNotes("");
+};
 /*
     if (!fullName) {
       Alert.alert("Missing Info", "Please enter the child's name.");
       return;
     }
 */
-    const newChild = {
-      fullName,
-      preferredName,
-      age,
-      grade,
-      notes,
-    };
-
-    setChildren([...children, newChild]);
-
-    setFullName("");
-    setPreferredName("");
-    setAge("");
-    setGrade("");
-    setNotes("");
-  };
-
   const removeChild = (index) => {
     const updated = [...children];
     updated.splice(index, 1);
@@ -62,18 +62,29 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       return;
     }
 
-    if (children.length === 0) {
-      Alert.alert("No Children", "Please add at least one child.");
-      return;
-    }
+  
 
-    if (!fullName) {
-      Alert.alert("Missing Info", "Please enter the child's name.");
-      return;
-    }
+    let childrenToSave = [...children];
+
+  const hasTypedAChild = fullName && fullName.trim().length > 0;
+  if (childrenToSave.length === 0 && hasTypedAChild) {
+   childrenToSave.push({
+  fullName: fullName.trim(),
+  preferredName: preferredName?.trim() || "",
+  age: age ? Number(age) : null,
+  grade: grade?.trim() || "",
+  notes: notes?.trim() || "",
+    });
+  }
+
+  if (childrenToSave.length === 0) {
+    Alert.alert("No Children", "Please add at least one child.");
+    return;
+  }
+
     try {
-      const auth = getAuth();
-      const user = auth.currentUser;
+     const firebaseAuth = getAuth();
+      const user = firebaseAuth.currentUser;
       const userId = user ? user.uid : null;
 
       if (!userId) {
@@ -88,17 +99,19 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
       });
       console.log("Parent pin saved with Parent Id:", userId);
 
-      const createdChildIds = [];
-      for (const child of children) {
-        await addDoc(collection(db, "children"), {
-          ...child,
-          userId,
-          points: 0,
-          avatar: {base: "penguin_base_01", equipped: {} },
-          createdAt: new Date().toISOString(),
-        });
-        createdChildIds.push(childDocRef.id);
-      }
+  const createdChildIds = [];
+
+for (const child of childrenToSave) {
+  const childDocRef = await addDoc(collection(db, "children"), {
+    ...child,
+    userId,
+    points: 0,
+    avatar: { base: "penguin_base_01", equipped: {} },
+    createdAt: new Date().toISOString(),
+  });
+
+  createdChildIds.push(childDocRef.id);
+}
 
    /*   
       const docRef = await addDoc(collection(db, "children"), {
