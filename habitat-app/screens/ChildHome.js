@@ -16,7 +16,9 @@ export default function ChildHome() {
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
-    const [hatEquipped, setHatEquipped] = useState(false);
+    const [hatEquipped, setHatEquipped] = useState(false); // used for mask
+    const [capeEquipped, setCapeEquipped] = useState(false);
+    const [bowtieEquipped, setBowtieEquipped] = useState(false);
     const [childDocId, setChildDocId] = useState(null);
     const progress = useRef(new Animated.Value(0)).current;
     const MAX_POINTS = 300;
@@ -97,8 +99,10 @@ export default function ChildHome() {
         giraffe: require("../assets/giraffe.jpg"),
     };
 
-    // Wardrobe accessory image
+    // Wardrobe accessory images
     const turtleMask = require("../assets/turtle_mask.png");
+    const turtleCape = require("../assets/turtle_cape.png");
+    const turtleBowtie = require("../assets/turtle_bowtie.png");
 
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -128,6 +132,14 @@ export default function ChildHome() {
         } catch (e) {
             console.error("Error updating wardrobe (hatEquipped):", e);
         }
+    };
+
+    const toggleCape = () => {
+        setCapeEquipped((prev) => !prev);
+    };
+
+    const toggleBowtie = () => {
+        setBowtieEquipped((prev) => !prev);
     };
 
     return (
@@ -168,11 +180,14 @@ export default function ChildHome() {
                             source={avatarImages[avatar] || avatarImages["panda"]}
                             style={styles.avatar}
                         />
-                        {hatEquipped && (
-                            <Image
-                                source={turtleMask}
-                                style={styles.maskOverlay}
-                            />
+                        {avatar === "turtle" && hatEquipped && (
+                            <Image source={turtleMask} style={styles.maskOverlay} />
+                        )}
+                        {avatar === "turtle" && capeEquipped && (
+                            <Image source={turtleCape} style={styles.capeOverlay} />
+                        )}
+                        {avatar === "turtle" && bowtieEquipped && (
+                            <Image source={turtleBowtie} style={styles.bowtieOverlay} />
                         )}
                     </View>
                 </View>
@@ -196,32 +211,29 @@ export default function ChildHome() {
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
                     <View style={styles.wardrobeRow}>
-                        {/* Turtle mask wardrobe item */}
+                        {/* Mask wardrobe item */}
                         <TouchableOpacity
                             style={[styles.wardrobeItem, { backgroundColor: "#f3d17a" }]}
                             onPress={toggleHat}
                         >
                             <Image source={turtleMask} style={styles.wardrobeIcon} />
-                            <Text style={[styles.wardrobeLabel, { color: colors.text }]}>
-                                {/*Mask {hatEquipped ? "On" : "Off"}*/}
-                            </Text>
                         </TouchableOpacity>
 
-                        {/* Locked placeholder wardrobe items */}
-                        {['Shoes', 'Makeup', 'Fruit'].map((label) => (
-                            <View
-                                key={label}
-                                style={[
-                                    styles.wardrobeItem,
-                                    { backgroundColor: colors.border, opacity: 0.6 },
-                                ]}
-                            >
-                                <Ionicons name="lock-closed" size={22} color={colors.muted} />
-                                <Text style={[styles.wardrobeLabel, { color: colors.muted }]}>
-                                    Locked
-                                </Text>
-                            </View>
-                        ))}
+                        {/* Cape wardrobe item */}
+                        <TouchableOpacity
+                            style={[styles.wardrobeItem, { backgroundColor: "#f3d17a" }]}
+                            onPress={toggleCape}
+                        >
+                            <Image source={turtleCape} style={styles.wardrobeIcon} />
+                        </TouchableOpacity>
+
+                        {/* Bowtie wardrobe item */}
+                        <TouchableOpacity
+                            style={[styles.wardrobeItem, { backgroundColor: "#f3d17a" }]}
+                            onPress={toggleBowtie}
+                        >
+                            <Image source={turtleBowtie} style={styles.wardrobeIcon} />
+                        </TouchableOpacity>
                     </View>
                 </View>
             </ScrollView>
@@ -243,6 +255,8 @@ const styles = StyleSheet.create({
     scrollContent: { paddingBottom: 30 },
     avatar: { width: 300, height: 300, borderRadius: 10 },
     maskOverlay: { position: "absolute", top: 0, left: 0, width: 300, height: 300, resizeMode: "contain" },
+    capeOverlay: { position: "absolute", top: 80, left: 0, width: 300, height: 220, resizeMode: "contain" },
+    bowtieOverlay: { position: "absolute", top: 150, left: 110, width: 80, height: 80, resizeMode: "contain" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
@@ -250,6 +264,5 @@ const styles = StyleSheet.create({
     milestoneStatus: { marginLeft: 10, fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
     wardrobeRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 6 },
     wardrobeItem: { width: "23%", aspectRatio: 1, borderRadius: 999, alignItems: "center", justifyContent: "center", marginBottom: 10 },
-    wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
-    wardrobeIcon: { width: 40, height: 40, resizeMode: "contain" },
+    wardrobeIcon: { width: 60, height: 60, resizeMode: "contain" },
 });
