@@ -10,6 +10,7 @@ import { getAuth } from "firebase/auth";
 import { arrayRemove } from "firebase/firestore";
 
 export default function ParentReward({navigation}) {
+const childId = route?.params?.childId 
   const auth = getAuth();
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
@@ -18,8 +19,28 @@ export default function ParentReward({navigation}) {
   const [rewardImage, setRewardImage] = useState (null);
   const [imageUri, setImageUri] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [rewards, setRewards] = useState([]);
 
-  
+  useEffect(() => {
+    if (!childId) {
+      console.log("ParentReward missing childId in route params");
+      return;
+    }
+
+    const rewardsRef = collection(db, "children", childId, "rewards");
+
+    const unsub = onSnapshot(rewardsRef, (snap) => {
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      setRewards(data);
+    });
+
+    return () => unsub();
+  }, [childId]);
+
+
   //adding the picture to the reward
 const pickImage = async () => {
   let result = await ImagePicker.launchImageLibraryAsync({
@@ -64,7 +85,8 @@ const uploadImageAsync = async (uri) => {
         imageURL = await uploadImageAsync(rewardImage);
       }
       await addDoc(collection(db, "rewards"), {
-        parentId: auth.currentUser.uid,
+        parentId: auth.currentUser?.uid ?? null,
+        childId: childId,
         name: rewardName,
         description: description,
         points: parseInt(points),
@@ -83,6 +105,7 @@ const uploadImageAsync = async (uri) => {
     }
   };
   
+  
   const removeReward = async (rewardId) => {
   try {
     await deleteDoc(doc(db, "rewards", rewardId));
@@ -93,19 +116,16 @@ const uploadImageAsync = async (uri) => {
   }
 };
 
-//confirm before deleting reward?
-{/*}
-const confirmRemoveReward = (rewardId) => {
-  Alert.alert(
-    "Remove Reward",
-    "Are you sure you want to delete this reward?",
-    [
-      { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => removeReward(rewardId) }
-    ]
-  );
-};
-*/}
+  const confirmRemoveReward = (rewardId, rewardNameToShow) => {
+    Alert.alert(
+      "Remove Reward",
+      `Are you sure you want to delete "${rewardNameToShow}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: () => removeReward(rewardId) },
+      ]
+    );
+  };
 
 
   return (
@@ -177,6 +197,8 @@ const confirmRemoveReward = (rewardId) => {
     <TouchableOpacity style={styles.saveButton} onPress={saveReward}>
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
+
+    <Text style={styles.sectionHeader}>Rewards for this child</Text>
 
     {rewards.map((reward) => (
   <View key={reward.id} style={styles.rewardCard}>
@@ -311,5 +333,14 @@ addImageButtonText: {
   color: "#fff",
   fontWeight: "bold",
 },
-
+ deleteButton: {
+    backgroundColor: "#ff4d4d",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  deleteText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 });
