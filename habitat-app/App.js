@@ -1,4 +1,9 @@
 import React, { useEffect, useState } from "react";
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { getAuth } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from './firebaseConfig';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -138,9 +143,12 @@ function ChildTabs() {
 /**
  * Main app navigation stack
  */
+
 function AppNavigator() {
   const [orientation, setOrientation] = useState();
   const { theme } = useTheme();
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState(false);
 
   useEffect(() => {
     const getOrientation = async () => {
@@ -150,21 +158,61 @@ function AppNavigator() {
     getOrientation();
   }, []);
 
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(async token => {
+      if (token) {
+        setExpoPushToken(token);
+        // Save token to Firestore for current user
+        const user = getAuth().currentUser;
+        if (user) {
+          // You may want to distinguish parent/child here
+          // Example: Save to "children" collection
+          const userRef = doc(db, 'children', user.uid);
+          await setDoc(userRef, { expoPushToken: token }, { merge: true });
+        }
+      }
+    });
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+    return () => subscription.remove();
+  }, []);
+
   return (
-      <ParentLockProvider>
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-        <Stack.Screen name="ChildHome" component={ChildHome} />
-        <Stack.Screen name="ChildTabs" component={ChildTabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ParentLockProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="LoginScreen" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+          <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+          <Stack.Screen name="ChildHome" component={ChildHome} />
+          <Stack.Screen name="ChildTabs" component={ChildTabs} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </ParentLockProvider>
   );
+}
+
+async function registerForPushNotificationsAsync() {
+  let token;
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token for push notification!');
+      return;
+    }
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+  } else {
+    alert('Must use physical device for Push Notifications');
+  }
+  return token;
 }
 
 

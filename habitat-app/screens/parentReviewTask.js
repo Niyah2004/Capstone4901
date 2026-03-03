@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { db } from "../firebaseConfig";
+import * as Notifications from 'expo-notifications';
 import {
   collection,
   onSnapshot,
@@ -19,9 +20,9 @@ import {
   deleteDoc,
   doc,
   where,
-  runTransaction,     
-  increment,          
-  serverTimestamp,    
+  runTransaction,
+  increment,
+  serverTimestamp,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
@@ -74,52 +75,52 @@ export default function ParentReviewTask({ navigation }) {
   };*/
 
   const handleVerify = async (taskId) => {
-  const taskRef = doc(db, "tasks", taskId);
+    const taskRef = doc(db, "tasks", taskId);
 
-  try {
-    await runTransaction(db, async (tx) => {
-      const taskSnap = await tx.get(taskRef);
-      if (!taskSnap.exists()) return;
+    try {
+      await runTransaction(db, async (tx) => {
+        const taskSnap = await tx.get(taskRef);
+        if (!taskSnap.exists()) return;
 
-      const t = taskSnap.data();
+        const t = taskSnap.data();
 
-      // prevent double-award
-      if (t.pointsAwarded === true || t.verified === true) return;
+        // prevent double-award
+        if (t.pointsAwarded === true || t.verified === true) return;
 
-      const childUid = t.completedByChildId || t.childId;
-      if (!childUid) throw new Error("Task missing child id to award points");
+        const childUid = t.completedByChildId || t.childId;
+        if (!childUid) throw new Error("Task missing child id to award points");
 
-      const points = Number(t.points || 0);
-      const childPointsRef = doc(db, "childPoints", childUid);
+        const points = Number(t.points || 0);
+        const childPointsRef = doc(db, "childPoints", childUid);
 
-      // award points
-      tx.set(
-        childPointsRef,
-        {
-          childId: childUid,
-          parentId: t.ownerId || getAuth().currentUser?.uid || null,
-          // current balance
-          points: increment(points),
-          // lifetime earned
-          totalPoints: increment(points),
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+        // award points
+        tx.set(
+          childPointsRef,
+          {
+            childId: childUid,
+            parentId: t.ownerId || getAuth().currentUser?.uid || null,
+            // current balance
+            points: increment(points),
+            // lifetime earned
+            totalPoints: increment(points),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
 
-      // mark verified + close out pending approval
-      tx.update(taskRef, {
-        verified: true,
-        verifiedAt: serverTimestamp(),
-        pendingApproval: false,
-        status: "completed",
-        pointsAwarded: true,
+        // mark verified + close out pending approval
+        tx.update(taskRef, {
+          verified: true,
+          verifiedAt: serverTimestamp(),
+          pendingApproval: false,
+          status: "completed",
+          pointsAwarded: true,
+        });
       });
-    });
-  } catch (e) {
-    console.error("Error verifying + awarding points:", e);
-  }
-};
+    } catch (e) {
+      console.error("Error verifying + awarding points:", e);
+    }
+  };
 
 
   const handleDelete = async (id) => {
@@ -221,35 +222,35 @@ export default function ParentReviewTask({ navigation }) {
                   : Boolean(parentChecks[item.id]);
 
                 return (
-                <View style={[styles.taskCard, { backgroundColor: colors.card, shadowColor: "#000" }]}>
-                  {/* Icon and Title Row */}
-                  <View style={styles.row}>
-                    <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
-                      <Ionicons name="book-outline" size={24} color="#C8A94B" />
+                  <View style={[styles.taskCard, { backgroundColor: colors.card, shadowColor: "#000" }]}>
+                    {/* Icon and Title Row */}
+                    <View style={styles.row}>
+                      <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
+                        <Ionicons name="book-outline" size={24} color="#C8A94B" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+                        <Text style={[styles.subtitle, { color: colors.muted }]}>{item.description}</Text>
+                      </View>
+                      <View style={[styles.pointsBadge, { backgroundColor: colors.background }]}>
+                        <Text style={[styles.pointsText, { color: colors.primary }]}>
+                          {(item.points ?? 10) + " Pts"}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
-                      <Text style={[styles.subtitle, { color: colors.muted }]}>{item.description}</Text>
-                    </View>
-                    <View style={[styles.pointsBadge, { backgroundColor: colors.background }]}>
-                      <Text style={[styles.pointsText, { color: colors.primary }]}>
-                        {(item.points ?? 10) + " Pts"}
-                      </Text>
-                    </View>
-                  </View>
 
-                  {/* Progress Bar */}
-                  <View style={styles.progressContainer}>
-                    <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-                      <Animated.View
-                        style={[styles.progressFill, { width: "100%" }]}
-                      />
+                    {/* Progress Bar */}
+                    <View style={styles.progressContainer}>
+                      <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+                        <Animated.View
+                          style={[styles.progressFill, { width: "100%" }]}
+                        />
+                      </View>
+                      <Text style={[styles.stepsText, { color: colors.muted }]}>1/1 Steps</Text>
                     </View>
-                    <Text style={[styles.stepsText, { color: colors.muted }]}>1/1 Steps</Text>
-                  </View>
 
-                  {/* Status Row */}
-                { /* <View style={styles.statusRow}>
+                    {/* Status Row */}
+                    { /* <View style={styles.statusRow}>
                     <Ionicons
                       name={
                         item.status === "completed"
@@ -265,67 +266,68 @@ export default function ParentReviewTask({ navigation }) {
                         : "Pending"}
                     </Text>
                   </View>*/}
-                  <View style={styles.statusRow}>
-                    <Ionicons
-                      name={childCompleted ? "checkbox-outline" : "square-outline"}
-                      size={20}
-                      color={childCompleted ? "#4CAF50" : "#999"}
-                    />
-                    <Text
-                      style={[
-                        styles.completeText,
-                        !childCompleted && styles.completeTextMuted,
-                        !childCompleted && { color: colors.muted },
-                      ]}
+                    <View style={styles.statusRow}>
+                      <Ionicons
+                        name={childCompleted ? "checkbox-outline" : "square-outline"}
+                        size={20}
+                        color={childCompleted ? "#4CAF50" : "#999"}
+                      />
+                      <Text
+                        style={[
+                          styles.completeText,
+                          !childCompleted && styles.completeTextMuted,
+                          !childCompleted && { color: colors.muted },
+                        ]}
+                      >
+                        Marked as Complete
+                      </Text>
+                    </View>
+
+                    {/* Parent confirmation checkbox */}
+                    <TouchableOpacity
+                      style={styles.statusRow}
+                      onPress={() => toggleParentCheck(item.id)}
+                      disabled={!childCompleted || item.verified}
                     >
-                      Marked as Complete
-                    </Text>
+                      <Ionicons
+                        name={parentChecked ? "checkbox-outline" : "square-outline"}
+                        size={20}
+                        color={
+                          !childCompleted || item.verified ? "#999" : "#4CAF50"
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.completeText,
+                          (!childCompleted || item.verified) && styles.completeTextMuted,
+                          (!childCompleted || item.verified) && { color: colors.muted },
+                        ]}
+                      >
+                        Parent Verified
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Verify Button (parent approval) */}
+                    <TouchableOpacity
+                      style={[
+                        styles.verifyButton,
+                        (!childCompleted || item.verified || !parentChecked) &&
+                        styles.verifyButtonDisabled,
+                      ]}
+                      onPress={() => handleVerify(item.id)}
+                      disabled={!childCompleted || item.verified || !parentChecked}
+                    >
+                      <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
+                    </TouchableOpacity>
+
+
+                    {/* Optional Delete Icon */}
+                    <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
+                      <Ionicons name="trash-outline" size={20} color="gray" />
+                    </TouchableOpacity>
                   </View>
-
-                  {/* Parent confirmation checkbox */}
-                  <TouchableOpacity
-                    style={styles.statusRow}
-                    onPress={() => toggleParentCheck(item.id)}
-                    disabled={!childCompleted || item.verified}
-                  >
-                    <Ionicons
-                      name={parentChecked ? "checkbox-outline" : "square-outline"}
-                      size={20}
-                      color={
-                        !childCompleted || item.verified ? "#999" : "#4CAF50"
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.completeText,
-                        (!childCompleted || item.verified) && styles.completeTextMuted,
-                        (!childCompleted || item.verified) && { color: colors.muted },
-                      ]}
-                    >
-                      Parent Verified
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Verify Button (parent approval) */}
-                 <TouchableOpacity
-  style={[
-    styles.verifyButton,
-    (!childCompleted || item.verified || !parentChecked) &&
-      styles.verifyButtonDisabled,
-  ]}
-  onPress={() => handleVerify(item.id)}
-  disabled={!childCompleted || item.verified || !parentChecked}
->
-  <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
-</TouchableOpacity>
-
-
-                  {/* Optional Delete Icon */}
-                  <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash-outline" size={20} color="gray" />
-                  </TouchableOpacity>
-                </View>
-              )}}
+                )
+              }}
             />
           )}
         </View>

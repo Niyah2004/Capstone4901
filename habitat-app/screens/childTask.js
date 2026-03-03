@@ -16,6 +16,8 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import * as Notifications from 'expo-notifications';
+import { getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 import Slider from "@react-native-community/slider";
@@ -393,6 +395,34 @@ export default function ChildTask({ route, navigation }) {
             createdAt: serverTimestamp(),
             read: false,
           });
+
+          // Send push notification to parent
+          // Fetch parent's expoPushToken from Firestore
+          setTimeout(async () => {
+            try {
+              const parentDoc = await getDoc(doc(db, "parents", current.ownerId));
+              const parentData = parentDoc.exists() ? parentDoc.data() : null;
+              const expoPushToken = parentData?.expoPushToken;
+              if (expoPushToken) {
+                await fetch("https://exp.host/--/api/v2/push/send", {
+                  method: "POST",
+                  headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    to: expoPushToken,
+                    sound: "default",
+                    title: "Task Completed",
+                    body: `Your child has completed a task!`,
+                    data: { taskId: task.id },
+                  }),
+                });
+              }
+            } catch (err) {
+              console.error("Error sending push notification to parent:", err);
+            }
+          }, 0);
         }
       });
     } catch (err) {
