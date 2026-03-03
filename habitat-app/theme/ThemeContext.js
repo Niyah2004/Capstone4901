@@ -58,13 +58,14 @@ export function ThemeProvider({ children }) {
   const isDark = resolvedScheme === "dark";
   const colors = isDark ? DarkColors : LightColors;
 
-  const baseTheme = isDark ? DarkTheme : DefaultTheme;
+  const baseTheme = (isDark ? DarkTheme : DefaultTheme) || {};
+  const baseThemeColors = baseTheme.colors || {};
   const theme = useMemo(
     () => ({
       ...baseTheme,
-      colors: { ...baseTheme.colors, ...colors },
+      colors: { ...baseThemeColors, ...colors },
     }),
-    [baseTheme, colors]
+    [baseTheme, baseThemeColors, colors]
   );
 
   const value = useMemo(

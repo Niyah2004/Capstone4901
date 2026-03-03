@@ -1,8 +1,7 @@
 // this is the child home page import code here 
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Image, TouchableOpacity, ScrollView } from "react-native";
-import Icon from 'react-native-vector-icons/FontAwesome';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -123,11 +122,13 @@ export default function ChildHome() {
         { id: "dinoScarf", label: "Scarf", image: require("../assets/dinoScarf.png") },
         { id: "dinoSkates", label: "Skates", image: require("../assets/dinoSkates.png") },
         { id: "dinoDog", label: "Dog", image: require("../assets/dinoDog.png") },
-        { id: "SpaceBackground", label: "Space Background", image: require("../assets/SpaceBackground.png") },
     ];
 
     const toggleWardrobeItem = (itemId) => {
-        setEquippedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
+        setEquippedItems((prev) => {
+            const current = prev?.[itemId] ?? false;
+            return { ...(prev || {}), [itemId]: !current };
+        });
     };
 
     const milestones = [
@@ -167,7 +168,7 @@ export default function ChildHome() {
                     )}
                     <Text style={[styles.date, { color: colors.muted }]}>{formattedDate}</Text>
                     <View style={styles.progressBarRow}>
-                        <Icon name="star" style={{ color: "#ffea00", fontSize: 30 }} />
+                        <FontAwesome name="star" size={30} color="#ffea00" />
                         <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
                             <Animated.View
                                 style={[
@@ -203,7 +204,7 @@ export default function ChildHome() {
                     <Text style={[styles.subtitle, { color: colors.text }]}>Milestone Celebrations</Text>
                     {milestones.map((m) => (
                         <View key={m.id} style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                            <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : "#ccc", fontSize: 30 }} />
+                            <Ionicons name={m.icon} size={30} color={m.achieved ? "#ffd700" : "#ccc"} />
                             <View style={{ marginLeft: 2 }}>
                                 <Text style={[styles.milestoneText, { color: m.achieved ? colors.text : colors.muted }]}>{m.label}</Text>
                                 <Text style={[styles.milestoneStatus, {
