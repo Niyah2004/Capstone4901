@@ -31,8 +31,7 @@ import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
-import ForgotPassword from "./screens/ForgotPassword";
-
+import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
@@ -97,7 +96,10 @@ function ParentStackScreen() {
         name="ChangePin"
         component={ChangePin}
       />
-
+      <ParentStack.Screen
+        name="GenericTaskLibrary"
+        component={GenericTaskLibrary}
+      />
     </ParentStack.Navigator>
   );
 }
