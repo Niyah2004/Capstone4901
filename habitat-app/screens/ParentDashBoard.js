@@ -42,28 +42,43 @@ export default function ParentDashBoard({ navigation, route }) {
 
   useFocusEffect(
     useCallback(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user && !route?.params?.childId) {
-      // optionally redirect to login or show message
-      setChildPoints({ points: 0, loading: false });
-      return;
-    }
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user && !route?.params?.childId) {
+        // optionally redirect to login or show message
+        setChildPoints({ points: 0, loading: false });
+        return;
+      }
 
-    const childIdFromRoute = route?.params?.childId;
-    let pointsUnsub = () => {};
+      // Decide which childId to use
+      // If you're passing childId in navigation params, use that:
+      const childIdFromRoute = route?.params?.childId;
+      const childId = childIdFromRoute || user?.uid; // adjust this depending on your schema
 
-    if (childIdFromRoute) {
-      const childPointsRef = doc(db, "childPoints", childIdFromRoute);
-      pointsUnsub = onSnapshot(
+      if (!childId) {
+        setChildPoints({ points: 0, loading: false });
+        return;
+      }
+
+      const childPointsRef = doc(db, "childPoints", childId);
+
+      const pointsUnsub = onSnapshot(
         childPointsRef,
         (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data();
+            // support either "points" or "stars" as the field name
             const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
-            setChildPoints({ points: balance, loading: false });
+
+            setChildPoints({
+              points: balance,
+              loading: false,
+            });
           } else {
-            setChildPoints({ points: 0, loading: false });
+            setChildPoints({
+              points: 0,
+              loading: false,
+            });
           }
         },
         (error) => {
@@ -71,91 +86,35 @@ export default function ParentDashBoard({ navigation, route }) {
           setChildPoints((prev) => ({ ...prev, loading: false }));
         }
       );
-    } else {
-      // Parent dashboard default: aggregate balances for this parent's children.
-      const parentChildPointsQuery = query(
-        collection(db, "childPoints"),
-        where("parentId", "==", user.uid)
-      );
-      let fallbackUnsub = () => {};
-      let isFallbackActive = false;
-      pointsUnsub = onSnapshot(
-        parentChildPointsQuery,
-        (snap) => {
-          if (!snap.empty) {
-            try { fallbackUnsub(); } catch {}
-            fallbackUnsub = () => {};
-            isFallbackActive = false;
-            const total = snap.docs.reduce((sum, d) => {
-              const data = d.data() || {};
-              return sum + Number(data.points ?? data.stars ?? data.totalPoints ?? 0);
-            }, 0);
-            setChildPoints({ points: total, loading: false });
-            return;
-          }
 
-          // Backward compatibility if older docs don't have parentId.
-          if (!isFallbackActive) {
-            const fallbackRef = doc(db, "childPoints", user.uid);
-            fallbackUnsub = onSnapshot(
-              fallbackRef,
-              (fallbackSnap) => {
-                if (fallbackSnap.exists()) {
-                  const data = fallbackSnap.data();
-                  const balance = data.points ?? data.stars ?? data.totalPoints ?? 0;
-                  setChildPoints({ points: balance, loading: false });
-                } else {
-                  setChildPoints({ points: 0, loading: false });
-                }
-              },
-              (fallbackErr) => {
-                console.error("Error listening to fallback childPoints:", fallbackErr);
-                setChildPoints((prev) => ({ ...prev, loading: false }));
-              }
-            );
-            isFallbackActive = true;
+      let pendingUnsub = () => { };
+      if (user?.uid) {
+        // Pending tasks = completed by child, not yet verified
+        const pendingQuery = query(
+          collection(db, "tasks"),
+          where("ownerId", "==", user.uid),
+          where("pendingApproval", "==", true)
+        );
+        pendingUnsub = onSnapshot(
+          pendingQuery,
+          (snap) => {
+            const count = snap.docs.filter((d) => d.data()?.verified !== true).length;
+            setPendingCount(count);
+          },
+          (err) => {
+            console.error("Error listening to pending tasks:", err);
+            setPendingCount(0);
           }
-        },
-        (err) => {
-          console.error("Error listening to parent childPoints:", err);
-          setChildPoints((prev) => ({ ...prev, loading: false }));
-        }
-      );
-      const parentPointsUnsub = pointsUnsub;
-      pointsUnsub = () => {
-        try { parentPointsUnsub(); } catch {}
-        try { fallbackUnsub(); } catch {}
+        );
+      } else {
+        setPendingCount(0);
+      }
+
+      return () => {
+        try { pointsUnsub(); } catch { }
+        try { pendingUnsub(); } catch { }
       };
-    }
-
-    let pendingUnsub = () => {};
-    if (user?.uid) {
-      // Pending tasks = completed by child, not yet verified
-      const pendingQuery = query(
-        collection(db, "tasks"),
-        where("ownerId", "==", user.uid),
-        where("pendingApproval", "==", true)
-      );
-      pendingUnsub = onSnapshot(
-        pendingQuery,
-        (snap) => {
-          const count = snap.docs.filter((d) => d.data()?.verified !== true).length;
-          setPendingCount(count);
-        },
-        (err) => {
-          console.error("Error listening to pending tasks:", err);
-          setPendingCount(0);
-        }
-      );
-    } else {
-      setPendingCount(0);
-    }
-
-    return () => {
-      try { pointsUnsub(); } catch {}
-      try { pendingUnsub(); } catch {}
-    };
-  }, [route]));
+    }, [route]));
 
   useFocusEffect(
     useCallback(() => {
@@ -250,7 +209,7 @@ export default function ParentDashBoard({ navigation, route }) {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-       <ScrollView
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -258,23 +217,24 @@ export default function ParentDashBoard({ navigation, route }) {
         >
           {/* Header */}
           <Text style={[styles.header, { color: colors.text }]}>Parent Dashboard</Text>
-      {/* Current Balance Card */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.balanceHeader}>
-          <Ionicons name="star-outline" size={30} color={colors.text} />
-          <Text style={[styles.balanceTitle, { color: colors.text }]}>Current Balance</Text>
-        </View>
-        <TouchableOpacity style={styles.balanceContent}>
-        <Text style={[styles.starCount, { color: colors.text }]}>
-          {childPoints.loading ? "--" : childPoints.points}
-        </Text>
-        <Text style={[styles.starLabel, { color: colors.text }]}>Star Points</Text>
-        <Text style={[styles.points, { color: colors.muted }]}>
-          {childPoints.loading ? "Loading..." : "Current Balance"}
-        </Text>
 
-        </TouchableOpacity>
-      </View>
+          {/* Current Balance Card */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.balanceHeader}>
+              <Ionicons name="star-outline" size={30} color={colors.text} />
+              <Text style={[styles.balanceTitle, { color: colors.text }]}>Current Balance</Text>
+            </View>
+            <TouchableOpacity style={styles.balanceContent}>
+              <Text style={[styles.starCount, { color: colors.text }]}>
+                {childPoints.loading ? "--" : childPoints.points}
+              </Text>
+              <Text style={[styles.starLabel, { color: colors.text }]}>Star Points</Text>
+              <Text style={[styles.points, { color: colors.muted }]}>
+                {childPoints.loading ? "Loading..." : "Current Balance"}
+              </Text>
+
+            </TouchableOpacity>
+          </View>
 
       {/* Recent Milestone */}
       <View style={[styles.milestoneCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -308,48 +268,54 @@ export default function ParentDashBoard({ navigation, route }) {
         )}
       </View>
 
-      {/* Tasks Awaiting Approval */}
-      <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Tasks Awaiting Approval</Text>
-        <Text style={styles.pendingCount}>{pendingCount}</Text>
-        <Text style={[styles.pendingText, { color: colors.muted }]}>pending tasks</Text>
-        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate("parentReviewTask")}>
-          <Text style={styles.buttonText}>Review Tasks →</Text>
-        </TouchableOpacity>
-      </View>
+          {/* Tasks Awaiting Approval */}
+          <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Tasks Awaiting Approval</Text>
+            <Text style={styles.pendingCount}>{pendingCount}</Text>
+            <Text style={[styles.pendingText, { color: colors.muted }]}>pending tasks</Text>
+            <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate("parentReviewTask")}>
+              <Text style={styles.buttonText}>Review Tasks →</Text>
+            </TouchableOpacity>
+          </View>
 
-      {/* Manage Habitat */}
-      <View style={styles.manageContainer}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Manage Habitat</Text>
-        <View style={styles.manageGrid}>
-          <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-           // onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentTaskPage" })}
-          onPress={() => navigation.navigate("ParentTaskPage")}
-          >
-            <Ionicons name="list-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]}> Create Task</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-          //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
-             onPress={() => navigation.navigate("parentReward")}
-             >
-            <Ionicons name="gift-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]}>Create Reward</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-          onPress={() => navigation.navigate("parentReviewTask")}
-          >
-            <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]}>Review Task</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-          onPress={() => navigation.navigate("AccountSetting")}
-          >
-            <Ionicons name="settings-outline" size={24} color={colors.text} />
-            <Text style={[styles.manageText, { color: colors.text }]}>Settings</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+          {/* Manage Habitat */}
+          <View style={styles.manageContainer}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Manage Habitat</Text>
+            <View style={styles.manageGrid}>
+              <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                // onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentTaskPage" })}
+                onPress={() => navigation.navigate("ParentTaskPage")}
+              >
+                <Ionicons name="list-outline" size={24} color={colors.text} />
+                <Text style={{ color: colors.text }}>Task Management</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                onPress={() => navigation.navigate("GenericTaskLibrary")}
+              >
+                <Ionicons name="library-outline" size={24} color={colors.text} />
+                <Text style={{ color: colors.text }}>Generic Task Library</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
+                onPress={() => navigation.navigate("parentReward")}
+              >
+                <Ionicons name="gift-outline" size={24} color={colors.text} />
+                <Text style={{ color: colors.text }}>Create Reward</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                onPress={() => navigation.navigate("parentReviewTask")}
+              >
+                <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
+                <Text style={{ color: colors.text }}>Review Task</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                onPress={() => navigation.navigate("AccountSetting")}
+              >
+                <Ionicons name="settings-outline" size={24} color={colors.text} />
+                <Text style={{ color: colors.text }}>Settings</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -363,7 +329,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-    scrollView: {
+  scrollView: {
     flex: 1,
   },
   scrollContent: {
@@ -422,22 +388,22 @@ const styles = StyleSheet.create({
   milestoneCard: {
     backgroundColor: "#ffffffff",
     borderRadius: 12,
-    borderWidth: 0.25,   
+    borderWidth: 0.25,
     borderColor: "#ddd",
     padding: 16,
     marginBottom: 16,
     elevation: 2,
     justifyContent: "center",
-    textAlign:"center",
+    textAlign: "center",
   },
   milestoneContent: {
     flexDirection: "row",
     alignItems: "flex-start",
-    textAlign:"center",  
-    borderColor: "#ddd",
+    textAlign: "center",
+    border: "1px solid #ddd",
     padding: 10,
     borderRadius: 8,
-    flexWrap: "nowrap",
+
   },
   milestoneImage: {
     width: 50,
@@ -454,13 +420,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flexWrap: "wrap",
     flexShrink: 1,
-    
+
   },
   milestoneDesc: {
     color: "gray",
     flexWrap: "wrap",
     flexShrink: 1,
-    
+
   },
   milestoneDate: {
     fontSize: 12,
