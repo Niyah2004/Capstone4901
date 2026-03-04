@@ -53,16 +53,16 @@ export const AVATARS = {
       },
      },
    },
-//   dino: {
-//     base: require("../assets/dino.png"),
-//     hats: {
-//       crown: {
-//         image: require("../assets/dino/hats/crown.png"),
-//         cost: 20,
-//         position: { top: -70, left: 75, size: 180 },
-//       },
-//     },
-//   },
+ dino: {
+     base: require("../assets/dino.png"),
+     hats: {
+       crown: {
+         image: require("../assets/dino/hats/dinoHat.png"),
+         cost: 20,
+         position: { top: -70, left: 75, size: 180 },
+       },
+    },
+ },
 //   lion: {
 //     base: require("../assets/lion.png"),
 //     hats: {
