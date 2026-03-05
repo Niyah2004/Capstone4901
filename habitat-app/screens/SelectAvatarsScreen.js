@@ -5,7 +5,7 @@ export default function SelectAvatarsScreen({ navigation }) {
   const [selectedAvatar, setSelected] = useState(null);
 
   const avatars = [
-    { id: "panda", image: require("../assets/images/panda.png") }
+    { id: "panda", image: require("../assets/panda.png") }
   ];
   const handleAvatarSelect = (avatarId) => {
         setSelected(avatarId); //Update selected avatar
