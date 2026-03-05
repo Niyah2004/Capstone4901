@@ -215,6 +215,7 @@ function AppNavigator() {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+        <Stack.Screen name="ChildSelection" component={ChildSelection} />
         <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
         <Stack.Screen name="ChildHome" component={ChildHome} />
         <Stack.Screen name="ChildTabs" component={ChildTabs} />
