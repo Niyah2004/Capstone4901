@@ -106,7 +106,8 @@ for (const child of childrenToSave) {
     ...child,
     userId,
     points: 0,
-    avatar: { base: "penguin_base_01", equipped: {} },
+    avatar: "panda",
+    wardrobe: {},
     createdAt: new Date().toISOString(),
   });
 

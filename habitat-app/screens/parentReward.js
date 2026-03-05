@@ -9,8 +9,8 @@ import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { arrayRemove } from "firebase/firestore";
 
-export default function ParentReward({navigation, route}) {
-const childId = route?.params?.childId; 
+
+export default function ParentReward({navigation}) {
   const auth = getAuth();
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
@@ -20,34 +20,38 @@ const childId = route?.params?.childId;
   const [imageUri, setImageUri] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [rewards, setRewards] = useState([]);
-  
-useEffect(() => {
-  if (!childId) {
-    console.log("ParentReward missing childId in route params");
-    setRewards([]);
-    return;
-  }
 
-  const rewardsRef = collection(db, "children", childId, "rewards");
-
-  const unsub = onSnapshot(
-    rewardsRef,
-    (snap) => {
-      const data = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
-      setRewards(data);
-    },
-    (error) => {
-      console.error("Error loading rewards:", error);
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
       setRewards([]);
+      return;
     }
-  );
 
-  return () => unsub();
-}, [childId]);
+    const rewardsQuery = query(
+      collection(db, "rewards"),
+      where("parentId", "==", uid)
+    );
 
+    const unsubscribe = onSnapshot(
+      rewardsQuery,
+      (snap) => {
+        const list = snap.docs.map((rewardDoc) => ({
+          id: rewardDoc.id,
+          ...rewardDoc.data(),
+        }));
+        setRewards(list);
+      },
+      (error) => {
+        console.error("Error loading rewards:", error);
+        setRewards([]);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [auth.currentUser?.uid]);
+
+  
   //adding the picture to the reward
 const pickImage = async () => {
   let result = await ImagePicker.launchImageLibraryAsync({
@@ -110,19 +114,6 @@ const uploadImageAsync = async (uri) => {
           return;
         }
       }
-      await addDoc(collection(db, "rewards"), {
-        parentId: auth.currentUser?.uid ?? null,
-        childId: childId,
-        name: rewardName,
-        description: description,
-        points: parseInt(points),
-        frequency: frequency,
-        image: imageURL,
-        createdAt: new Date(),
-      });
-  
-      Alert.alert("Success!", "Reward has been added.");
-      navigation.goBack(); // sends you back after saving
 
       await saveRewardToFirestore(imageURL);
     } catch (error) {
@@ -150,7 +141,6 @@ const uploadImageAsync = async (uri) => {
     navigation.goBack();
   };
   
-  
   const removeReward = async (rewardId) => {
   try {
     await deleteDoc(doc(db, "rewards", rewardId));
@@ -161,16 +151,19 @@ const uploadImageAsync = async (uri) => {
   }
 };
 
-  const confirmRemoveReward = (rewardId, rewardNameToShow) => {
-    Alert.alert(
-      "Remove Reward",
-      `Are you sure you want to delete "${rewardNameToShow}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Remove", style: "destructive", onPress: () => removeReward(rewardId) },
-      ]
-    );
-  };
+//confirm before deleting reward?
+{/*}
+const confirmRemoveReward = (rewardId) => {
+  Alert.alert(
+    "Remove Reward",
+    "Are you sure you want to delete this reward?",
+    [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => removeReward(rewardId) }
+    ]
+  );
+};
+*/}
 
 
   return (
@@ -243,24 +236,41 @@ const uploadImageAsync = async (uri) => {
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
 
-    <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-  {childName ? `Rewards for ${childName}` : "Rewards"}
-</Text>
-
-    {rewards.map((reward) => (
-  <View key={reward.id} style={styles.rewardCard}>
-    <Text style={styles.rewardTitle}>{reward.name || reward.title || "Untitled Reward"}</Text>
-
-    <TouchableOpacity
-      onPress={() => removeReward(reward.id)}
-      style={styles.deleteButton}
-    >
-
-      
-      <Text style={styles.deleteText}>Remove</Text>
-    </TouchableOpacity>
-  </View>
-))}
+    {rewards.length > 0 && (
+      <View style={styles.existingRewardsSection}>
+        <Text style={styles.existingRewardsTitle}>Available Rewards 🎁 (visible to your child)</Text>
+        {rewards.map((reward) => (
+          <View key={reward.id} style={styles.rewardCard}>
+            <View style={styles.rewardCardLeft}>
+              <Text style={styles.rewardCardEmoji}>🎁</Text>
+              <View style={styles.rewardCardInfo}>
+                <Text style={styles.rewardCardName}>{reward.name || "Untitled Reward"}</Text>
+                <View style={styles.rewardCardBadges}>
+                  <View style={styles.pointsBadge}>
+                    <Text style={styles.pointsBadgeText}>⭐ {reward.points ?? 0} pts</Text>
+                  </View>
+                  <View style={[styles.freqBadge,
+                    reward.frequency === "One-Time" && { backgroundColor: "#FFE0E0" },
+                    reward.frequency === "Daily" && { backgroundColor: "#E0F0FF" },
+                    reward.frequency === "Weekly" && { backgroundColor: "#E8F5E9" },
+                    reward.frequency === "Monthly" && { backgroundColor: "#FFF3E0" },
+                    reward.frequency === "Milestone" && { backgroundColor: "#F3E5F5" },
+                  ]}>
+                    <Text style={styles.freqBadgeText}>{reward.frequency || "One-Time"}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => removeReward(reward.id)}
+              style={styles.deleteButton}
+            >
+              <Text style={styles.deleteText}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    )}
 
 
 
@@ -388,16 +398,6 @@ addImageButtonText: {
   color: "#fff",
   fontWeight: "bold",
 },
- deleteButton: {
-    backgroundColor: "#ff4d4d",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  deleteText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
 imagePreviewContainer: {
   position: "relative",
   marginTop: 10,
@@ -429,5 +429,81 @@ removeImageText: {
   fontSize: 16,
   fontWeight: "bold",
 },
-
+existingRewardsSection: {
+  marginTop: 24,
+},
+existingRewardsTitle: {
+  fontSize: 16,
+  fontWeight: "700",
+  color: "#333",
+  marginBottom: 10,
+},
+rewardCard: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  backgroundColor: "#F9F9F9",
+  borderRadius: 14,
+  padding: 12,
+  marginBottom: 10,
+  borderWidth: 1,
+  borderColor: "#ECECEC",
+  shadowColor: "#000",
+  shadowOpacity: 0.05,
+  shadowRadius: 4,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 1,
+},
+rewardCardLeft: {
+  flexDirection: "row",
+  alignItems: "center",
+  flex: 1,
+},
+rewardCardEmoji: {
+  fontSize: 28,
+  marginRight: 10,
+},
+rewardCardInfo: {
+  flex: 1,
+},
+rewardCardName: {
+  fontSize: 14,
+  fontWeight: "700",
+  color: "#222",
+  marginBottom: 5,
+},
+rewardCardBadges: {
+  flexDirection: "row",
+  gap: 6,
+  flexWrap: "wrap",
+},
+pointsBadge: {
+  backgroundColor: "#FFFDE7",
+  borderRadius: 10,
+  paddingHorizontal: 8,
+  paddingVertical: 3,
+},
+pointsBadgeText: {
+  fontSize: 11,
+  fontWeight: "600",
+  color: "#C19A00",
+},
+freqBadge: {
+  backgroundColor: "#E8F5E9",
+  borderRadius: 10,
+  paddingHorizontal: 8,
+  paddingVertical: 3,
+},
+freqBadgeText: {
+  fontSize: 11,
+  fontWeight: "600",
+  color: "#555",
+},
+deleteButton: {
+  padding: 6,
+  marginLeft: 8,
+},
+deleteText: {
+  fontSize: 20,
+},
 });

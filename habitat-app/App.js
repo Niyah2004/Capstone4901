@@ -25,6 +25,7 @@ import ParentDashBoard from "./screens/ParentDashBoard";
 import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
+import ParentReviewRewards from "./screens/parentReviewRewards";
 import AccountSetting from "./screens/AccountSetting";
 import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
@@ -32,7 +33,6 @@ import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
 import ForgotPassword from "./screens/ForgotPassword";
 import ChildSelection from "./screens/ChildSelection";
-import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
 import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
@@ -44,7 +44,8 @@ const Tab = createBottomTabNavigator();
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -76,6 +77,10 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="parentReward"
         component={ParentReward}
+      />
+      <ParentStack.Screen
+        name="parentReviewRewards"
+        component={ParentReviewRewards}
       />
       <ParentStack.Screen
         name="AccountSetting"
@@ -140,7 +145,11 @@ function ChildTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={ChildHome} />
+      <Tab.Screen 
+        name="Home" 
+        component={ChildHome}
+        initialParams={{ childId }}
+      />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
       <Tab.Screen name="Parent" component={ParentStackScreen}
