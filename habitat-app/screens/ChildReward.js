@@ -9,17 +9,15 @@ import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, 
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { AVATARS } from "../data/avatars";
 
 // Character roster - starters are free, others unlock at milestone thresholds
 const CHARACTER_ROSTER = [
     { id: "panda", name: "Panda", emoji: "🐼", milestone: 0, image: require("../assets/panda.png") },
-    { id: "turtle", name: "Turtle", emoji: "🐢", milestone: 0, image: require("../assets/turtle.jpg") },
-    { id: "giraffe", name: "Giraffe", emoji: "🦒", milestone: 0, image: require("../assets/giraffe.jpg") },
-    { id: "cat", name: "Cat", emoji: "🐱", milestone: 50, image: null },
-    { id: "dog", name: "Dog", emoji: "🐶", milestone: 100, image: null },
-    { id: "bunny", name: "Bunny", emoji: "🐰", milestone: 200, image: null },
-    { id: "owl", name: "Owl", emoji: "🦉", milestone: 350, image: null },
-    { id: "dragon", name: "Dragon", emoji: "🐉", milestone: 500, image: null },
+    { id: "turtle", name: "Turtle", emoji: "🐢", milestone: 0, image: require("../assets/turtle.png") },
+    { id: "dino", name: "Dino", emoji: "🦒", milestone: 0, image: require("../assets/dino.png") },
+    { id: "lion", name: "Lion", emoji: "🦁", milestone: 50, image: require("../assets/lion.png") },
+    { id: "penguin", name: "Penguin", emoji: "🐧", milestone: 100, image: require("../assets/penguin.png") },
 ];
 
 const STARTER_IDS = CHARACTER_ROSTER.filter(c => c.milestone === 0).map(c => c.id);
@@ -41,6 +39,7 @@ export default function ChildReward() {
     const [lifetimeStars, setLifetimeStars] = useState(0);
     const [unlockedAvatars, setUnlockedAvatars] = useState([...STARTER_IDS]);
     const [childDocId, setChildDocId] = useState(null);
+    const [wardrobe, setWardrobe] = useState({});
     
     // Fetch rewards in real-time (instant updates!)
     useEffect(() => {
@@ -134,6 +133,7 @@ export default function ChildReward() {
                     setChildDocId(docSnap.id);
                     setChildName(data.preferredName || data.fullName || "Lea");
                     setAvatar(data.avatar || "panda");
+                    setWardrobe(data.wardrobe || {});
                     // Load previously unlocked avatars (starters are always included)
                     const saved = data.unlockedAvatars || [];
                     const merged = [...new Set([...STARTER_IDS, ...saved])];
@@ -406,13 +406,29 @@ export default function ChildReward() {
 
 
 
-            <Text style={styles.unlockTitle}>Unlock More Items :</Text>
+            <Text style={styles.unlockTitle}>Unlock More Items</Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.unlockItemsRow}>
-                <View style={[styles.unlockCircle, { backgroundColor: "#FFB6C1" }]}><Text style={styles.unlockItemIcon}>📱</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#A1C4FD" }]}><Text style={styles.unlockItemIcon}>👟</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#FAD0C4" }]}><Text style={styles.unlockItemIcon}>💄</Text></View>
-                <View style={[styles.unlockCircle, { backgroundColor: "#84FAB0" }]}><Text style={styles.unlockItemIcon}>🥑</Text></View>
+                {Object.entries(AVATARS[avatar] || AVATARS["panda"]).map(([category, items]) => {
+                    if (category === "base") return null;
+                    return Object.entries(items).map(([itemId, item]) => {
+                        const owned = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
+                        return (
+                            <View key={`${category}-${itemId}`} style={styles.unlockItemCard}>
+                                <View style={styles.unlockItemImageWrap}>
+                                    <Image source={item.image} style={styles.unlockItemImage} resizeMode="contain" />
+                                    {!owned && (
+                                        <View style={styles.unlockItemOverlay}>
+                                            <Ionicons name="lock-closed" size={18} color="#fff" />
+                                        </View>
+                                    )}
+                                </View>
+                                <Text style={styles.unlockItemCost}>⭐ {item.cost}</Text>
+                                <Text style={styles.unlockItemLabel}>{itemId}</Text>
+                            </View>
+                        );
+                    });
+                })}
             </ScrollView>
 
             <View style={styles.heartsRow}>
@@ -702,9 +718,58 @@ const styles = StyleSheet.create({
 
     unlockItemsRow: {
         flexDirection: "row",
-        gap: 20,
+        gap: 14,
         marginBottom: 16,
-        paddingVertical: 4,
+        paddingVertical: 8,
+        paddingHorizontal: 4,
+    },
+
+    unlockItemCard: {
+        alignItems: "center",
+        width: 80,
+    },
+
+    unlockItemImageWrap: {
+        width: 75,
+        height: 75,
+        borderRadius: 16,
+        backgroundColor: "#f0f0f0",
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+        shadowColor: "#000",
+        shadowOpacity: 0.10,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 2,
+    },
+
+    unlockItemImage: {
+        width: 60,
+        height: 60,
+    },
+
+    unlockItemOverlay: {
+        position: "absolute",
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.45)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    unlockItemCost: {
+        fontSize: 11,
+        fontWeight: "700",
+        color: "#555",
+        marginTop: 5,
+    },
+
+    unlockItemLabel: {
+        fontSize: 10,
+        color: "#888",
+        textAlign: "center",
+        textTransform: "capitalize",
+        marginTop: 2,
     },
 
     unlockCircle: {
@@ -826,6 +891,11 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "700",
     },
+    avatarContainer: {
+        alignItems: "center",
+        marginVertical: 8,
+    },
+
     emojiAvatarContainer: {
         backgroundColor: "#FFF3E0",
         justifyContent: "center",

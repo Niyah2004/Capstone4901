@@ -65,22 +65,21 @@ export default function ChildHome({ navigation }) {
         if (!user) return;
 
         const childPointsRef = doc(db, "childPoints", user.uid);
-
-        const unsubChild = onSnapshot(childPointsRef, (snap) => {
-            if (!snap.exists()) {
-            setChildPoints(0);
-            setTotalAssignedPoints(0);
-            return;
-            }
-
-        const childPointsRef = doc(db, "childPoints", user.uid);
         const unsub = onSnapshot(childPointsRef, (snap) => {
-            const data = snap.exists() ? snap.data() : {};
+            if (!snap.exists()) {
+                setChildPoints(0);
+                setTotalAssignedPoints(0);
+                return;
+            }
+            const data = snap.data();
             const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
             const totalEarned = data.totalPoints ?? data.points ?? data.stars ?? 0;
+            const assigned = data.totalAssignedPoints ?? 0;
             setChildPoints(points);
             setTotalPointsEarned(totalEarned);
-            const clamped = Math.max(0, Math.min(MAX_POINTS, points));
+            if (assigned > 0) setTotalAssignedPoints(assigned);
+            const goal = assigned > 0 ? assigned : 100;
+            const clamped = Math.min(1, points / goal);
             Animated.timing(progress, {
                 toValue: clamped,
                 duration: 600,
@@ -185,6 +184,14 @@ export default function ChildHome({ navigation }) {
         await updateDoc(childRef, updates);
         };
 
+    const milestones = [
+        { id: "first_task", icon: "star", label: "First Task Complete", achieved: verifiedTaskCount >= 1 },
+        { id: "five_tasks", icon: "ribbon", label: "5 Tasks Completed", achieved: verifiedTaskCount >= 5 },
+        { id: "ten_tasks", icon: "trophy", label: "10 Tasks Completed", achieved: verifiedTaskCount >= 10 },
+        { id: "ten_stars", icon: "flash", label: "Earned 10 Stars", achieved: totalPointsEarned >= 10 },
+        { id: "fifty_stars", icon: "flame", label: "Earned 50 Stars", achieved: totalPointsEarned >= 50 },
+    ];
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -199,7 +206,7 @@ export default function ChildHome({ navigation }) {
                     )}
                     <Text style={[styles.date, { color: colors.muted }]}>{formattedDate}</Text>
                     <View style={styles.progressBarRow}>
-                        <Icon name="star" style={{ color: "#ffea00", fontSize: 30 }} />
+                        <Icon name="star" style={{ color: "#ffea00", fontSize: 18 }} />
                         <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
                             <Animated.View
                                 style={[
@@ -212,10 +219,8 @@ export default function ChildHome({ navigation }) {
                                 ]}
                             />
                         </View>
-                        <Text style={[styles.progressText, { color: colors.text }]}>  
-                            {totalAssignedPoints > 0
-                            ? `${Math.round((childPoints / totalAssignedPoints) * 100)}%`
-                            : "0%"}</Text>
+                        <Text style={[styles.progressText, { color: colors.text }]}>
+                            {childPoints} pts</Text>
                     </View>
                 </View>
                 {/* Middle Section: Avatar — tap to change character */}
@@ -316,7 +321,7 @@ export default function ChildHome({ navigation }) {
                                 <Text style={styles.costText}>{item.cost} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 15 }} />
                                 </Text>
                             )}
-                            </TouchableOpacity>
+                            </View>
                             </TouchableOpacity>
                         );
                         });
@@ -347,10 +352,10 @@ const styles = StyleSheet.create({
     topSection: { marginTop: 20, alignItems: "center" },
     title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5,textAlign: "center" },
     date: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
-    progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10,  justifyContent: "center" },
-    progressBarContainer: {  height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
+    progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10, paddingHorizontal: 10 },
+    progressBarContainer: { flex: 1, height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", marginHorizontal: 8 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
-    progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
+    progressText: { fontSize: 11, color: "#333", marginLeft: 4, flexShrink: 0 },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative", overflow: "visible" },
     scrollContent: { paddingBottom: 30 },

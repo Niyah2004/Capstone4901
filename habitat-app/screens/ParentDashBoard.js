@@ -61,9 +61,12 @@ export default function ParentDashBoard({ navigation, route }) {
         return;
       }
 
+      let pointsUnsub = () => {};
+
+      if (childIdFromRoute) {
       const childPointsRef = doc(db, "childPoints", childId);
 
-      const pointsUnsub = onSnapshot(
+      pointsUnsub = onSnapshot(
         childPointsRef,
         (snapshot) => {
           if (snapshot.exists()) {
@@ -87,7 +90,7 @@ export default function ParentDashBoard({ navigation, route }) {
           setChildPoints((prev) => ({ ...prev, loading: false }));
         }
       );
-    } else {
+      } else {
       // Parent dashboard default: aggregate balances for this parent's children.
       const parentChildPointsQuery = query(
         collection(db, "childPoints"),
@@ -298,7 +301,7 @@ export default function ParentDashBoard({ navigation, route }) {
           {/* Current Balance Card */}
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.balanceHeader}>
-              <Ionicons name="star-outline" size={30} color={colors.text} />
+              <Ionicons name="star" size={30} color="#ffd700" />
               <Text style={[styles.balanceTitle, { color: colors.text }]}>Current Balance</Text>
             </View>
             <TouchableOpacity style={styles.balanceContent}>
@@ -379,13 +382,13 @@ export default function ParentDashBoard({ navigation, route }) {
                 onPress={() => navigation.navigate("ParentTaskPage")}
               >
                 <Ionicons name="list-outline" size={24} color={colors.text} />
-                <Text style={{ color: colors.text }}>Task Management</Text>
+                <Text style={{ color: colors.text }}>Create Task</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("GenericTaskLibrary")}
               >
                 <Ionicons name="library-outline" size={24} color={colors.text} />
-                <Text style={{ color: colors.text }}>Generic Task Library</Text>
+                <Text style={{ color: colors.text }}>Task Library</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
