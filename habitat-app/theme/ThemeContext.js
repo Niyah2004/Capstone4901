@@ -14,6 +14,20 @@ const LightColors = {
   notification: "#ff3b30",
   muted: "#777777",
   tabBar: "#fff5f5ff",
+  // New tokens
+  success: "#2d7a2d",
+  successBg: "#e7ffd7",
+  danger: "#e53935",
+  overlay: "rgba(0,0,0,0.35)",
+  wardrobeLocked: "#adadad",
+  inputBg: "#f9f9f9",
+  starsBanner: "#FFF8E1",
+  starsBannerBorder: "#FFE082",
+  starsBannerText: "#C17F00",
+  progressCard: "#E8F5E9",
+  progressCardBorder: "#C8E6C9",
+  progressCardText: "#388E3C",
+  progressBarBg: "#C8E6C9",
 };
 
 const DarkColors = {
@@ -25,6 +39,20 @@ const DarkColors = {
   notification: "#ff453a",
   muted: "#A0A7B4",
   tabBar: "#121417",
+  // New tokens
+  success: "#6FCF6F",
+  successBg: "#1A3A1A",
+  danger: "#FF6B6B",
+  overlay: "rgba(0,0,0,0.6)",
+  wardrobeLocked: "#3A3F47",
+  inputBg: "#1E2530",
+  starsBanner: "#2A2510",
+  starsBannerBorder: "#5A4A00",
+  starsBannerText: "#FFD54F",
+  progressCard: "#0D2A10",
+  progressCardBorder: "#1A4A1A",
+  progressCardText: "#81C784",
+  progressBarBg: "#1A4A1A",
 };
 
 const ThemeContext = createContext(null);
