@@ -308,7 +308,6 @@ export default function ParentReviewTask({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.tabButton,
-                activeTab === "pending" && styles.tabButtonActive,
                 activeTab === "pending" && { borderBottomColor: colors.primary },
               ]}
               onPress={() => setActiveTab("pending")}
@@ -327,7 +326,6 @@ export default function ParentReviewTask({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.tabButton,
-                activeTab === "completed" && styles.tabButtonActive,
                 activeTab === "completed" && { borderBottomColor: colors.primary },
               ]}
               onPress={() => setActiveTab("completed")}
@@ -381,7 +379,7 @@ export default function ParentReviewTask({ navigation }) {
                         <Text style={[styles.completeText, { color: !childCompleted || item.verified ? colors.muted : colors.primary }]}>Parent Verified</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.verifyButton, { backgroundColor: (!childCompleted || item.verified || !parentChecked) ? colors.border : colors.primary }]} onPress={() => handleVerify(item.id)} disabled={!childCompleted || item.verified || !parentChecked}>
-                        <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
+                        <Text style={[styles.verifyText, { color: "#fff" }]}>{item.verified ? "Verified" : "Verify Completed"}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
                         <Ionicons name="trash-outline" size={20} color={colors.muted} />
@@ -471,9 +469,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
-  tabButtonActive: {
-    borderBottomColor: "transparent",
-  },
   tabText: {
     fontSize: 14,
     fontWeight: "600",
@@ -523,14 +518,13 @@ const styles = StyleSheet.create({
   stepsText: { fontSize: 12 },
   statusRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   completeText: { marginLeft: 5, fontSize: 14, flex: 1, flexWrap: "wrap" },
-  completeTextMuted: {},
   verifyButton: {
     marginTop: 10,
     borderRadius: 25,
     paddingVertical: 10,
     alignItems: "center",
   },
-  verifyText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  verifyText: { fontWeight: "600", fontSize: 15 },
   deleteBtn: { position: "absolute", top: 10, right: 10 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   empty: { textAlign: "center", marginTop: 40 },
