@@ -10,6 +10,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
+import { useRoute } from "@react-navigation/native";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 
 // --- Screen Imports ---
@@ -30,14 +32,15 @@ import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
+import ForgotPassword from "./screens/ForgotPassword";
+import ChildSelection from "./screens/ChildSelection";
+import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
 import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 import ParentReviewRewards from "./screens/parentReviewRewards";
 import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
-import ForgotPassword from "./screens/ForgotPassword";
-
 
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
@@ -118,6 +121,9 @@ function ParentStackScreen() {
 function ChildTabs() {
   const { lockParent } = useParentLock();
   const { theme } = useTheme();
+
+  const route = useRoute();
+  const childId = route?.params?.childId;
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -149,6 +155,8 @@ function ChildTabs() {
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
       <Tab.Screen name="Parent" component={ParentStackScreen}
+        components={ParentStackScreen}
+        initialParams={{childId}}
         listeners={{
           blur: () => {
             // whenever you leave the Parent tab, lock it
@@ -213,10 +221,10 @@ function AppNavigator() {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+        <Stack.Screen name="ChildSelection" component={ChildSelection} />
         <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
         <Stack.Screen name="ChildHome" component={ChildHome} />
         <Stack.Screen name="ChildTabs" component={ChildTabs} />
-        <Stack.Screen name="SelectAvatars" component={SelectAvatarsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
     </ParentLockProvider>

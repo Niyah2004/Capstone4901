@@ -50,7 +50,12 @@ export default function ChildHome({ navigation }) {
             setChildDocId(docSnap.id);
             setChildName(data.fullName || "");
             setChildPreferredName(data.preferredName || "");
-            setAvatar(data.avatar || "panda");
+            const avatarData = data.avatar;
+            const avatarBase =
+            typeof avatarData === "string"
+                ? avatarData
+                : avatarData?.base ?? "panda";
+            setAvatar(avatarBase);
             setWardrobe(data.wardrobe || {});
             }
             setLoading(false);
