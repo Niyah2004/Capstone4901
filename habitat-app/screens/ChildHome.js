@@ -1,5 +1,5 @@
 // this is the child home page import code here 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Alert, Modal, View, Text, StyleSheet, Animated, Image, TouchableOpacity, ScrollView } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -10,12 +10,14 @@ import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import { AVATARS } from "../data/avatars";
 
-export default function ChildHome() {
+export default function ChildHome({ navigation }) {
     const [childName, setChildName] = useState("");
     const [childPreferredName, setChildPreferredName] = useState("");
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
+      const [totalPointsEarned, setTotalPointsEarned] = useState(0);
+    const [verifiedTaskCount, setVerifiedTaskCount] = useState(0);
     const [totalAssignedPoints, setTotalAssignedPoints] = useState(0);
     const parentUnsubRef = useRef(null);
     const [wardrobe, setWardrobe] = useState({});
@@ -71,51 +73,40 @@ export default function ChildHome() {
             return;
             }
 
-            const data = snap.data();
-            const points = data.points ?? 0;
-            const parentId = data.parentId;
-
+        const childPointsRef = doc(db, "childPoints", user.uid);
+        const unsub = onSnapshot(childPointsRef, (snap) => {
+            const data = snap.exists() ? snap.data() : {};
+            const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
+            const totalEarned = data.totalPoints ?? data.points ?? data.stars ?? 0;
             setChildPoints(points);
-
-            // Listen to parentPoints ONLY when parentId changes
-            if (parentId) {
-            if (parentUnsubRef.current) {
-                parentUnsubRef.current();
-            }
-
-            const parentRef = doc(db, "parentPoints", parentId);
-            parentUnsubRef.current = onSnapshot(parentRef, (parentSnap) => {
-                setTotalAssignedPoints(
-                parentSnap.data()?.totalAssignedPoints ?? 0
-                );
-            });
-            }
+            setTotalPointsEarned(totalEarned);
+            const clamped = Math.max(0, Math.min(MAX_POINTS, points));
+            Animated.timing(progress, {
+                toValue: clamped,
+                duration: 600,
+                useNativeDriver: false,
+            }).start();
         });
 
-        return () => {
-            unsubChild();
-            if (parentUnsubRef.current) parentUnsubRef.current();
-        };
-        }, []);
+        return () => unsub();
+    }, [progress]);
 
-   useEffect(() => {
-        if (totalAssignedPoints <= 0) {
-            progress.setValue(0);
-            return;
-        }
-
-        const percent = Math.min(
-            childPoints / totalAssignedPoints,
-            1
+    useEffect(() => {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return;
+        const q = query(
+            collection(db, "tasks"),
+            where("userId", "==", user.uid),
+            where("verified", "==", true)
         );
+        const unsub = onSnapshot(q, (snap) => {
+            setVerifiedTaskCount(snap.docs.length);
+        }, (err) => console.error("Error fetching verified tasks:", err));
+        return () => unsub();
+    }, []);
 
-        Animated.timing(progress, {
-            toValue: percent,
-            duration: 500,
-            useNativeDriver: false,
-        }).start();
-        }, [childPoints, totalAssignedPoints]);
-    
+
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
         weekday: 'long', // "Monday"
@@ -227,7 +218,7 @@ export default function ChildHome() {
                             : "0%"}</Text>
                     </View>
                 </View>
-                {/* Middle Section: Avatar */}
+                {/* Middle Section: Avatar — tap to change character */}
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image */}
                     <View style={styles.avatarWrapper}>
@@ -265,23 +256,23 @@ export default function ChildHome() {
                         })}
                     </View>
                 </View>
-                {/* Bottom Section: Milestone Celebrations/task view?*/}
+                {/* Bottom Section: Milestone Celebrations */}
                 <View style={styles.bottomSection}>
                     <Text style={[styles.subtitle, { color: colors.text }]}>Milestone Celebrations</Text>
-                    <View style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                        <Ionicons name="trophy-outline" style={{ color: "#ffd700", fontSize: 30 }} />
-                        <View style={{ marginLeft: 2 }}>
-                            <Text style={[styles.milestoneText, { color: colors.text }]}>First Task Completed!</Text>
-                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>Achieved</Text>
+                    {milestones.map((m) => (
+                        <View key={m.id} style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                            <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : "#ccc", fontSize: 30 }} />
+                            <View style={{ marginLeft: 2 }}>
+                                <Text style={[styles.milestoneText, { color: m.achieved ? colors.text : colors.muted }]}>{m.label}</Text>
+                                <Text style={[styles.milestoneStatus, {
+                                    backgroundColor: m.achieved ? "#e7ffd7ff" : "#f0f0f0",
+                                    color: m.achieved ? "#2d7a2d" : "#999"
+                                }]}>
+                                    {m.achieved ? "Achieved" : "Not Yet"}
+                                </Text>
+                            </View>
                         </View>
-                    </View>
-                    <View style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                        <Ionicons name="star-outline" style={{ color: "#ffd700", fontSize: 30 }} />
-                        <View style={{ marginLeft: 2 }}>
-                            <Text style={[styles.milestoneText, { color: colors.text }]}>Collected 50 Stars!</Text>
-                            <Text style={[styles.milestoneStatus, { color: colors.text }]}>Achieved</Text>
-                        </View>
-                    </View>
+                    ))}
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
                     <ScrollView
@@ -325,7 +316,7 @@ export default function ChildHome() {
                                 <Text style={styles.costText}>{item.cost} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 15 }} />
                                 </Text>
                             )}
-                            </View>
+                            </TouchableOpacity>
                             </TouchableOpacity>
                         );
                         });
@@ -361,10 +352,13 @@ const styles = StyleSheet.create({
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
     progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
-    avatarWrapper: { position: "relative" },
+    avatarWrapper: { position: "relative", overflow: "visible" },
     scrollContent: { paddingBottom: 30 },
     avatar: { width: 300, height: 300, borderRadius: 10 },
-    hatOverlay: { position: "absolute", top: -65, left: 70 },
+    avatarOverlay: { position: "absolute", top: 0, left: 0, width: 300, height: 300 },
+    backgroundOverlay: { position: "absolute", top: -60, left: -60, width: 420, height: 420 },
+    changeCharacterBadge: { position: "absolute", bottom: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
+    changeCharacterText: { color: "#fff", fontSize: 12, fontWeight: "700" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },

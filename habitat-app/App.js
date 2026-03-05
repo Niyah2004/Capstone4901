@@ -31,6 +31,8 @@ import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
 import GenericTaskLibrary from "./screens/GenericTaskLibrary";
+import ParentReviewRewards from "./screens/parentReviewRewards";
+import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
@@ -95,6 +97,10 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="ChangePin"
         component={ChangePin}
+      />
+      <ParentStack.Screen
+        name="parentReviewRewards"
+        component={ParentReviewRewards}
       />
       <ParentStack.Screen
         name="GenericTaskLibrary"
@@ -200,18 +206,19 @@ function AppNavigator() {
   }, []);
 
   return (
-    <ParentLockProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="LoginScreen" component={LoginScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-          <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-          <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-          <Stack.Screen name="ChildHome" component={ChildHome} />
-          <Stack.Screen name="ChildTabs" component={ChildTabs} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <ParentLockProvider>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+        <Stack.Screen name="ChildHome" component={ChildHome} />
+        <Stack.Screen name="ChildTabs" component={ChildTabs} />
+        <Stack.Screen name="SelectAvatars" component={SelectAvatarsScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
     </ParentLockProvider>
   );
 }
