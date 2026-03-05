@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -113,7 +112,6 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,

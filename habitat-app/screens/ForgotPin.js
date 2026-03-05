@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
     width: "60%",
     height: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 10,
     textAlign: "center",
     fontSize: 16,

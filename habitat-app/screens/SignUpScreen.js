@@ -3,8 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import {signUp} from "../auth";
 import { useTheme } from "../theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
-
 export default function SignUpScreen({ navigation }) {
   const { theme } = useTheme();
   const colors = theme.colors;
@@ -148,7 +146,6 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
