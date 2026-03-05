@@ -167,12 +167,12 @@ export default function AccountSetting({navigation}) {
             
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Text style={styles.backText}>← Back</Text>
+              <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
             </TouchableOpacity> 
 
             <Text style={[styles.title, { color: colors.text }]}>Our Profile</Text>
 
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
+            <TouchableOpacity style={[styles.logoutButton, { backgroundColor: colors.danger }]} onPress={handleLogOut}>
               <Text style={styles.logoutButtonText}>Log Out</Text>
             </TouchableOpacity>
           </View>
@@ -245,7 +245,7 @@ export default function AccountSetting({navigation}) {
             <View style={styles.changeRow}>
               <Text style={[styles.label, { color: colors.text }]}>Email</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ChangeEmail")}>
-                <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change Email</Text>
+                <Text style={{ color: colors.primary, fontSize: 12, marginRight:"1%" }}>Change Email</Text>
               </TouchableOpacity>
             </View> 
             <TextInput
@@ -260,7 +260,7 @@ export default function AccountSetting({navigation}) {
             <View style={styles.changeRow}>
               <Text style={[styles.label, { color: colors.text }]}>Password</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ChangePassword")}>
-                <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change Password</Text>
+                <Text style={{ color: colors.primary, fontSize: 12, marginRight:"1%" }}>Change Password</Text>
               </TouchableOpacity>
             </View>
             <TextInput
@@ -272,7 +272,7 @@ export default function AccountSetting({navigation}) {
             <View style={styles.changeRow}>
               <Text style={[styles.label, { color: colors.text }]}>PIN</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ChangePin")}> 
-                <Text style={{ color: "#1E90FF", fontSize: 12, marginRight:"1%" }}>Change PIN</Text>
+                <Text style={{ color: colors.primary, fontSize: 12, marginRight:"1%" }}>Change PIN</Text>
               </TouchableOpacity>
             </View>
             <TextInput
@@ -286,23 +286,33 @@ export default function AccountSetting({navigation}) {
               <Text style={[styles.label, { color: colors.text }]}>Appearance</Text>
             </View>
             <View style={styles.themeRow}>
-              {["system", "light", "dark"].map((opt) => (
+              {[
+                { key: "system", label: "System", icon: "globe-outline" },
+                { key: "light",  label: "Light",  icon: "sunny-outline" },
+                { key: "dark",   label: "Dark",   icon: "moon-outline" },
+              ].map((opt) => (
                 <TouchableOpacity
-                  key={opt}
+                  key={opt.key}
                   style={[
                     styles.themeOption,
                     { borderColor: colors.border },
-                    mode === opt && { backgroundColor: colors.primary, borderColor: colors.primary },
+                    mode === opt.key && { backgroundColor: colors.primary, borderColor: colors.primary },
                   ]}
-                  onPress={() => setMode(opt)}
+                  onPress={() => setMode(opt.key)}
                 >
+                  <Ionicons
+                    name={opt.icon}
+                    size={16}
+                    color={mode === opt.key ? "#fff" : colors.text}
+                    style={{ marginBottom: 2 }}
+                  />
                   <Text
                     style={[
                       styles.themeOptionText,
-                      { color: mode === opt ? "#fff" : colors.text },
+                      { color: mode === opt.key ? "#fff" : colors.text },
                     ]}
                   >
-                    {opt === "system" ? "System" : opt === "light" ? "Light" : "Dark"}
+                    {opt.label}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -365,7 +375,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#4CAF50",
     fontWeight: "bold",
   },
   title: { 
@@ -373,10 +382,9 @@ const styles = StyleSheet.create({
     fontSize: 22, 
     fontWeight: "600" 
   },
-  logoutButton: { 
+  logoutButton: {
     width: 65,
     height: 40,
-    backgroundColor: "#ff0000ff",
     alignItems: "center",
     borderRadius: 8,
     justifyContent: "center",
@@ -446,6 +454,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     alignItems: "center",
+    justifyContent: "center",
   },
   themeOptionText: {
     fontSize: 12,
