@@ -146,7 +146,7 @@ export default function ParentReviewRewards({ navigation }) {
               <View style={[styles.claimCard, { backgroundColor: colors.card }]}>
                 {/* Reward icon + info */}
                 <View style={styles.cardTop}>
-                  <View style={styles.giftBubble}>
+                  <View style={[styles.giftBubble, { backgroundColor: colors.inputBg }]}>
                     <Text style={styles.giftEmoji}>🎁</Text>
                   </View>
                   <View style={styles.cardInfo}>
@@ -178,7 +178,7 @@ export default function ParentReviewRewards({ navigation }) {
                   style={[styles.fulfillButton, { backgroundColor: colors.primary }]}
                   onPress={() => handleFulfill(item.id, item.rewardName, item.item_id)}
                 >
-                  <Text style={styles.fulfillButtonText}>Give Reward 🎉</Text>
+                  <Text style={[styles.fulfillButtonText, { color: "#fff" }]}>Give Reward 🎉</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -318,7 +318,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   fulfillButtonText: {
-    color: "#fff",
     fontWeight: "700",
     fontSize: 15,
   },
