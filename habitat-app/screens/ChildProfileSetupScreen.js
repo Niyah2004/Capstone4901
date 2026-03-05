@@ -77,15 +77,10 @@ export default function ChildProfileSetupScreen({ navigation, route }) {
     });
   }
 
-  if (childIds.length === 0) {
-  navigation.replace("ChildProfileSetup");
-
-} else if (childIds.length === 1) {
-  navigation.replace("ChildTabs", { childId: childIds[0] });
-
-} else {
-  navigation.replace("ChildSelection", { childIds });
-}
+  if (childrenToSave.length === 0) {
+    Alert.alert("Missing Info", "Please add at least one child before finishing setup.");
+    return;
+  }
 
     try {
      const firebaseAuth = getAuth();
@@ -133,7 +128,7 @@ for (const child of childrenToSave) {
      // console.log("Parent pin saved with Parent Id:", parentRef.id);
      // console.log("Navigating to AvatarSelection with childId:", docRef.id);
     //  navigation.navigate("AvatarSelection", { childId: docRef.id });
-    navigation.navigate("ChildSelection", { childIds: createdChildIds });
+    navigation.replace("ChildSelection");
     } catch (e) {
       console.log("Error adding document: ", e);
       Alert.alert("Error", "Could not save profile.");

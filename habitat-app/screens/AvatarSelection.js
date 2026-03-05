@@ -1,20 +1,15 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
-import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { db } from "../firebaseConfig";
-import { doc, updateDoc } from "firebase/firestore";
 import { AVATARS } from "../data/avatars";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from "react-native";
+import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 
 export default function AvatarSelection({ navigation, route }) {
-  const [selectedAvatar, setSelected] = useState(null);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [equipped, setEquipped] = useState({}); 
+  const [loading, setLoading] = useState(true);
   const childId = route?.params?.childId;
-
-  const avatars = [
-    { id: "panda", image: require("../assets/panda.png") },
-    { id: "turtle", image: require("../assets/turtle.jpg")},
-    { id: "giraffe", image: require("../assets/giraffe.jpg") },
-  ];
 
   useEffect(() => {
     const loadChildAvatar = async () => {
@@ -109,7 +104,7 @@ export default function AvatarSelection({ navigation, route }) {
 
       <TouchableOpacity
         style={[styles.button, !selectedAvatar && { opacity: 0.5 }]}
-        onPress={handleGetStarted}
+        onPress={handleSave}
         disabled={!selectedAvatar}
       >
         <Text style={styles.buttonText}>Get Started</Text>
