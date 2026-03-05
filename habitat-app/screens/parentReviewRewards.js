@@ -107,7 +107,7 @@ export default function ParentReviewRewards({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#5CB85C" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -169,8 +169,8 @@ export default function ParentReviewRewards({ navigation }) {
 
                 {/* Pending badge */}
                 <View style={[styles.pendingBadge, { backgroundColor: colors.inputBg }]}>
-                  <Ionicons name="time-outline" size={13} color="#C19A00" />
-                  <Text style={[styles.pendingBadgeText, { color: "#C19A00" }]}>Waiting for you!</Text>
+                  <Ionicons name="time-outline" size={13} color={colors.muted} />
+                  <Text style={[styles.pendingBadgeText, { color: colors.muted }]}>Waiting for you!</Text>
                 </View>
 
                 {/* Give reward button */}
