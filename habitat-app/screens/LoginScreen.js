@@ -10,9 +10,12 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { signIn } from "../auth"; 
+import { signIn } from "../auth";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function LoginScreen({ navigation }) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,30 +42,32 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.form}>
-        <Text style={styles.title}>Welcome Back!</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.text }]}>Welcome Back!</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>
           Log in to continue building healthy habits with Habitat.
         </Text>
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, { borderColor: colors.border, backgroundColor: colors.inputBg, color: colors.text }]}
           placeholder="Enter your email"
+          placeholderTextColor={colors.muted}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { borderColor: colors.border, backgroundColor: colors.inputBg, color: colors.text }]}
           placeholder="Enter your password"
+          placeholderTextColor={colors.muted}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleLogin} disabled={loading}>
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
@@ -73,13 +78,13 @@ export default function LoginScreen({ navigation }) {
         <TouchableOpacity
           onPress={() => navigation.navigate("ForgotPassword")}
         >
-        <Text style={styles.forgotText}>
+        <Text style={[styles.forgotText, { color: colors.primary }]}>
           Forgot Password?
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-          <Text style={styles.loginText}>Don’t have an account? Sign Up</Text>
+          <Text style={[styles.loginText, { color: colors.primary }]}>Don’t have an account? Sign Up</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -89,7 +94,6 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: "#fff",
     justifyContent: "center",
     padding: 20,
   },
@@ -100,12 +104,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#2d2d2d",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
     marginBottom: 25,
     textAlign: "center",
   },
@@ -117,7 +119,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   button: {
-    backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
@@ -130,12 +131,10 @@ const styles = StyleSheet.create({
   },
   loginText: {
     textAlign: "center",
-    color: "#4CAF50",
     fontWeight: "500",
   },
 
   forgotText: {
-  color: "#4CAF50",
   textAlign: "center",
   marginBottom: 10,
   fontWeight: "500",
