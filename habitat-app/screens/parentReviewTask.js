@@ -282,7 +282,7 @@ export default function ParentReviewTask({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#5CB85C" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -362,7 +362,7 @@ export default function ParentReviewTask({ navigation }) {
                     >
                       <View style={styles.row}>
                         <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
-                          <Ionicons name="book-outline" size={24} color="#C8A94B" />
+                          <Ionicons name="book-outline" size={24} color={colors.muted} />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
@@ -380,11 +380,11 @@ export default function ParentReviewTask({ navigation }) {
                         <Ionicons name={parentChecked ? "checkbox-outline" : "square-outline"} size={20} color={!childCompleted || item.verified ? colors.muted : colors.primary} />
                         <Text style={[styles.completeText, { color: !childCompleted || item.verified ? colors.muted : colors.primary }]}>Parent Verified</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.verifyButton, (!childCompleted || item.verified || !parentChecked) && styles.verifyButtonDisabled]} onPress={() => handleVerify(item.id)} disabled={!childCompleted || item.verified || !parentChecked}>
+                      <TouchableOpacity style={[styles.verifyButton, { backgroundColor: (!childCompleted || item.verified || !parentChecked) ? colors.border : colors.primary }]} onPress={() => handleVerify(item.id)} disabled={!childCompleted || item.verified || !parentChecked}>
                         <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash-outline" size={20} color="gray" />
+                        <Ionicons name="trash-outline" size={20} color={colors.muted} />
                       </TouchableOpacity>
                     </View>
                   );
@@ -404,7 +404,7 @@ export default function ParentReviewTask({ navigation }) {
                       <View key={item.id} style={[styles.taskCard, { backgroundColor: colors.card, marginBottom: 8 }]}>
                         <View style={styles.row}>
                           <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
-                            <Ionicons name="checkmark-done-outline" size={20} color="#4CAF50" />
+                            <Ionicons name="checkmark-done-outline" size={20} color={colors.primary} />
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
@@ -526,12 +526,10 @@ const styles = StyleSheet.create({
   completeTextMuted: {},
   verifyButton: {
     marginTop: 10,
-    backgroundColor: "#5CB85C",
     borderRadius: 25,
     paddingVertical: 10,
     alignItems: "center",
   },
-  verifyButtonDisabled: { backgroundColor: "#A5D6A7" },
   verifyText: { color: "#fff", fontWeight: "600", fontSize: 15 },
   deleteBtn: { position: "absolute", top: 10, right: 10 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
