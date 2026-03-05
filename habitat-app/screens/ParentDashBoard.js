@@ -351,7 +351,7 @@ export default function ParentDashBoard({ navigation, route }) {
       {/* Tasks Awaiting Approval */}
       <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Tasks Awaiting Approval</Text>
-        <Text style={styles.pendingCount}>{pendingCount}</Text>
+        <Text style={[styles.pendingCount, { color: colors.primary }]}>{pendingCount}</Text>
         <Text style={[styles.pendingText, { color: colors.muted }]}>pending tasks</Text>
         <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate("parentReviewTask")}>
           <Text style={styles.buttonText}>Review Tasks →</Text>
@@ -361,7 +361,7 @@ export default function ParentDashBoard({ navigation, route }) {
       {/* Rewards Claimed by Child */}
       <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>🎁 Rewards to Give Out</Text>
-        <Text style={styles.pendingCount}>{pendingClaimsCount}</Text>
+        <Text style={[styles.pendingCount, { color: colors.primary }]}>{pendingClaimsCount}</Text>
         <Text style={[styles.pendingText, { color: colors.muted }]}>
           {pendingClaimsCount === 1 ? "reward waiting" : "rewards waiting"}
         </Text>
@@ -419,7 +419,6 @@ export default function ParentDashBoard({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingTop: 16,
   },
@@ -437,7 +436,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   card: {
-    backgroundColor: "#EAF5E4",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -471,7 +469,6 @@ const styles = StyleSheet.create({
   points: {
     width: "100%",
     textAlign: "center",
-    color: "gray",
     marginTop: 4,
   },
   sectionTitle: {
@@ -480,10 +477,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   milestoneCard: {
-    backgroundColor: "#ffffffff",
     borderRadius: 12,
     borderWidth: 0.25,
-    borderColor: "#ddd",
     padding: 16,
     marginBottom: 16,
     elevation: 2,
@@ -517,23 +512,19 @@ const styles = StyleSheet.create({
 
   },
   milestoneDesc: {
-    color: "gray",
     flexWrap: "wrap",
     flexShrink: 1,
 
   },
   milestoneDate: {
     fontSize: 12,
-    color: "#777",
     marginTop: 4,
     flexWrap: "wrap",
     flexShrink: 1,
   },
   taskCard: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 0.25,
-    borderColor: "#ddd",
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -543,20 +534,17 @@ const styles = StyleSheet.create({
   pendingCount: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#C19A00",
     textAlign: "center",
     flexWrap: "wrap",
     width: "100%",
   },
   pendingText: {
-    color: "gray",
     marginBottom: 8,
     textAlign: "center",
     flexWrap: "wrap",
     width: "100%",
   },
   button: {
-    backgroundColor: "#C19A00",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 10,
@@ -578,7 +566,6 @@ const styles = StyleSheet.create({
   },
   manageBox: {
     width: "48%",
-    backgroundColor: "#F5F5F5",
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 8,
