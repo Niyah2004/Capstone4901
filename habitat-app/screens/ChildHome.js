@@ -172,10 +172,12 @@ export default function ChildHome({ navigation, route }) {
 
             const updates = {};
 
-            // Unequip everything else in category
-            Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
-            updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
-            });
+            // Unequip everything else in category (except for accessories - can have multiple)
+            if (category !== "accessories") {
+                Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
+                    updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
+                });
+            }
 
             // Unlock and auto-equip
             updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
@@ -200,10 +202,12 @@ export default function ChildHome({ navigation, route }) {
             // Unequip the item
             updates[`wardrobe.${avatar}.${category}.${itemId}.equipped`] = false;
         } else {
-            // Unequip everything else in category
-            Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
-            updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
-            });
+            // Unequip everything else in category (except for accessories - can have multiple)
+            if (category !== "accessories") {
+                Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
+                    updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
+                });
+            }
 
             // Equip selected item
             updates[`wardrobe.${avatar}.${category}.${itemId}.equipped`] = true;
