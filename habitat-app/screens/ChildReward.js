@@ -31,7 +31,8 @@ export default function ChildReward() {
     const [selectedReward, setSelectedReward] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [childName, setChildName] = useState("Lea");
-    const [avatar, setAvatar] = useState("panda");
+    const [avatar, setAvatar] = useState(null);
+    const [avatarLoading, setAvatarLoading] = useState(true);
     const confettiRef = useRef(null);
 
     // Character unlock state
@@ -132,12 +133,19 @@ export default function ChildReward() {
                     const data = docSnap.data();
                     setChildDocId(docSnap.id);
                     setChildName(data.preferredName || data.fullName || "Lea");
-                    setAvatar(data.avatar || "panda");
+                    // Normalize avatar: handle both string and object formats
+                    const avatarData = data.avatar;
+                    const avatarBase = typeof avatarData === "string" ? avatarData : (avatarData?.base ?? "panda");
+                    const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
+                    setAvatar(validAvatar);
+                    setAvatarLoading(false);
                     setWardrobe(data.wardrobe || {});
                     // Load previously unlocked avatars (starters are always included)
                     const saved = data.unlockedAvatars || [];
                     const merged = [...new Set([...STARTER_IDS, ...saved])];
                     setUnlockedAvatars(merged);
+                } else {
+                    setAvatarLoading(false);
                 }
             } catch (error) {
                 console.error("Error fetching child profile:", error);
@@ -237,14 +245,7 @@ export default function ChildReward() {
             setTimeout(() => setModalVisible(false), 2500);
         }
     };
-    // Map avatar id to image
-    const avatarImages = {
-        panda: require("../assets/panda.png"),
-        turtle: require("../assets/turtle.png"),
-        dino: require("../assets/dino.png"),
-        lion: require("../assets/lion.png"),
-        penguin: require("../assets/penguin.png"),
-    };
+    // End of handleClaimReward
 
     return (
         <ScrollView>
@@ -384,11 +385,16 @@ export default function ChildReward() {
             <View style={styles.RewardCard}>
 
                 <View style={styles.avatarContainer}>
-                    {/* Avatar Image */}
-                    <Image
-                            source={avatarImages[avatar] || avatarImages["panda"]}
-                            style={styles.avatar}
-                        />
+                    {/* Avatar Image - show selected avatar only when loaded */}
+                    {!avatarLoading && avatar ? (
+                        <Image
+                                source={AVATARS[avatar]?.base || require("../assets/panda.png")}
+                                style={styles.avatar}
+
+                            />
+                    ) : (
+                        <View style={[styles.avatar, { backgroundColor: "#f0f0f0" }]} />
+                    )}
                 </View>
 
                 <View style={styles.pointsRow}>
