@@ -378,36 +378,34 @@ export default function ParentDashBoard({ navigation, route }) {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Manage Habitat</Text>
             <View style={styles.manageGrid}>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-                // onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentTaskPage" })}
                 onPress={() => navigation.navigate("ParentTaskPage")}
               >
                 <Ionicons name="list-outline" size={24} color={colors.text} />
-                <Text style={{ color: colors.text }}>Create Task</Text>
+                <Text style={[styles.manageText, { color: colors.text }]}>Create Task</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("GenericTaskLibrary")}
               >
                 <Ionicons name="library-outline" size={24} color={colors.text} />
-                <Text style={{ color: colors.text }}>Task Library</Text>
+                <Text style={[styles.manageText, { color: colors.text }]}>Task Library</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-                //onPress={() => navigation.navigate("ParentStackScreen", { screen: "parentReward" })}>
                 onPress={() => navigation.navigate("parentReward")}
               >
                 <Ionicons name="gift-outline" size={24} color={colors.text} />
-                <Text style={{ color: colors.text }}>Create Reward</Text>
+                <Text style={[styles.manageText, { color: colors.text }]}>Create Reward</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("parentReviewTask")}
               >
                 <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
-                <Text style={{ color: colors.text }}>Review Task</Text>
+                <Text style={[styles.manageText, { color: colors.text }]}>Review Task</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("AccountSetting")}
               >
                 <Ionicons name="settings-outline" size={24} color={colors.text} />
-                <Text style={{ color: colors.text }}>Settings</Text>
+                <Text style={[styles.manageText, { color: colors.text }]}>Settings</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -582,16 +580,17 @@ const styles = StyleSheet.create({
     width: "48%",
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
-    paddingVertical: 20,
+    paddingVertical: 16,
     paddingHorizontal: 8,
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 10,
   },
   manageText: {
     textAlign: "center",
     fontSize: 12,
-    marginTop: 8,
-    paddingHorizontal: 2,
+    marginTop: 6,
+    paddingHorizontal: 4,
     width: "100%",
     flexShrink: 1,
     flexWrap: "wrap",
