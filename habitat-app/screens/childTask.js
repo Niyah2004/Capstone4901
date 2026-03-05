@@ -526,4 +526,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: "700",
   },
+  progressContainer: {
+    height: 8,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  progressLabel: {
+    fontSize: 11,
+    marginTop: 4,
+  },
 });
