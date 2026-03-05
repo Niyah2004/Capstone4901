@@ -9,8 +9,11 @@ import {
   Alert,
 } from "react-native";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import { useTheme } from "../theme/ThemeContext";
 
 const ForgotPassword = ({ navigation }) => {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -47,12 +50,12 @@ const ForgotPassword = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Reset Password</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.header, { color: colors.text }]}>Reset Password</Text>
 
-      <Text style={styles.label}>Email</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Email</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, backgroundColor: colors.inputBg, color: colors.text }]}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -60,7 +63,7 @@ const ForgotPassword = ({ navigation }) => {
       />
 
       <TouchableOpacity
-        style={[styles.button, loading && { opacity: 0.6 }]}
+        style={[styles.button, { backgroundColor: colors.primary }, loading && { opacity: 0.6 }]}
         onPress={handleResetPassword}
         disabled={loading}
       >
@@ -74,7 +77,7 @@ const ForgotPassword = ({ navigation }) => {
         onPress={() => navigation.goBack()}
         disabled={loading}
       >
-        <Text style={styles.cancelText}>Cancel</Text>
+        <Text style={[styles.cancelText, { color: colors.primary }]}>Cancel</Text>
       </TouchableOpacity>
     </View>
   );
@@ -87,7 +90,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
   header: {
@@ -113,7 +115,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   button: {
-    backgroundColor: "#4CAF50",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 8,
@@ -127,7 +128,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   cancelText: {
-    color: "#4CAF50",
     fontWeight: "500",
   },
 });
