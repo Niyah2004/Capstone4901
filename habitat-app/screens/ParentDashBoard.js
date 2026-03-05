@@ -319,7 +319,7 @@ export default function ParentDashBoard({ navigation, route }) {
       {/* Recent Milestone */}
       <View style={[styles.milestoneCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Recent Milestone{verifiedCount > 0 ? `  ·  ${verifiedCount} completed` : ""}
+          Recent Milestone{verifiedCount > 0 ? `  ·  ${verifiedCount}  Completed` : ""}
         </Text>
         {recentMilestone ? (
           <View style={styles.milestoneContent}>
@@ -328,8 +328,8 @@ export default function ParentDashBoard({ navigation, route }) {
               style={styles.milestoneImage}
             />
             <View style={styles.milestoneText}>
-              <Text style={[styles.milestoneTitle, { color: colors.text }]}>
-                Completed '{recentMilestone.title}'
+              <Text style={[styles.milestoneTitle, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
+                Task Completed: {recentMilestone.title}
               </Text>
               <Text style={[styles.milestoneDesc, { color: colors.muted }]}>
                 {recentMilestone.description || "Task completed and verified!"}
