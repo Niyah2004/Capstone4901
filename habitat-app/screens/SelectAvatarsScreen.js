@@ -20,7 +20,6 @@ import {
   doc,
   getDoc,
   updateDoc,
-  orderBy,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
@@ -55,11 +54,11 @@ export default function SelectAvatarsScreen({ navigation }) {
     if (!uid) { setLoading(false); return; }
 
     try {
-      // 1. Fetch avatars from Firestore, ordered by 'order' field
-      const avatarSnap = await getDocs(
-        query(collection(db, "avatars"), orderBy("order", "asc"))
-      );
-      const avatarList = avatarSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      // 1. Fetch avatars from Firestore, sort client-side to avoid index issues
+      const avatarSnap = await getDocs(collection(db, "avatars"));
+      const avatarList = avatarSnap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => Number(a.order ?? 99) - Number(b.order ?? 99));
       setAvatars(avatarList);
 
       // 2. Fetch child's lifetime points

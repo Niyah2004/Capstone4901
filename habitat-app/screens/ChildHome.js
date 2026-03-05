@@ -1,5 +1,5 @@
 // this is the child home page import code here 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, StyleSheet, Animated, Image, TouchableOpacity, ScrollView } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -8,6 +8,7 @@ import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/fir
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function ChildHome({ navigation }) {
     const [childName, setChildName] = useState("");
@@ -28,41 +29,43 @@ export default function ChildHome({ navigation }) {
     const { theme } = useTheme();
     const colors = theme.colors;
 
-    useEffect(() => {
-        const fetchChildData = async () => {
-            try {
-                const auth = getAuth();
-                const user = auth.currentUser;
-                if (!user) {
-                    setChildName("");
-                    setAvatar("panda");
+    useFocusEffect(
+        useCallback(() => {
+            const fetchChildData = async () => {
+                try {
+                    const auth = getAuth();
+                    const user = auth.currentUser;
+                    if (!user) {
+                        setChildName("");
+                        setAvatar("panda");
+                        setLoading(false);
+                        return;
+                    }
+                    const uid = user.uid;
+                    const q = query(collection(db, "children"), where("userId", "==", uid));
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const data = querySnapshot.docs[0].data();
+                        setChildName(data.fullName || "");
+                        setChildPreferredName(data.preferredName || "");
+                        setAvatar(data.avatar || "panda");
+                    } else {
+                        setChildName("");
+                        setChildPreferredName("");
+                        setAvatar("panda");
+                    }
                     setLoading(false);
-                    return;
-                }
-                const uid = user.uid;
-                const q = query(collection(db, "children"), where("userId", "==", uid));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const data = querySnapshot.docs[0].data();
-                    setChildName(data.fullName || "");
-                    setChildPreferredName(data.preferredName || "");
-                    setAvatar(data.avatar || "panda");
-                } else {
+                } catch (error) {
+                    console.error("Error fetching child profile:", error);
                     setChildName("");
                     setChildPreferredName("");
                     setAvatar("panda");
+                    setLoading(false);
                 }
-                setLoading(false);
-            } catch (error) {
-                console.error("Error fetching child profile:", error);
-                setChildName("");
-                setChildPreferredName("");
-                setAvatar("panda");
-                setLoading(false);
-            }
-        };
-        fetchChildData();
-    }, []);
+            };
+            fetchChildData();
+        }, [])
+    );
 
     useEffect(() => {
         const auth = getAuth();
@@ -118,13 +121,45 @@ export default function ChildHome({ navigation }) {
         lion: require("../assets/lion.png"),
         penguin: require("../assets/penguin.png"),
     };
-    const wardrobeItems = [
-        { id: "dinoHat", label: "Hat", image: require("../assets/dinoHat.png") },
-        { id: "dinoScarf", label: "Scarf", image: require("../assets/dinoScarf.png") },
-        { id: "dinoSkates", label: "Skates", image: require("../assets/dinoSkates.png") },
-        { id: "dinoDog", label: "Dog", image: require("../assets/dinoDog.png") },
-        { id: "SpaceBackground", label: "Space Background", image: require("../assets/SpaceBackground.png") },
-    ];
+    // Wardrobe items per avatar — each character gets their own themed accessories
+    const wardrobeByAvatar = {
+        dino: [
+            { id: "dinoHat", label: "Hat", image: require("../assets/dinoHat.png") },
+            { id: "dinoScarf", label: "Scarf", image: require("../assets/dinoScarf.png") },
+            { id: "dinoSkates", label: "Skates", image: require("../assets/dinoSkates.png") },
+            { id: "dinoDog", label: "Dog", image: require("../assets/dinoDog.png") },
+            { id: "SpaceBackground", label: "Space BG", isBackground: true, image: require("../assets/SpaceBackground.png") },
+        ],
+        lion: [
+            { id: "lionCrown",   label: "👑 Crown",      type: "emoji", emoji: "👑", top: 2,   left: 114, fontSize: 72 },
+            { id: "lionGlasses", label: "🕶️ Shades",     type: "emoji", emoji: "🕶️", top: 60,  left: 99,  fontSize: 97 },
+            { id: "lionScarf",   label: "🧣 Mane Scarf", type: "image", image: require("../assets/dinoScarf.png") },
+            { id: "lionMedal",   label: "🏅 Medal",       type: "emoji", emoji: "🏅", top: 195, left: 126, fontSize: 52 },
+            { id: "SpaceBackground", label: "🌟 Space BG", isBackground: true, image: require("../assets/SpaceBackground.png") },
+        ],
+        turtle: [
+            { id: "dinoHat", label: "Hat", image: require("../assets/dinoHat.png") },
+            { id: "dinoScarf", label: "Scarf", image: require("../assets/dinoScarf.png") },
+            { id: "dinoSkates", label: "Skates", image: require("../assets/dinoSkates.png") },
+            { id: "dinoDog", label: "Dog", image: require("../assets/dinoDog.png") },
+            { id: "SpaceBackground", label: "Space BG", isBackground: true, image: require("../assets/SpaceBackground.png") },
+        ],
+        panda: [
+            { id: "dinoHat", label: "🎩 Top Hat", image: require("../assets/dinoHat.png") },
+            { id: "dinoScarf", label: "🧣 Scarf", image: require("../assets/dinoScarf.png") },
+            { id: "dinoSkates", label: "⛸️ Skates", image: require("../assets/dinoSkates.png") },
+            { id: "dinoDog", label: "🐶 Buddy", image: require("../assets/dinoDog.png") },
+            { id: "SpaceBackground", label: "🌌 Space BG", isBackground: true, image: require("../assets/SpaceBackground.png") },
+        ],
+        penguin: [
+            { id: "dinoHat", label: "🎓 Cap", image: require("../assets/dinoHat.png") },
+            { id: "dinoScarf", label: "🧣 Scarf", image: require("../assets/dinoScarf.png") },
+            { id: "dinoSkates", label: "⛸️ Skates", image: require("../assets/dinoSkates.png") },
+            { id: "dinoDog", label: "🐾 Buddy", image: require("../assets/dinoDog.png") },
+            { id: "SpaceBackground", label: "❄️ Space BG", isBackground: true, image: require("../assets/SpaceBackground.png") },
+        ],
+    };
+    const wardrobeItems = wardrobeByAvatar[avatar] || wardrobeByAvatar["dino"];
 
     const toggleWardrobeItem = (itemId) => {
         setEquippedItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -199,13 +234,32 @@ export default function ChildHome({ navigation }) {
                         activeOpacity={0.85}
                     >
                         <View style={styles.avatarWrapper}>
+                            {/* Background items render first (behind lion) */}
+                            {wardrobeItems.map((item) =>
+                                equippedItems[item.id] && item.isBackground ? (
+                                    item.type === "emoji" ? (
+                                        <Text key={item.id} style={[styles.emojiOverlay, { top: item.top, left: item.left, fontSize: item.fontSize }]}>
+                                            {item.emoji}
+                                        </Text>
+                                    ) : (
+                                        <Image key={item.id} source={item.image} style={styles.backgroundOverlay} />
+                                    )
+                                ) : null
+                            )}
                             <Image
                                 source={avatarImages[avatar] || avatarImages["panda"]}
                                 style={styles.avatar}
                             />
+                            {/* Foreground items render after (on top of lion) */}
                             {wardrobeItems.map((item) =>
-                                equippedItems[item.id] ? (
-                                    <Image key={item.id} source={item.image} style={styles.avatarOverlay} />
+                                equippedItems[item.id] && !item.isBackground ? (
+                                    item.type === "emoji" ? (
+                                        <Text key={item.id} style={[styles.emojiOverlay, { top: item.top, left: item.left, fontSize: item.fontSize }]}>
+                                            {item.emoji}
+                                        </Text>
+                                    ) : (
+                                        <Image key={item.id} source={item.image} style={styles.avatarOverlay} />
+                                    )
                                 ) : null
                             )}
                             {/* Tap hint badge */}
@@ -245,7 +299,11 @@ export default function ChildHome({ navigation }) {
                                     equippedItems[item.id] && styles.wardrobeItemSelected,
                                 ]}
                             >
-                                <Image source={item.image} style={styles.wardrobeIcon} resizeMode="contain" />
+                                {item.type === "emoji" ? (
+                                    <Text style={styles.wardrobeEmojiIcon}>{item.emoji}</Text>
+                                ) : (
+                                    <Image source={item.image} style={styles.wardrobeIcon} resizeMode="contain" />
+                                )}
                                 <Text style={[styles.wardrobeLabel, { color: colors.text }]}>
                                     {item.label}
                                 </Text>
@@ -268,10 +326,11 @@ const styles = StyleSheet.create({
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
     progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
-    avatarWrapper: { position: "relative" },
+    avatarWrapper: { position: "relative", overflow: "visible" },
     scrollContent: { paddingBottom: 30 },
     avatar: { width: 300, height: 300, borderRadius: 10 },
     avatarOverlay: { position: "absolute", top: 0, left: 0, width: 300, height: 300 },
+    backgroundOverlay: { position: "absolute", top: -60, left: -60, width: 420, height: 420 },
     changeCharacterBadge: { position: "absolute", bottom: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
     changeCharacterText: { color: "#fff", fontSize: 12, fontWeight: "700" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
@@ -283,7 +342,9 @@ const styles = StyleSheet.create({
     wardrobeItem: { width: "23%", aspectRatio: 1, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 10, borderWidth: 1, padding: 6 },
     wardrobeItemSelected: { borderColor: "#4CAF50", borderWidth: 2, backgroundColor: "#ECF9ED" },
     wardrobeIcon: { width: 34, height: 34 },
+    wardrobeEmojiIcon: { fontSize: 30 },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
+    emojiOverlay: { position: "absolute", backgroundColor: "transparent" },
     emojiAvatarContainer: { backgroundColor: "#FFF3E0", justifyContent: "center", alignItems: "center" },
     emojiAvatarText: { fontSize: 140 },
 });

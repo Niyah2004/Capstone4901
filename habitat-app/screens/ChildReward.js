@@ -29,6 +29,7 @@ export default function ChildReward() {
     const parentId = auth.currentUser?.uid;
     const [totalStars, setTotalStars] = useState(0);
     const [rewards, setRewards] = useState([]);
+    const [claimedRewardIds, setClaimedRewardIds] = useState(new Set());
     const [selectedReward, setSelectedReward] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [childName, setChildName] = useState("Lea");
@@ -77,6 +78,21 @@ export default function ChildReward() {
 
         return () => unsubscribe();
     }, [parentId]);
+
+    // Track which rewards the child has already claimed (pending or fulfilled)
+    useEffect(() => {
+        if (!auth.currentUser) return;
+        const claimsQ = query(
+            collection(db, "claims"),
+            where("user_id", "==", auth.currentUser.uid),
+            where("status", "==", "claimed")
+        );
+        const unsubClaims = onSnapshot(claimsQ, (snap) => {
+            const ids = new Set(snap.docs.map(d => d.data().item_id));
+            setClaimedRewardIds(ids);
+        });
+        return () => unsubClaims();
+    }, []);
 
     // Fetch child's stars from childPoints collection (current balance + lifetime total)
     useEffect(() => {
@@ -409,14 +425,14 @@ export default function ChildReward() {
 
             <Text style={styles.sectionTitle}>Available Rewards</Text>
 
-            {rewards.length === 0 && (
+            {rewards.filter(r => !claimedRewardIds.has(r.id)).length === 0 && (
                 <Text style={{ textAlign: "center", color: "#999", marginVertical: 16, fontSize: 14 }}>
                     No rewards yet. Ask your parent to create some!
                 </Text>
             )}
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rewardsScrollContainer}>
-                {rewards.map((reward) => (
+                {rewards.filter(r => !claimedRewardIds.has(r.id)).map((reward) => (
                     <LinearGradient
                         key={reward.id}
                         colors={reward.gradient || ["#FF9966", "#FF5E62"]}
