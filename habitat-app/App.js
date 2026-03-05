@@ -27,6 +27,7 @@ import ParentDashBoard from "./screens/ParentDashBoard";
 import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
+import ParentReviewRewards from "./screens/parentReviewRewards";
 import AccountSetting from "./screens/AccountSetting";
 import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
@@ -34,10 +35,7 @@ import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
 import ForgotPassword from "./screens/ForgotPassword";
 import ChildSelection from "./screens/ChildSelection";
-import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
 import GenericTaskLibrary from "./screens/GenericTaskLibrary";
-import ParentReviewRewards from "./screens/parentReviewRewards";
-import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
@@ -82,6 +80,10 @@ function ParentStackScreen() {
         component={ParentReward}
       />
       <ParentStack.Screen
+        name="parentReviewRewards"
+        component={ParentReviewRewards}
+      />
+      <ParentStack.Screen
         name="AccountSetting"
         component={AccountSetting}
       />
@@ -100,10 +102,6 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="ChangePin"
         component={ChangePin}
-      />
-      <ParentStack.Screen
-        name="parentReviewRewards"
-        component={ParentReviewRewards}
       />
       <ParentStack.Screen
         name="GenericTaskLibrary"
@@ -151,7 +149,11 @@ function ChildTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={ChildHome} />
+      <Tab.Screen 
+        name="Home" 
+        component={ChildHome}
+        initialParams={{ childId }}
+      />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
       <Tab.Screen name="Parent" component={ParentStackScreen}

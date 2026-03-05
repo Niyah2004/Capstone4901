@@ -10,7 +10,7 @@ import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import { AVATARS } from "../data/avatars";
 
-export default function ChildHome({ navigation }) {
+export default function ChildHome({ navigation, route }) {
     const [childName, setChildName] = useState("");
     const [childPreferredName, setChildPreferredName] = useState("");
     const [avatar, setAvatar] = useState("panda"); // default avatar
@@ -28,6 +28,7 @@ export default function ChildHome({ navigation }) {
     const progress = useRef(new Animated.Value(0)).current;
     const { theme } = useTheme();
     const colors = theme.colors;
+    const childIdFromRoute = route?.params?.childId;
 
     useEffect(() => {
         const auth = getAuth();
@@ -37,6 +38,27 @@ export default function ChildHome({ navigation }) {
             return;
         }
 
+        // If we have a specific childId from route, use that
+        if (childIdFromRoute) {
+            const childRef = doc(db, "children", childIdFromRoute);
+            const unsub = onSnapshot(childRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setChildDocId(snap.id);
+                    setChildName(data.fullName || "");
+                    setChildPreferredName(data.preferredName || "");
+                    const avatarData = data.avatar;
+                    const avatarBase = typeof avatarData === "string" ? avatarData : (avatarData?.base ?? "panda");
+                    const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
+                    setAvatar(validAvatar);
+                    setWardrobe(data.wardrobe || {});
+                }
+                setLoading(false);
+            });
+            return unsub;
+        }
+
+        // Otherwise, fall back to first child for this user
         const q = query(
             collection(db, "children"),
             where("userId", "==", user.uid)
@@ -55,14 +77,15 @@ export default function ChildHome({ navigation }) {
             typeof avatarData === "string"
                 ? avatarData
                 : avatarData?.base ?? "panda";
-            setAvatar(avatarBase);
+            const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
+            setAvatar(validAvatar);
             setWardrobe(data.wardrobe || {});
             }
             setLoading(false);
         });
 
         return unsub;
-        }, []);
+        }, [childIdFromRoute]);
 
     useEffect(() => {
         const auth = getAuth();
