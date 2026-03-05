@@ -328,7 +328,7 @@ export default function AccountSetting({navigation}) {
               />
             </View>
 
-            <TouchableOpacity style={[styles.saveButton, loading && { opacity: 0.6 }]} onPress={handleSaveChanges} disabled={loading}>
+            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }, loading && { opacity: 0.6 }]} onPress={handleSaveChanges} disabled={loading}>
               <Text style={styles.saveButtonText}>Save Changes</Text>
             </TouchableOpacity>
 
@@ -340,10 +340,9 @@ export default function AccountSetting({navigation}) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#fff", 
-    padding: 15 
+  container: {
+    flex: 1,
+    padding: 15
   },
   row: {
     flexDirection: "row",
@@ -394,20 +393,17 @@ const styles = StyleSheet.create({
     color: "#fff", 
     fontWeight: "600"
   },
-  label: { 
-    fontSize: 14, 
-    fontWeight: "500", 
-    marginBottom: 4, 
-    color: "#333", 
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 8,
     padding: 10,
     marginTop: "1%",
     marginBottom: "5%",
-    backgroundColor: "#f9f9f9",
     fontSize: 12,
   },
   inputWrapper: {
@@ -424,12 +420,10 @@ const styles = StyleSheet.create({
   },
   prefInput: {
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 8,
     padding: 10,
     marginTop: "1%",
     marginBottom: "5%",
-    backgroundColor: "#f9f9f9",
     fontSize: 12,
     textAlign: "left",
   },
@@ -462,7 +456,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     width: "50%",
-    backgroundColor: "#4CAF50",
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
