@@ -302,8 +302,8 @@ export default function ChildHome({ navigation, route }) {
                             <View style={{ marginLeft: 2 }}>
                                 <Text style={[styles.milestoneText, { color: m.achieved ? colors.text : colors.muted }]}>{m.label}</Text>
                                 <Text style={[styles.milestoneStatus, {
-                                    backgroundColor: m.achieved ? "#e7ffd7ff" : "#f0f0f0",
-                                    color: m.achieved ? "#2d7a2d" : "#999"
+                                    backgroundColor: m.achieved ? colors.successBg : colors.border,
+                                    color: m.achieved ? colors.success : colors.muted,
                                 }]}>
                                     {m.achieved ? "Achieved" : "Not Yet"}
                                 </Text>
@@ -330,9 +330,9 @@ export default function ChildHome({ navigation, route }) {
                             style={[
                                 styles.wardrobeItem,
                                 {
-                                    backgroundColor: unlocked ? "#ffffff" : "#adadade8",
+                                    backgroundColor: unlocked ? colors.card : colors.wardrobeLocked,
                                     borderWidth: unlocked ? 0 : 1,
-                                    borderColor: "#707070",
+                                    borderColor: colors.border,
                                 }
                             ]}
                             onPress={() => handleWardrobePress(category, itemId, item.cost)}
@@ -362,8 +362,8 @@ export default function ChildHome({ navigation, route }) {
                 </View>
             </ScrollView>
             <Modal transparent visible={showPopup} animationType="fade">
-                <View style={styles.popupOverlay}>
-                    <View style={styles.popup}>
+                <View style={[styles.popupOverlay, { backgroundColor: colors.overlay }]}>
+                    <View style={[styles.popup, { backgroundColor: colors.card }]}>
                     <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
                     <Text style={styles.popupText}>{popupMsg}</Text>
                     <TouchableOpacity
@@ -380,12 +380,12 @@ export default function ChildHome({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
+    container: { flex: 1, paddingHorizontal: 20 },
     topSection: { marginTop: 20, alignItems: "center" },
     title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5,textAlign: "center" },
     date: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10, paddingHorizontal: 10 },
-    progressBarContainer: { flex: 1, height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", marginHorizontal: 8 },
+    progressBarContainer: { flex: 1, height: 12, borderRadius: 5, overflow: "hidden", marginHorizontal: 8 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
     progressText: { fontSize: 11, color: "#333", marginLeft: 4, flexShrink: 0 },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
@@ -402,8 +402,8 @@ const styles = StyleSheet.create({
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
     milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
     wardrobeScroll: { paddingVertical: 10, alignItems: "center", },
-    popupOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
-    popup: { width: 260, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
+    popupOverlay: { flex: 1, justifyContent: "center", alignItems: "center" },
+    popup: { width: 260, borderRadius: 12, padding: 20, alignItems: "center" },
     popupText: { marginTop: 10, fontSize: 14, textAlign: "center" },
     popupButton: { marginTop: 15, backgroundColor: "#ffea00", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
     popupButtonText: { fontWeight: "bold", },
