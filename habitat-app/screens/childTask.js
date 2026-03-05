@@ -463,7 +463,6 @@ export default function ChildTask({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F7F7",
     paddingHorizontal: 20,
     paddingTop: 50,
   },
@@ -474,7 +473,6 @@ const styles = StyleSheet.create({
   },
   pointsTotal: {
     fontSize: 14,
-    color: "#4CAF50",
     marginBottom: 10,
     fontWeight: "600",
   },
@@ -489,7 +487,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   taskBox: {
-    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
@@ -511,11 +508,10 @@ const styles = StyleSheet.create({
   },
   points: {
     fontSize: 16,
-    color: "#4CAF50",
   },
   sliderRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   slider: { flex: 1, height: 40, marginRight: 10 },
-  percentText: { width: 52, textAlign: "right", fontWeight: "600", color: "#4CAF50" },
+  percentText: { width: 52, textAlign: "right", fontWeight: "600" },
 
   completeButton: {
     flexDirection: "row",
@@ -529,6 +525,5 @@ const styles = StyleSheet.create({
   completeText: {
     marginLeft: 8,
     fontWeight: "700",
-    color: "#333",
   },
 });
