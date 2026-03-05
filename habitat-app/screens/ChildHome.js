@@ -298,7 +298,7 @@ export default function ChildHome({ navigation, route }) {
                     <Text style={[styles.subtitle, { color: colors.text }]}>Milestone Celebrations</Text>
                     {milestones.map((m) => (
                         <View key={m.id} style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                            <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : "#ccc", fontSize: 30 }} />
+                            <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : colors.muted, fontSize: 30 }} />
                             <View style={{ marginLeft: 2 }}>
                                 <Text style={[styles.milestoneText, { color: m.achieved ? colors.text : colors.muted }]}>{m.label}</Text>
                                 <Text style={[styles.milestoneStatus, {
@@ -365,7 +365,7 @@ export default function ChildHome({ navigation, route }) {
                 <View style={[styles.popupOverlay, { backgroundColor: colors.overlay }]}>
                     <View style={[styles.popup, { backgroundColor: colors.card }]}>
                     <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
-                    <Text style={styles.popupText}>{popupMsg}</Text>
+                    <Text style={[styles.popupText, { color: colors.text }]}>{popupMsg}</Text>
                     <TouchableOpacity
                         style={styles.popupButton}
                         onPress={() => setShowPopup(false)}
