@@ -489,7 +489,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     textAlign: "center",
-    border: "1px solid #ddd",
     padding: 10,
     borderRadius: 8,
 
