@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import {signUp} from "../auth";
+import { useTheme } from "../theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function SignUpScreen({ navigation }) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,16 +46,17 @@ export default function SignUpScreen({ navigation }) {
       }
   };
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.form}>
-        <Text style={styles.title}>Hey Family!</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.text }]}>Hey Family!</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>
           Create your account to start building healthy habits with Habitat.
         </Text>
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, { borderColor: colors.border, backgroundColor: colors.inputBg, color: colors.text }]}
           placeholder="Enter your email"
+          placeholderTextColor={colors.muted}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -60,8 +64,9 @@ export default function SignUpScreen({ navigation }) {
         />
         <View style={styles.passwordContainer}>
           <TextInput
-            style={[styles.input, { flex: 1 }]}
+            style={[styles.input, { flex: 1, borderColor: colors.border, backgroundColor: colors.inputBg, color: colors.text }]}
             placeholder="Create your password"
+            placeholderTextColor={colors.muted}
             secureTextEntry={!showPassword}
             value={password}
           onChangeText={setPassword}
@@ -73,14 +78,15 @@ export default function SignUpScreen({ navigation }) {
             <Ionicons
               name={showPassword ? "eye-off" : "eye"}
               size={22}
-              color= "#555"
+              color={colors.muted}
             />
           </TouchableOpacity>
         </View>
        <View style={styles.passwordContainer}>
           <TextInput
-            style={[styles.input, { flex: 1 }]}
+            style={[styles.input, { flex: 1, borderColor: colors.border, backgroundColor: colors.inputBg, color: colors.text }]}
             placeholder="Confirm your password"
+            placeholderTextColor={colors.muted}
             secureTextEntry={!showConfirmPassword}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -92,18 +98,18 @@ export default function SignUpScreen({ navigation }) {
             <Ionicons
               name={showConfirmPassword ? "eye-off" : "eye"}
               size={22}
-              color="#555"
+              color={colors.muted}
             />
           </TouchableOpacity>
         </View>
-        <Text style={styles.requirements}>• At least 8 characters</Text>
-        <Text style={styles.requirements}>• At least one uppercase letter</Text>
-        <Text style={styles.requirements}>• At least one lowercase letter</Text>
-        <Text style={styles.requirements}>• At least one number</Text>
-        <Text style={styles.requirements}>• At least one special character</Text>
+        <Text style={[styles.requirements, { color: colors.muted }]}>• At least 8 characters</Text>
+        <Text style={[styles.requirements, { color: colors.muted }]}>• At least one uppercase letter</Text>
+        <Text style={[styles.requirements, { color: colors.muted }]}>• At least one lowercase letter</Text>
+        <Text style={[styles.requirements, { color: colors.muted }]}>• At least one number</Text>
+        <Text style={[styles.requirements, { color: colors.muted }]}>• At least one special character</Text>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { backgroundColor: colors.primary }]}
           onPress={handleSignUp}
           disabled={loading}
         >
@@ -115,7 +121,7 @@ export default function SignUpScreen({ navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate("LoginScreen")}>
-          <Text style={styles.loginText}>Already have an account? Log In</Text>
+          <Text style={[styles.loginText, { color: colors.primary }]}>Already have an account? Log In</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -125,7 +131,6 @@ export default function SignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: "#fff",
     justifyContent: "center",
     padding: 20,
   },
@@ -134,12 +139,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#2d2d2d",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -160,14 +163,13 @@ const styles = StyleSheet.create({
     right: 12,
     padding: 4,
   },
-  requirements: { fontSize: 12, color: "#555", marginLeft: 8 },
+  requirements: { fontSize: 12, marginLeft: 8 },
   button: {
-    backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
     marginVertical: 15,
   },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  loginText: { textAlign: "center", color: "#4CAF50" },
+  loginText: { textAlign: "center" },
 });
