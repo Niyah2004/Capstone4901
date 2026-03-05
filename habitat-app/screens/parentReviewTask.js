@@ -298,7 +298,7 @@ export default function ParentReviewTask({ navigation }) {
               onPress={() => navigation.goBack()}
               style={styles.backButtonInline}
             >
-              <Text style={styles.backText}>← Back</Text>
+              <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
             </TouchableOpacity>
             <Text style={[styles.header, { color: colors.text }]}>Review Tasks</Text>
             <View style={styles.headerSpacer} />
@@ -373,12 +373,12 @@ export default function ParentReviewTask({ navigation }) {
                         </View>
                       </View>
                       <View style={styles.statusRow}>
-                        <Ionicons name={childCompleted ? "checkbox-outline" : "square-outline"} size={20} color={childCompleted ? "#4CAF50" : "#999"} />
-                        <Text style={[styles.completeText, !childCompleted && styles.completeTextMuted, !childCompleted && { color: colors.muted }]}>Marked as Complete</Text>
+                        <Ionicons name={childCompleted ? "checkbox-outline" : "square-outline"} size={20} color={childCompleted ? colors.primary : colors.muted} />
+                        <Text style={[styles.completeText, { color: !childCompleted ? colors.muted : colors.primary }]}>Marked as Complete</Text>
                       </View>
                       <TouchableOpacity style={styles.statusRow} onPress={() => toggleParentCheck(item.id)} disabled={!childCompleted || item.verified}>
-                        <Ionicons name={parentChecked ? "checkbox-outline" : "square-outline"} size={20} color={!childCompleted || item.verified ? "#999" : "#4CAF50"} />
-                        <Text style={[styles.completeText, (!childCompleted || item.verified) && styles.completeTextMuted, (!childCompleted || item.verified) && { color: colors.muted }]}>Parent Verified</Text>
+                        <Ionicons name={parentChecked ? "checkbox-outline" : "square-outline"} size={20} color={!childCompleted || item.verified ? colors.muted : colors.primary} />
+                        <Text style={[styles.completeText, { color: !childCompleted || item.verified ? colors.muted : colors.primary }]}>Parent Verified</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.verifyButton, (!childCompleted || item.verified || !parentChecked) && styles.verifyButtonDisabled]} onPress={() => handleVerify(item.id)} disabled={!childCompleted || item.verified || !parentChecked}>
                         <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
@@ -430,7 +430,6 @@ export default function ParentReviewTask({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F6F7FB",
     paddingHorizontal: 20,
     paddingTop: 10,
   },
@@ -440,7 +439,6 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: "600",
-    color: "#333",
     textAlign: "center",
     marginBottom: 0,
     flex: 1,
@@ -459,7 +457,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#4CAF50",
     fontWeight: "bold",
   },
   tabs: {
@@ -475,18 +472,16 @@ const styles = StyleSheet.create({
     borderBottomColor: "transparent",
   },
   tabButtonActive: {
-    borderBottomColor: "#4CAF50",
+    borderBottomColor: "transparent",
   },
   tabText: {
     fontSize: 14,
-    color: "#8A8FA3",
     fontWeight: "600",
   },
   tabTextActive: {
-    color: "#4CAF50",
+    fontWeight: "600",
   },
   taskCard: {
-    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 15,
     marginBottom: 15,
@@ -498,20 +493,18 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: "row", alignItems: "center" },
   iconContainer: {
-    backgroundColor: "#FFF8E1",
     padding: 8,
     borderRadius: 10,
     marginRight: 10,
   },
-  title: { fontSize: 17, fontWeight: "600", color: "#222" },
-  subtitle: { fontSize: 13, color: "#555", marginTop: 2 },
+  title: { fontSize: 17, fontWeight: "600" },
+  subtitle: { fontSize: 13, marginTop: 2 },
   pointsBadge: {
-    backgroundColor: "#E9F5E9",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 20,
   },
-  pointsText: { color: "#388E3C", fontWeight: "600" },
+  pointsText: { fontWeight: "600" },
   progressContainer: {
     marginTop: 10,
     flexDirection: "row",
@@ -520,19 +513,17 @@ const styles = StyleSheet.create({
   progressBar: {
     flex: 1,
     height: 6,
-    backgroundColor: "#E0E0E0",
     borderRadius: 4,
     marginRight: 8,
   },
   progressFill: {
     height: 6,
     borderRadius: 4,
-    backgroundColor: "#5CB85C",
   },
-  stepsText: { fontSize: 12, color: "#777" },
+  stepsText: { fontSize: 12 },
   statusRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
-  completeText: { marginLeft: 5, color: "#4CAF50", fontSize: 14, flex: 1, flexWrap: "wrap" },
-  completeTextMuted: { color: "#777" },
+  completeText: { marginLeft: 5, fontSize: 14, flex: 1, flexWrap: "wrap" },
+  completeTextMuted: {},
   verifyButton: {
     marginTop: 10,
     backgroundColor: "#5CB85C",
@@ -544,5 +535,5 @@ const styles = StyleSheet.create({
   verifyText: { color: "#fff", fontWeight: "600", fontSize: 15 },
   deleteBtn: { position: "absolute", top: 10, right: 10 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-  empty: { textAlign: "center", color: "#777", marginTop: 40 },
+  empty: { textAlign: "center", marginTop: 40 },
 });
