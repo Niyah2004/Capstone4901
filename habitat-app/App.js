@@ -33,12 +33,12 @@ import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
 import ForgotPassword from "./screens/ForgotPassword";
-
+import ChildSelection from "./screens/ChildSelection";
+import SelectAvatarsScreen from "./screens/SelectAvatarsScreen";
+import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
-import ForgotPassword from "./screens/ForgotPassword";
-
 
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
