@@ -91,14 +91,15 @@ const handleLogin = async () => {
             <Text style={styles.buttonText}>Log In</Text>
           )}
         </TouchableOpacity>
-
+        
         <TouchableOpacity
-              onPress={() => navigation.navigate("ForgotPassword")}
-            >
-            <Text style={styles.forgotText}>
-              Forgot Password?
-              </Text>
+          onPress={() => navigation.navigate("ForgotPassword")}
+        >
+        <Text style={styles.forgotText}>
+          Forgot Password?
+          </Text>
         </TouchableOpacity>
+        
         <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
           <Text style={styles.loginText}>Don’t have an account? Sign Up</Text>
         </TouchableOpacity>
