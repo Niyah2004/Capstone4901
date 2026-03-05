@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from "react-native";
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { db } from "../firebaseConfig";
 import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
@@ -21,6 +22,27 @@ const CHARACTER_ROSTER = [
 ];
 
 const STARTER_IDS = CHARACTER_ROSTER.filter(c => c.milestone === 0).map(c => c.id);
+
+function AnimatedHeart({ delay }) {
+    const scale = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        const pulse = Animated.loop(
+            Animated.sequence([
+                Animated.timing(scale, { toValue: 1.35, duration: 500, delay, useNativeDriver: true }),
+                Animated.timing(scale, { toValue: 1, duration: 500, useNativeDriver: true }),
+            ])
+        );
+        pulse.start();
+        return () => pulse.stop();
+    }, []);
+
+    return (
+        <Animated.View style={{ transform: [{ scale }] }}>
+            <Ionicons name="heart" size={22} color="#e53935" />
+        </Animated.View>
+    );
+}
 
 export default function ChildReward() {
     const auth = getAuth();
@@ -398,7 +420,7 @@ export default function ChildReward() {
                 </View>
 
                 <View style={styles.pointsRow}>
-                    <Text style={styles.starIcon}>⭐</Text>
+                    <Icon name="star" style={{ color: "#ffd700", fontSize: 24, marginRight: 6 }} />
                     <Text style={styles.pointsNumber}>{totalStars}</Text>
                     <Text style={styles.pointsLabel}>Star Points</Text>
                 </View>
@@ -438,7 +460,9 @@ export default function ChildReward() {
             </ScrollView>
 
             <View style={styles.heartsRow}>
-                <Text style={styles.heartsText}>❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</Text>
+                {[...Array(7)].map((_, i) => (
+                    <AnimatedHeart key={i} delay={i * 150} />
+                ))}
             </View>
 
             <TouchableOpacity style={styles.characterButton} onPress={openCharacterModal}>
@@ -792,12 +816,11 @@ const styles = StyleSheet.create({
     },
 
     heartsRow: {
+        flexDirection: "row",
+        justifyContent: "center",
         alignItems: "center",
         marginVertical: 10,
-    },
-
-    heartsText: {
-        fontSize: 20,
+        gap: 6,
     },
 
     characterButton: {
