@@ -118,7 +118,7 @@ export default function ParentReviewRewards({ navigation }) {
         {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backText}>← Back</Text>
+            <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
           </TouchableOpacity>
           <Text style={[styles.header, { color: colors.text }]}>Claimed Rewards</Text>
           <View style={styles.headerSpacer} />
@@ -168,14 +168,14 @@ export default function ParentReviewRewards({ navigation }) {
                 </View>
 
                 {/* Pending badge */}
-                <View style={styles.pendingBadge}>
+                <View style={[styles.pendingBadge, { backgroundColor: colors.inputBg }]}>
                   <Ionicons name="time-outline" size={13} color="#C19A00" />
-                  <Text style={styles.pendingBadgeText}>Waiting for you!</Text>
+                  <Text style={[styles.pendingBadgeText, { color: "#C19A00" }]}>Waiting for you!</Text>
                 </View>
 
                 {/* Give reward button */}
                 <TouchableOpacity
-                  style={styles.fulfillButton}
+                  style={[styles.fulfillButton, { backgroundColor: colors.primary }]}
                   onPress={() => handleFulfill(item.id, item.rewardName, item.item_id)}
                 >
                   <Text style={styles.fulfillButtonText}>Give Reward 🎉</Text>
@@ -211,7 +211,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#4CAF50",
     fontWeight: "bold",
   },
   header: {
@@ -268,7 +267,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#FFF3E0",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -303,7 +301,6 @@ const styles = StyleSheet.create({
   pendingBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF8DC",
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -313,11 +310,9 @@ const styles = StyleSheet.create({
   },
   pendingBadgeText: {
     fontSize: 11,
-    color: "#C19A00",
     fontWeight: "600",
   },
   fulfillButton: {
-    backgroundColor: "#5CB85C",
     paddingVertical: 12,
     borderRadius: 25,
     alignItems: "center",
