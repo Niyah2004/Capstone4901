@@ -20,39 +20,39 @@ export const AVATARS = {
                 image: require("../assets/panda/pants/pant.png"),
                 cost: 20,
                 position: { top: 185, left: 83.1, size: 134.9 },
+            },
         },
-        },
-        shoes : {
+        shoes: {
             slippers: {
                 image: require("../assets/panda/shoes/slippers.png"),
                 cost: 15,
                 position: { top: 213, left: 82, size: 135 },
             },
         },
-        tops : {
-            hoodie: {  
+        tops: {
+            hoodie: {
                 image: require("../assets/panda/tops/hoodie.png"),
                 cost: 15,
                 position: { top: 137, left: 74.6, size: 148.9 },
-        },
-            top: {  
+            },
+            top: {
                 image: require("../assets/panda/tops/top.png"),
                 cost: 15,
                 position: { top: 130, left: 75, size: 147 },
-        }
+            }
         },
     },
 
     turtle: {
         base: require("../assets/turtle.png"),
-        hats: {
-            cap: {
-                image: require("../assets/panda/hats/hat.png"),
-                cost: 5,
-                position: { top: -25, left: 60, size: 140 },
+        accessories: {
+            turtle_mask: {
+                image: require("../assets/turtle/accessories/turtle_mask.png"),
+                cost: 1000,
+                position: { top: -40, left: -35, size: 370 },
             },
         },
-   },
+    },
     dino: {
         base: require("../assets/dino.png"),
         accessories: {
@@ -76,30 +76,30 @@ export const AVATARS = {
         },
         shoes: {
             sneakers: {
-                image: require("../assets/dino/shoes/dinoSkates.png"),    
+                image: require("../assets/dino/shoes/dinoSkates.png"),
                 cost: 15,
                 position: { top: 213, left: 85, size: 135 },
             },
         },
-   },
-//   lion: {
-//     base: require("../assets/lion.png"),
-//     hats: {
-//       crown: {
-//         image: require("../assets/lion/hats/crown.png"),
-//         cost: 20,
-//         position: { top: -70, left: 75, size: 180 },
-//       },
-//     },
-//   },
-//   penguin: {
-//     base: require("../assets/penguin.png"),
-//     hats: {
-//       cap: {
-//         image: require("../assets/penguin/hats/cap.png"),
-//         cost: 5,
-//         position: { top: -25, left: 60, size: 140 },
-//       },
-//     },
-//   },
+    },
+    //   lion: {
+    //     base: require("../assets/lion.png"),
+    //     hats: {
+    //       crown: {
+    //         image: require("../assets/lion/hats/crown.png"),
+    //         cost: 20,
+    //         position: { top: -70, left: 75, size: 180 },
+    //       },
+    //     },
+    //   },
+    //   penguin: {
+    //     base: require("../assets/penguin.png"),
+    //     hats: {
+    //       cap: {
+    //         image: require("../assets/penguin/hats/cap.png"),
+    //         cost: 5,
+    //         position: { top: -25, left: 60, size: 140 },
+    //       },
+    //     },
+    //   },
 };
