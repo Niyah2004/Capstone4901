@@ -38,12 +38,12 @@ export default function SelectAvatarsScreen({ navigation }) {
   const { theme } = useTheme();
   const colors = theme.colors;
 
-  const [avatars, setAvatars] = useState([]);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [currentAvatar, setCurrentAvatar] = useState(null);
-  const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const avatars = [
+    { id: "panda", image: require("../assets/panda.png") }
+  ];
+  const handleAvatarSelect = (avatarId) => {
+        setSelected(avatarId); //Update selected avatar
+    };
 
   useEffect(() => {
     loadAll();
