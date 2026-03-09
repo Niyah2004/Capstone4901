@@ -32,11 +32,12 @@ useEffect(() => {
     }
   );
 
-  return unsub;
+  return () => unsub;
 }, [userId]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+  <SafeAreaView style={styles.safe} edges={["top"]}>
+    <View style={styles.container}>
       <Text style={styles.title}>Who's Playing?</Text>
 <Text style={{ marginBottom: 10, opacity: 0.6 }}>
   Logged in as: {userId || "NO USER"}
@@ -72,6 +73,7 @@ useEffect(() => {
     </View>
   )}
 />
+    </View>
     </SafeAreaView>
   );
 }

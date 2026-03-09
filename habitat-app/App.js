@@ -11,7 +11,6 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
-import * as ScreenOrientation from "expo-screen-orientation";
 
 
 // --- Screen Imports ---
@@ -120,9 +119,9 @@ function ParentStackScreen() {
 function ChildTabs() {
   const { lockParent } = useParentLock();
   const { theme } = useTheme();
-
   const route = useRoute();
   const childId = route?.params?.childId;
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -158,8 +157,6 @@ function ChildTabs() {
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
       <Tab.Screen name="Parent" component={ParentStackScreen}
-        components={ParentStackScreen}
-        initialParams={{childId}}
         listeners={{
           blur: () => {
             // whenever you leave the Parent tab, lock it
@@ -217,19 +214,19 @@ function AppNavigator() {
   }, []);
 
   return (
-      <ParentLockProvider>
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-        <Stack.Screen name="ChildSelection" component={ChildSelection} />
-        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-        <Stack.Screen name="ChildHome" component={ChildHome} />
-        <Stack.Screen name="ChildTabs" component={ChildTabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ParentLockProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="LoginScreen" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="ChildSelection" component={ChildSelection} />
+          <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+          <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+          <Stack.Screen name="ChildHome" component={ChildHome} />
+          <Stack.Screen name="ChildTabs" component={ChildTabs} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </ParentLockProvider>
   );
 }
