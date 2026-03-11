@@ -24,6 +24,7 @@ import {
   increment,
   serverTimestamp,
   addDoc,
+  getDocs,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
@@ -262,12 +263,35 @@ export default function ParentReviewTask({ navigation }) {
 
       // Local banner on the current device to confirm to the parent
       try {
+        let childNameForLocal = "";
+
+        if (childUid) {
+          try {
+            const childrenQuery = query(
+              collection(db, "children"),
+              where("userId", "==", childUid)
+            );
+            const childrenSnap = await getDocs(childrenQuery);
+            const childDoc = childrenSnap.docs[0];
+            if (childDoc) {
+              const data = childDoc.data() || {};
+              childNameForLocal = data.preferredName || data.fullName || "";
+            }
+          } catch (e) {
+            console.warn("Error looking up child for local notification:", e);
+          }
+        }
+
         await Notifications.scheduleNotificationAsync({
           content: {
             title: "Task verified",
             body: taskTitle
-              ? `You verified "${taskTitle}" and awarded points.`
-              : "You verified a task and awarded points.",
+              ? childNameForLocal
+                ? `You verified ${childNameForLocal}'s "${taskTitle}" and awarded points.`
+                : `You verified "${taskTitle}" and awarded points.`
+              : childNameForLocal
+                ? `You verified one of ${childNameForLocal}'s tasks and awarded points.`
+                : "You verified a task and awarded points.",
           },
           trigger: null,
         });

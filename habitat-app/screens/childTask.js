@@ -34,6 +34,7 @@ export default function ChildTask({ route, navigation }) {
   const [tasksForDate, setTasksForDate] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [childDocId, setChildDocId] = useState(null);
+  const [childName, setChildName] = useState("");
   const { theme } = useTheme();
   const colors = theme.colors;
 
@@ -107,7 +108,14 @@ export default function ChildTask({ route, navigation }) {
       .then((snap) => {
         if (cancelled) return;
         const docMatch = snap.docs[0];
-        setChildDocId(docMatch ? docMatch.id : null);
+        if (docMatch) {
+          const data = docMatch.data();
+          setChildDocId(docMatch.id);
+          setChildName(data.preferredName || data.fullName || "");
+        } else {
+          setChildDocId(null);
+          setChildName("");
+        }
       })
       .catch((err) => console.error("child doc lookup error", err));
 
@@ -115,6 +123,20 @@ export default function ChildTask({ route, navigation }) {
       cancelled = true;
     };
   }, [currentChildUid, childId]);
+
+  useEffect(() => {
+    if (!childId) return;
+
+    const ref = doc(db, "children", childId);
+    getDoc(ref)
+      .then((snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        setChildDocId(childId);
+        setChildName(data.preferredName || data.fullName || "");
+      })
+      .catch((err) => console.error("child doc direct lookup error", err));
+  }, [childId]);
 
   // Load tasks (date-specific + recurring)
   useEffect(() => {
@@ -343,10 +365,16 @@ export default function ChildTask({ route, navigation }) {
             fromChildId: currentChildUid,
             taskId: task.id,
             type: "completion_request",
-            title: "Task completed",
+            title: childName
+              ? `${childName} completed a task`
+              : "Task completed",
             body: task.title
-              ? `${task.title} has been marked complete and is waiting for your review.`
-              : "A task has been marked complete and is waiting for your review.",
+              ? childName
+                ? `${childName} marked "${task.title}" as complete and it is waiting for your review.`
+                : `${task.title} has been marked complete and is waiting for your review.`
+              : childName
+                ? `${childName} marked a task as complete and it is waiting for your review.`
+                : "A task has been marked complete and is waiting for your review.",
             createdAt: serverTimestamp(),
             read: false,
           });

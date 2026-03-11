@@ -49,7 +49,7 @@ export const AVATARS = {
             turtle_mask: {
                 image: require("../assets/turtle/accessories/turtle_mask.png"),
                 cost: 1000,
-                position: { top: -40, left: -35, size: 370 },
+                position: { top: -43, left: -37, size: 375 },
             },
         },
     },
