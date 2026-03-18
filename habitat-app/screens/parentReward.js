@@ -8,9 +8,12 @@ import * as ImagePicker from 'expo-image-picker';
 import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { arrayRemove } from "firebase/firestore";
+import { useTheme } from "../theme/ThemeContext";
 
 
 export default function ParentReward({navigation}) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const auth = getAuth();
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
@@ -168,109 +171,105 @@ const confirmRemoveReward = (rewardId) => {
 
   return (
     <ScrollView
-  contentContainerStyle={styles.container}
-  keyboardShouldPersistTaps="handled"
->
+      contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
+      keyboardShouldPersistTaps="handled"
+    >
 
-     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-     <Text style={styles.backText}>← Back</Text>
-    </TouchableOpacity> 
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.header}>Create Reward</Text>
+      <Text style={[styles.header, { color: colors.text }]}>Create Reward</Text>
 
-      <View style={styles.formWrapper}>
-    <Text style={styles.label}>Reward Name</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="e.g., Movie Night, New Toy"
-      value={rewardName}
-      onChangeText={setRewardName}
-    />
+      <View style={[styles.formWrapper, { backgroundColor: colors.card }]}>
+        <Text style={[styles.label, { color: colors.text }]}>Reward Name</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
+          placeholder="e.g., Movie Night, New Toy"
+          placeholderTextColor={colors.muted}
+          value={rewardName}
+          onChangeText={setRewardName}
+        />
 
-    <Text style={styles.label}>Description</Text>
-    <TextInput
-      style={[styles.input, { height: 80 }]}
-      placeholder="Briefly describe what the reward is about."
-      value={description}
-      onChangeText={setDescription}
-      multiline
-    />
+        <Text style={[styles.label, { color: colors.text }]}>Description</Text>
+        <TextInput
+          style={[styles.input, { height: 80, backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
+          placeholder="Briefly describe what the reward is about."
+          placeholderTextColor={colors.muted}
+          value={description}
+          onChangeText={setDescription}
+          multiline
+        />
 
-    <Text style={styles.label}>Points Required</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="10"
-      value={points}
-      onChangeText={setPoints}
-      keyboardType="numeric"
-    />
+        <Text style={[styles.label, { color: colors.text }]}>Points Required</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
+          placeholder="10"
+          placeholderTextColor={colors.muted}
+          value={points}
+          onChangeText={setPoints}
+          keyboardType="numeric"
+        />
 
-    <Text style={styles.label}>Reward Frequency</Text>
-    <View style={styles.frequencyContainer}>
-      {["One-Time", "Daily", "Weekly", "Monthly", "Milestone"].map((freq) => (
-        <TouchableOpacity
-          key={freq}
-          style={[
-            styles.freqButton,
-            frequency === freq && styles.freqButtonActive,
-          ]}
-          onPress={() => setFrequency(freq)}
-        >
-          <Text
-            style={[
-              styles.freqText,
-              frequency === freq && styles.freqTextActive,
-            ]}
-          >
-            {freq}
-          </Text>
+        <Text style={[styles.label, { color: colors.text }]}>Reward Frequency</Text>
+        <View style={styles.frequencyContainer}>
+          {["One-Time", "Daily", "Weekly", "Monthly", "Milestone"].map((freq) => (
+            <TouchableOpacity
+              key={freq}
+              style={[
+                styles.freqButton,
+                { borderColor: colors.primary },
+                frequency === freq && { backgroundColor: colors.primary },
+              ]}
+              onPress={() => setFrequency(freq)}
+            >
+              <Text style={[
+                styles.freqText,
+                { color: frequency === freq ? "#fff" : colors.primary },
+              ]}>
+                {freq}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity style={[styles.addImageButton, { backgroundColor: colors.primary }]} onPress={pickImage}>
+          <Text style={styles.addImageButtonText}>Add Image</Text>
         </TouchableOpacity>
-      ))}
-    </View>
 
-<TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
-    <Text style={styles.addImageButtonText}>Add Image</Text>
-    </TouchableOpacity>
+        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={saveReward}>
+          <Text style={styles.saveButtonText}>Save Reward</Text>
+        </TouchableOpacity>
 
-    <TouchableOpacity style={styles.saveButton} onPress={saveReward}>
-      <Text style={styles.saveButtonText}>Save Reward</Text>
-    </TouchableOpacity>
-
-    {rewards.length > 0 && (
-      <View style={styles.existingRewardsSection}>
-        <Text style={styles.existingRewardsTitle}>Available Rewards 🎁 (visible to your child)</Text>
-        {rewards.map((reward) => (
-          <View key={reward.id} style={styles.rewardCard}>
-            <View style={styles.rewardCardLeft}>
-              <Text style={styles.rewardCardEmoji}>🎁</Text>
-              <View style={styles.rewardCardInfo}>
-                <Text style={styles.rewardCardName}>{reward.name || "Untitled Reward"}</Text>
-                <View style={styles.rewardCardBadges}>
-                  <View style={styles.pointsBadge}>
-                    <Text style={styles.pointsBadgeText}>⭐ {reward.points ?? 0} pts</Text>
-                  </View>
-                  <View style={[styles.freqBadge,
-                    reward.frequency === "One-Time" && { backgroundColor: "#FFE0E0" },
-                    reward.frequency === "Daily" && { backgroundColor: "#E0F0FF" },
-                    reward.frequency === "Weekly" && { backgroundColor: "#E8F5E9" },
-                    reward.frequency === "Monthly" && { backgroundColor: "#FFF3E0" },
-                    reward.frequency === "Milestone" && { backgroundColor: "#F3E5F5" },
-                  ]}>
-                    <Text style={styles.freqBadgeText}>{reward.frequency || "One-Time"}</Text>
+        {rewards.length > 0 && (
+          <View style={styles.existingRewardsSection}>
+            <Text style={[styles.existingRewardsTitle, { color: colors.text }]}>Available Rewards 🎁 (visible to your child)</Text>
+            {rewards.map((reward) => (
+              <View key={reward.id} style={[styles.rewardCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.rewardCardLeft}>
+                  <Text style={styles.rewardCardEmoji}>🎁</Text>
+                  <View style={styles.rewardCardInfo}>
+                    <Text style={[styles.rewardCardName, { color: colors.text }]}>{reward.name || "Untitled Reward"}</Text>
+                    <View style={styles.rewardCardBadges}>
+                      <View style={[styles.pointsBadge, { backgroundColor: colors.starsBanner }]}>
+                        <Text style={[styles.pointsBadgeText, { color: colors.starsBannerText }]}>⭐ {reward.points ?? 0} pts</Text>
+                      </View>
+                      <View style={[styles.freqBadge, { backgroundColor: colors.inputBg }]}>
+                        <Text style={[styles.freqBadgeText, { color: colors.muted }]}>{reward.frequency || "One-Time"}</Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
+                <TouchableOpacity
+                  onPress={() => removeReward(reward.id)}
+                  style={styles.deleteButton}
+                >
+                  <Text style={styles.deleteText}>🗑️</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-            <TouchableOpacity
-              onPress={() => removeReward(reward.id)}
-              style={styles.deleteButton}
-            >
-              <Text style={styles.deleteText}>🗑️</Text>
-            </TouchableOpacity>
+            ))}
           </View>
-        ))}
-      </View>
-    )}
+        )}
 
 
 
@@ -299,17 +298,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: "#fff",
   },
   header: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
-    color: "#333",
   },
   formWrapper: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
     shadowColor: "#000",
@@ -323,20 +319,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 5,
-    color: "#333",
   },
   input: {
-      borderWidth: 1,
-      borderColor: "#ccc",
-      borderRadius: 10,
-      padding: 10,
-      marginBottom: 5,
-      backgroundColor: "#fafafa",  
-      shadowColor: "#000",            
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,                    
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   frequencyContainer: {
     flexDirection: "row",
@@ -346,24 +339,15 @@ const styles = StyleSheet.create({
   },
   freqButton: {
     borderWidth: 1,
-    borderColor: "#4CAF50",
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 15,
     marginBottom: 10,
   },
-  freqButtonActive: {
-    backgroundColor: "#4CAF50",
-  },
   freqText: {
-    color: "#4CAF50",
     fontWeight: "bold",
   },
-  freqTextActive: {
-    color: "#fff",
-  },
   saveButton: {
-    backgroundColor: "#4CAF50",
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -383,127 +367,116 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#4CAF50",
     fontWeight: "bold",
   },
-
   addImageButton: {
-  backgroundColor: "#4CAF50",
-  padding: 15,
-  borderRadius: 10,
-  alignItems: "center",
-  marginTop: 10,
-},
-addImageButtonText: {
-  color: "#fff",
-  fontWeight: "bold",
-},
-imagePreviewContainer: {
-  position: "relative",
-  marginTop: 10,
-  alignSelf: "center",
-},
-imagePreview: {
-  width: 100,
-  height: 100,
-  borderRadius: 10,
-},
-removeImageButton: {
-  position: "absolute",
-  top: -8,
-  right: -8,
-  backgroundColor: "#FF4444",
-  width: 28,
-  height: 28,
-  borderRadius: 14,
-  justifyContent: "center",
-  alignItems: "center",
-  shadowColor: "#000",
-  shadowOpacity: 0.3,
-  shadowRadius: 3,
-  shadowOffset: { width: 0, height: 2 },
-  elevation: 3,
-},
-removeImageText: {
-  color: "#fff",
-  fontSize: 16,
-  fontWeight: "bold",
-},
-existingRewardsSection: {
-  marginTop: 24,
-},
-existingRewardsTitle: {
-  fontSize: 16,
-  fontWeight: "700",
-  color: "#333",
-  marginBottom: 10,
-},
-rewardCard: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  backgroundColor: "#F9F9F9",
-  borderRadius: 14,
-  padding: 12,
-  marginBottom: 10,
-  borderWidth: 1,
-  borderColor: "#ECECEC",
-  shadowColor: "#000",
-  shadowOpacity: 0.05,
-  shadowRadius: 4,
-  shadowOffset: { width: 0, height: 2 },
-  elevation: 1,
-},
-rewardCardLeft: {
-  flexDirection: "row",
-  alignItems: "center",
-  flex: 1,
-},
-rewardCardEmoji: {
-  fontSize: 28,
-  marginRight: 10,
-},
-rewardCardInfo: {
-  flex: 1,
-},
-rewardCardName: {
-  fontSize: 14,
-  fontWeight: "700",
-  color: "#222",
-  marginBottom: 5,
-},
-rewardCardBadges: {
-  flexDirection: "row",
-  gap: 6,
-  flexWrap: "wrap",
-},
-pointsBadge: {
-  backgroundColor: "#FFFDE7",
-  borderRadius: 10,
-  paddingHorizontal: 8,
-  paddingVertical: 3,
-},
-pointsBadgeText: {
-  fontSize: 11,
-  fontWeight: "600",
-  color: "#C19A00",
-},
-freqBadge: {
-  backgroundColor: "#E8F5E9",
-  borderRadius: 10,
-  paddingHorizontal: 8,
-  paddingVertical: 3,
-},
-freqBadgeText: {
-  fontSize: 11,
-  fontWeight: "600",
-  color: "#555",
-},
-deleteButton: {
-  padding: 6,
-  marginLeft: 8,
-},
-deleteText: {
-  fontSize: 20,
-},
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  addImageButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  imagePreviewContainer: {
+    position: "relative",
+    marginTop: 10,
+    alignSelf: "center",
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "#FF4444",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  removeImageText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  existingRewardsSection: {
+    marginTop: 24,
+  },
+  existingRewardsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  rewardCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  rewardCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  rewardCardEmoji: {
+    fontSize: 28,
+    marginRight: 10,
+  },
+  rewardCardInfo: {
+    flex: 1,
+  },
+  rewardCardName: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 5,
+  },
+  rewardCardBadges: {
+    flexDirection: "row",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  pointsBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  pointsBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  freqBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  freqBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  deleteButton: {
+    padding: 6,
+    marginLeft: 8,
+  },
+  deleteText: {
+    fontSize: 20,
+  },
 });

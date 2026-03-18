@@ -11,6 +11,7 @@ import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AVATARS } from "../data/avatars";
+import { useTheme } from "../theme/ThemeContext";
 
 // Character roster - starters are free, others unlock at milestone thresholds
 const CHARACTER_ROSTER = [
@@ -47,6 +48,8 @@ function AnimatedHeart({ delay }) {
 export default function ChildReward() {
     const auth = getAuth();
     const parentId = auth.currentUser?.uid;
+    const { theme } = useTheme();
+    const colors = theme.colors;
     const [totalStars, setTotalStars] = useState(0);
     const [rewards, setRewards] = useState([]);
     const [claimedRewardIds, setClaimedRewardIds] = useState(new Set());
@@ -270,8 +273,8 @@ export default function ChildReward() {
     // End of handleClaimReward
 
     return (
-        <ScrollView>
-        <View style={styles.container}>
+        <ScrollView style={{ backgroundColor: colors.background }}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView style={styles.ScrollView}>
             <Modal
                 animationType="slide"
@@ -279,8 +282,8 @@ export default function ChildReward() {
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
+                <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+                    <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
 
                         <ConfettiCannon
                             ref={confettiRef}
@@ -293,34 +296,31 @@ export default function ChildReward() {
                             colors={['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']}
                         />
 
-                        <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>{selectedReward?.title}</Text>
 
                         <View style={styles.modalImagePlaceholder}>
                             <Text style={styles.modalImageText}>🎁</Text>
                         </View>
 
-                        <Text style={styles.modalDesc}>
+                        <Text style={[styles.modalDesc, { color: colors.muted }]}>
                             {selectedReward?.description || "No description provided."}
                         </Text>
-                        <Text style={styles.modalPoints}>
+                        <Text style={[styles.modalPoints, { color: colors.text }]}>
                             ⭐ {selectedReward?.cost} Points
                         </Text>
 
 
                         <TouchableOpacity
-                            style={styles.modalCloseButton}
+                            style={[styles.modalCloseButton, { backgroundColor: colors.border }]}
                             onPress={() => setModalVisible(false)}
                         >
-                            <Text style={styles.modalCloseText}>Close</Text>
+                            <Text style={[styles.modalCloseText, { color: colors.text }]}>Close</Text>
                         </TouchableOpacity>
 
                         {/*claim button */}
                         <TouchableOpacity
-                            style={styles.modalClaimButton}
-
+                            style={[styles.modalClaimButton, { backgroundColor: colors.primary }]}
                             onPress={handleClaimReward}
-                        //setModalVisible(false)}
-                        //make it update the firebase
                         >
                             <Text style={styles.modalClaimText}>Claim</Text>
                         </TouchableOpacity>
@@ -335,13 +335,13 @@ export default function ChildReward() {
                 visible={characterModalVisible}
                 onRequestClose={() => setCharacterModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContainer, { width: "90%" }]}>
-                        <Text style={styles.modalTitle}>Choose Your Character</Text>
-                        <Text style={styles.charModalSubtitle}>
+                <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+                    <View style={[styles.modalContainer, { width: "90%", backgroundColor: colors.card }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Your Character</Text>
+                        <Text style={[styles.charModalSubtitle, { color: colors.muted }]}>
                             Earn more stars to unlock new characters!
                         </Text>
-                        <Text style={styles.charModalStars}>
+                        <Text style={[styles.charModalStars, { color: colors.text }]}>
                             Lifetime Stars Earned: ⭐ {lifetimeStars}
                         </Text>
 
@@ -355,7 +355,8 @@ export default function ChildReward() {
                                         key={character.id}
                                         style={[
                                             styles.characterCard,
-                                            isActive && styles.characterCardActive,
+                                            { backgroundColor: colors.card, borderColor: colors.border },
+                                            isActive && { borderColor: colors.primary, backgroundColor: colors.successBg },
                                             !isUnlocked && styles.characterCardLocked,
                                         ]}
                                         onPress={() => {
@@ -371,7 +372,8 @@ export default function ChildReward() {
 
                                         <Text style={[
                                             styles.characterName,
-                                            !isUnlocked && { color: "#aaa" }
+                                            { color: colors.text },
+                                            !isUnlocked && { color: colors.muted }
                                         ]}>
                                             {character.name}
                                         </Text>
@@ -384,7 +386,7 @@ export default function ChildReward() {
                                         )}
 
                                         {isActive && (
-                                            <View style={styles.activeBadge}>
+                                            <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
                                                 <Text style={styles.activeBadgeText}>Active</Text>
                                             </View>
                                         )}
@@ -394,17 +396,17 @@ export default function ChildReward() {
                         </View>
 
                         <TouchableOpacity
-                            style={[styles.modalCloseButton, { marginTop: 16 }]}
+                            style={[styles.modalCloseButton, { marginTop: 16, backgroundColor: colors.border }]}
                             onPress={() => setCharacterModalVisible(false)}
                         >
-                            <Text style={styles.modalCloseText}>Close</Text>
+                            <Text style={[styles.modalCloseText, { color: colors.text }]}>Close</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
 
-            <Text style={styles.title}>Reward</Text>
-            <View style={styles.RewardCard}>
+            <Text style={[styles.title, { color: colors.text }]}>Reward</Text>
+            <View style={[styles.RewardCard, { backgroundColor: colors.card }]}>
 
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image - show selected avatar only when loaded */}
@@ -415,26 +417,26 @@ export default function ChildReward() {
 
                             />
                     ) : (
-                        <View style={[styles.avatar, { backgroundColor: "#f0f0f0" }]} />
+                        <View style={[styles.avatar, { backgroundColor: colors.inputBg }]} />
                     )}
                 </View>
 
                 <View style={styles.pointsRow}>
                     <Icon name="star" style={{ color: "#ffd700", fontSize: 24, marginRight: 6 }} />
-                    <Text style={styles.pointsNumber}>{totalStars}</Text>
-                    <Text style={styles.pointsLabel}>Star Points</Text>
+                    <Text style={[styles.pointsNumber, { color: colors.text }]}>{totalStars}</Text>
+                    <Text style={[styles.pointsLabel, { color: colors.muted }]}>Star Points</Text>
                 </View>
 
 
                 <View style={styles.greetingRow}>
-                    <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits</Text>
+                    <Text style={[styles.greetingTitle, { color: colors.text }]}>Amazing job, {childName}! Keep building those Habits</Text>
                 </View>
             </View>
 
 
 
 
-            <Text style={styles.unlockTitle}>Unlock More Items</Text>
+            <Text style={[styles.unlockTitle, { color: colors.text }]}>Unlock More Items</Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.unlockItemsRow}>
                 {Object.entries(AVATARS[avatar] || AVATARS["panda"]).map(([category, items]) => {
@@ -443,7 +445,7 @@ export default function ChildReward() {
                         const owned = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
                         return (
                             <View key={`${category}-${itemId}`} style={styles.unlockItemCard}>
-                                <View style={styles.unlockItemImageWrap}>
+                                <View style={[styles.unlockItemImageWrap, { backgroundColor: colors.inputBg }]}>
                                     <Image source={item.image} style={styles.unlockItemImage} resizeMode="contain" />
                                     {!owned && (
                                         <View style={styles.unlockItemOverlay}>
@@ -451,8 +453,8 @@ export default function ChildReward() {
                                         </View>
                                     )}
                                 </View>
-                                <Text style={styles.unlockItemCost}>⭐ {item.cost}</Text>
-                                <Text style={styles.unlockItemLabel}>{itemId}</Text>
+                                <Text style={[styles.unlockItemCost, { color: colors.muted }]}>⭐ {item.cost}</Text>
+                                <Text style={[styles.unlockItemLabel, { color: colors.muted }]}>{itemId}</Text>
                             </View>
                         );
                     });
@@ -465,14 +467,14 @@ export default function ChildReward() {
                 ))}
             </View>
 
-            <TouchableOpacity style={styles.characterButton} onPress={openCharacterModal}>
+            <TouchableOpacity style={[styles.characterButton, { backgroundColor: colors.primary }]} onPress={openCharacterModal}>
                 <Text style={styles.characterButtonText}>Get different Character →</Text>
             </TouchableOpacity>
 
-            <Text style={styles.sectionTitle}>Available Rewards</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Available Rewards</Text>
 
             {rewards.filter(r => !claimedRewardIds.has(r.id)).length === 0 && (
-                <Text style={{ textAlign: "center", color: "#999", marginVertical: 16, fontSize: 14 }}>
+                <Text style={{ textAlign: "center", color: colors.muted, marginVertical: 16, fontSize: 14 }}>
                     No rewards yet. Ask your parent to create some!
                 </Text>
             )}
@@ -518,7 +520,7 @@ export default function ChildReward() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#F7F7F7", paddingHorizontal: 20, paddingTop: 48 },
+    container: { flex: 1, paddingHorizontal: 20, paddingTop: 48 },
     title: {
         fontSize: 22,
         fontWeight: "600",
@@ -528,7 +530,6 @@ const styles = StyleSheet.create({
     },
 
     RewardCard: {
-        backgroundColor: "#fff",
         borderRadius: 20,
         paddingVertical: 6,
         paddingHorizontal: 20,
@@ -552,12 +553,11 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     pointsNumber: { fontSize: 28, fontWeight: "700" },
-    pointsLabel: { fontSize: 12, color: "#777" },
+    pointsLabel: { fontSize: 12 },
     greetingRow: { alignItems: "center", marginTop: 8 },
     greetingTitle: { fontSize: 16, fontWeight: "600", textAlign: "center" },
 
     switchButton: {
-        backgroundColor: "#4CAF50",
         paddingVertical: 12,
         borderRadius: 24,
         alignItems: "center",
@@ -659,7 +659,6 @@ const styles = StyleSheet.create({
     //missing modal styles that control the reward popup layout
 
     modalClaimButton: {
-        backgroundColor: "#4CAF50",
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 10,
@@ -674,14 +673,12 @@ const styles = StyleSheet.create({
 
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
         justifyContent: "center",
         alignItems: "center",
     },
 
     modalContainer: {
         width: "80%",
-        backgroundColor: "#fff",
         borderRadius: 20,
         padding: 20,
         alignItems: "center",
@@ -712,7 +709,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: "center",
         marginVertical: 8,
-        color: "#555",
     },
 
     modalPoints: {
@@ -722,16 +718,13 @@ const styles = StyleSheet.create({
     },
 
     modalCloseButton: {
-        backgroundColor: "#ccc",
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 10,
         marginTop: 8,
-        color: "#4CAF50",
     },
 
     modalCloseText: {
-        color: "#000",
         fontWeight: "600",
     },
 
@@ -763,7 +756,6 @@ const styles = StyleSheet.create({
         width: 75,
         height: 75,
         borderRadius: 16,
-        backgroundColor: "#f0f0f0",
         justifyContent: "center",
         alignItems: "center",
         overflow: "hidden",
@@ -790,13 +782,11 @@ const styles = StyleSheet.create({
     unlockItemCost: {
         fontSize: 11,
         fontWeight: "700",
-        color: "#555",
         marginTop: 5,
     },
 
     unlockItemLabel: {
         fontSize: 10,
-        color: "#888",
         textAlign: "center",
         textTransform: "capitalize",
         marginTop: 2,
@@ -824,7 +814,6 @@ const styles = StyleSheet.create({
     },
 
     characterButton: {
-        backgroundColor: "#4CAF50",
         paddingVertical: 14,
         borderRadius: 30,
         alignItems: "center",
@@ -843,14 +832,12 @@ const styles = StyleSheet.create({
     // Character modal styles
     charModalSubtitle: {
         fontSize: 14,
-        color: "#666",
         textAlign: "center",
         marginBottom: 6,
     },
     charModalStars: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#333",
         marginBottom: 16,
     },
     characterGrid: {
@@ -863,20 +850,13 @@ const styles = StyleSheet.create({
         width: 90,
         height: 110,
         borderRadius: 16,
-        backgroundColor: "#f9f9f9",
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 2,
-        borderColor: "#e0e0e0",
         padding: 6,
-    },
-    characterCardActive: {
-        borderColor: "#4CAF50",
-        backgroundColor: "#e8f5e9",
     },
     characterCardLocked: {
         opacity: 0.5,
-        backgroundColor: "#eee",
     },
     characterImage: {
         width: 50,
@@ -890,7 +870,6 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: "600",
         marginTop: 4,
-        color: "#333",
         textAlign: "center",
     },
     lockBadge: {
@@ -909,7 +888,6 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     activeBadge: {
-        backgroundColor: "#4CAF50",
         borderRadius: 8,
         paddingHorizontal: 8,
         paddingVertical: 2,
@@ -926,7 +904,6 @@ const styles = StyleSheet.create({
     },
 
     emojiAvatarContainer: {
-        backgroundColor: "#FFF3E0",
         justifyContent: "center",
         alignItems: "center",
     },

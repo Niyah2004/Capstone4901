@@ -7,11 +7,14 @@ import { getAuth } from "firebase/auth";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { updateDoc } from "firebase/firestore";
 import { useParentLock } from "../ParentLockContext";
+import { useTheme } from "../theme/ThemeContext";
 
 
 const ParentPinScreen = ({ navigation,route  }) => {
   const [pin, setPin] = useState("");
   const { unlockParent } = useParentLock();
+  const { theme } = useTheme();
+  const colors = theme.colors;
 
   const correctPin = async () => {
     if (pin.length !== 4) {
@@ -50,17 +53,17 @@ const ParentPinScreen = ({ navigation,route  }) => {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" style={styles.backButton} />
+            <Ionicons name="arrow-back" style={[styles.backButton, { color: colors.text }]} />
           </TouchableOpacity>
-          
-          <Text style={styles.header}>Parent Access</Text>
-      </View> 
-        <Text style={styles.label}>Enter Your Pin</Text>
+
+          <Text style={[styles.header, { color: colors.text }]}>Parent Access</Text>
+        </View>
+        <Text style={[styles.label, { color: colors.text }]}>Enter Your Pin</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
           value={pin}
           onChangeText={setPin}
           keyboardType="numeric"
@@ -68,17 +71,17 @@ const ParentPinScreen = ({ navigation,route  }) => {
           maxLength={4}
         />
 
-      <TouchableOpacity style={styles.button} onPress={correctPin}>
-        <Text style={styles.buttonText}>Submit PIN</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={correctPin}>
+          <Text style={styles.buttonText}>Submit PIN</Text>
+        </TouchableOpacity>
 
-       <TouchableOpacity
-        style={styles.forgotButton}
-        onPress={() => navigation.navigate("ForgotPin")}
-      >
-        <Text style={styles.forgotText}>Forgot PIN?</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        <TouchableOpacity
+          style={styles.forgotButton}
+          onPress={() => navigation.navigate("ForgotPin")}
+        >
+          <Text style={[styles.forgotText, { color: colors.primary }]}>Forgot PIN?</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 };
@@ -86,7 +89,6 @@ const ParentPinScreen = ({ navigation,route  }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     padding: 20,
   },
   header: {
@@ -118,7 +120,6 @@ const styles = StyleSheet.create({
     width: "60%",
     height: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 10,
     textAlign: "center",
     fontSize: 20,
@@ -128,7 +129,6 @@ const styles = StyleSheet.create({
   button: {
     alignSelf: "center",
     width: "50%",
-    backgroundColor: "#4CAF50",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -142,7 +142,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   forgotText: {
-    color: "#4CAF50",
     fontWeight: "500",
     alignSelf: "center",
   },

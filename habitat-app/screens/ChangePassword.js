@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import {View, Text, TextInput, TouchableOpacity, StyleSheet, Alert} from "react-native";
 import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { useTheme } from "../theme/ThemeContext";
 
 const ChangePassword = ({ navigation }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -61,47 +64,51 @@ const ChangePassword = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-        <Text style={styles.header}>Reset Parent Password</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.header, { color: colors.text }]}>Reset Parent Password</Text>
 
-        <Text style={styles.label}>Email</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Email</Text>
         <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            placeholderTextColor={colors.muted}
         />
 
-        <Text style={styles.label}>Password</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Password</Text>
         <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            placeholderTextColor={colors.muted}
         />
 
-        <Text style={styles.label}>New Password</Text>
+        <Text style={[styles.label, { color: colors.text }]}>New Password</Text>
         <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             value={newPassword}
             onChangeText={setNewPassword}
-            keyboardType= "visible-password"
+            keyboardType="visible-password"
             secureTextEntry
+            placeholderTextColor={colors.muted}
         />
 
-        <Text style={styles.label}>Confirm New Password</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Confirm New Password</Text>
         <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            keyboardType= "visible-password"
+            keyboardType="visible-password"
             secureTextEntry
+            placeholderTextColor={colors.muted}
         />
 
         <TouchableOpacity
-            style={[styles.button, loading && { opacity: 0.6 }]}
-            onPress={handleResetPassword }
+            style={[styles.button, { backgroundColor: colors.primary }, loading && { opacity: 0.6 }]}
+            onPress={handleResetPassword}
             disabled={loading}
         >
             <Text style={styles.buttonText}>
@@ -114,7 +121,7 @@ const ChangePassword = ({ navigation }) => {
             onPress={() => navigation.goBack()}
             disabled={loading}
         >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: colors.primary }]}>Cancel</Text>
         </TouchableOpacity>
         </View>
     );
@@ -125,7 +132,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
   header: {
@@ -144,14 +150,12 @@ const styles = StyleSheet.create({
     width: "60%",
     height: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 10,
     textAlign: "center",
     fontSize: 16,
     marginBottom: 15,
   },
   button: {
-    backgroundColor: "#4CAF50",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 8,
@@ -165,7 +169,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   cancelText: {
-    color: "#4CAF50",
     fontWeight: "500",
   },
 });

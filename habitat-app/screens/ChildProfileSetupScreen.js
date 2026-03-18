@@ -6,8 +6,11 @@ import {doc, setDoc} from "firebase/firestore";
 import { auth } from "../auth";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function ChildProfileSetupScreen({ navigation, route }) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [fullName, setFullName] = useState("");
@@ -137,33 +140,33 @@ for (const child of childrenToSave) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.form}>
-        <Text style={styles.title}>Child Profile Setup</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Child Profile Setup</Text>
 
-        <TextInput style={styles.input} placeholder="Enter 4-digit PIN" secureTextEntry value={pin} onChangeText={setPin} keyboardType="number-pad" />
-        <TextInput style={styles.input} placeholder="Confirm PIN" secureTextEntry value={confirmPin} onChangeText={setConfirmPin} keyboardType="number-pad" />
+        <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} placeholder="Enter 4-digit PIN" placeholderTextColor={colors.muted} secureTextEntry value={pin} onChangeText={setPin} keyboardType="number-pad" />
+        <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} placeholder="Confirm PIN" placeholderTextColor={colors.muted} secureTextEntry value={confirmPin} onChangeText={setConfirmPin} keyboardType="number-pad" />
 
-        <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
-        <TextInput style={styles.input} placeholder="Preferred Name" value={preferredName} onChangeText={setPreferredName} />
-        <TextInput style={styles.input} placeholder="Age (years)" keyboardType="numeric" value={age} onChangeText={setAge} />
-        <TextInput style={styles.input} placeholder="Grade Level" value={grade} onChangeText={setGrade} />
-        <TextInput style={[styles.input, { height: 80 }]} placeholder="Special Needs or Preferences (Optional)" multiline value={notes} onChangeText={setNotes} />
+        <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} placeholder="Full Name" placeholderTextColor={colors.muted} value={fullName} onChangeText={setFullName} />
+        <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} placeholder="Preferred Name" placeholderTextColor={colors.muted} value={preferredName} onChangeText={setPreferredName} />
+        <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} placeholder="Age (years)" placeholderTextColor={colors.muted} keyboardType="numeric" value={age} onChangeText={setAge} />
+        <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} placeholder="Grade Level" placeholderTextColor={colors.muted} value={grade} onChangeText={setGrade} />
+        <TextInput style={[styles.input, { height: 80, backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} placeholder="Special Needs or Preferences (Optional)" placeholderTextColor={colors.muted} multiline value={notes} onChangeText={setNotes} />
 
-        <TouchableOpacity style={styles.button} onPress={addChild}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={addChild}>
           <Text style={styles.buttonText}>Add Child</Text>
         </TouchableOpacity>
 
         {children.map((child, index) => (
-          <View key={index} style={styles.childCard}>
-            <Text>{child.fullName}</Text>
+          <View key={index} style={[styles.childCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={{ color: colors.text }}>{child.fullName}</Text>
             <TouchableOpacity onPress={() => removeChild(index)}>
-              <Text style={{ color: "red" }}>Remove</Text>
+              <Text style={{ color: colors.danger }}>Remove</Text>
             </TouchableOpacity>
           </View>
         ))}
 
-        <TouchableOpacity style={styles.button} onPress={saveAll}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={saveAll}>
           <Text style={styles.buttonText}>Finish Setup</Text>
         </TouchableOpacity>
       </View>
@@ -172,10 +175,11 @@ for (const child of childrenToSave) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
+  container: { flexGrow: 1, justifyContent: "center", padding: 20 },
   form: { marginVertical: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#2d2d2d", textAlign: "center" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, marginBottom: 12 },
-  button: { backgroundColor: "#4CAF50", padding: 15, borderRadius: 8, alignItems: "center", marginVertical: 15 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, textAlign: "center" },
+  input: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 12 },
+  button: { padding: 15, borderRadius: 8, alignItems: "center", marginVertical: 15 },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  childCard: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
 });

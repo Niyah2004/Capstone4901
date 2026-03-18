@@ -4,8 +4,11 @@ import { AVATARS } from "../data/avatars";
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from "react-native";
 import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function AvatarSelection({ navigation, route }) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [equipped, setEquipped] = useState({}); 
   const [loading, setLoading] = useState(true);
@@ -77,8 +80,8 @@ export default function AvatarSelection({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Select Your Avatar</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Select Your Avatar</Text>
 
       <ScrollView
         horizontal
@@ -90,7 +93,7 @@ export default function AvatarSelection({ navigation, route }) {
             key={avatarId}
             onPress={() => handleAvatarSelect(avatarId)}
             style={[
-              selectedAvatar === avatarId && styles.selectedAvatar
+              selectedAvatar === avatarId && [styles.selectedAvatar, { borderColor: colors.primary }]
             ]}
           >
             <Image
@@ -103,7 +106,7 @@ export default function AvatarSelection({ navigation, route }) {
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.button, !selectedAvatar && { opacity: 0.5 }]}
+        style={[styles.button, { backgroundColor: colors.primary }, !selectedAvatar && { opacity: 0.5 }]}
         onPress={handleSave}
         disabled={!selectedAvatar}
       >
@@ -114,11 +117,11 @@ export default function AvatarSelection({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, marginTop: 150, color: "#2d2d2d", textAlign: "center" },
-  avatarContainer: { justifyContent: "center", alignItems: "center", paddingHorizontal: "10%", marginBottom: 5, marginTop: "5%"  },
-  avatar: { width: 300, height: 300, marginHorizontal: 10},
-  selectedAvatar: { borderColor: "#4CAF50", borderWidth: 3 },
-  button: { width: "50%", backgroundColor: "#4CAF50", padding: 15, borderRadius: 8, alignItems: "center", marginHorizontal: "25%", marginTop: 20 },
+  container: { flexGrow: 1, justifyContent: "center", padding: 20 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, marginTop: 150, textAlign: "center" },
+  avatarContainer: { justifyContent: "center", alignItems: "center", paddingHorizontal: "10%", marginBottom: 5, marginTop: "5%" },
+  avatar: { width: 300, height: 300, marginHorizontal: 10 },
+  selectedAvatar: { borderWidth: 3 },
+  button: { width: "50%", padding: 15, borderRadius: 8, alignItems: "center", marginHorizontal: "25%", marginTop: 20 },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

@@ -4,8 +4,11 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function ChildSelectScreen({ navigation }) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const auth = getAuth();
   const userId = auth.currentUser?.uid;
 
@@ -36,93 +39,87 @@ useEffect(() => {
 }, [userId]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <Text style={styles.title}>Who's Playing?</Text>
-<Text style={{ marginBottom: 10, opacity: 0.6 }}>
-  Logged in as: {userId || "NO USER"}
-</Text>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top"]}>
+      <Text style={[styles.title, { color: colors.text }]}>Who's Playing?</Text>
+      <Text style={[{ marginBottom: 10, color: colors.muted }]}>
+        Logged in as: {userId || "NO USER"}
+      </Text>
 
-<FlatList
-  data={children}
-  keyExtractor={(item) => item.id}
-  ListEmptyComponent={
-    <Text style={{ opacity: 0.7 }}>
-      No children found. If you definitely created one, the child docs may not have `userId`
-      matching this account, or Firestore rules are blocking reads.
-    </Text>
-  }
-  renderItem={({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.name}>{item.preferredName || item.fullName}</Text>
+      <FlatList
+        data={children}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+        ListEmptyComponent={
+          <Text style={{ color: colors.muted }}>
+            No children found. If you definitely created one, the child docs may not have `userId`
+            matching this account, or Firestore rules are blocking reads.
+          </Text>
+        }
+        renderItem={({ item }) => (
+          <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.name, { color: colors.text }]}>{item.preferredName || item.fullName}</Text>
 
-      <View style={styles.row}>
-        <TouchableOpacity
-        style={styles.primaryBtn}
-         onPress={() => navigation.replace("ChildTabs", { childId: item.id })}>
-       <Text style={styles.btnText}>Open</Text>
-        </TouchableOpacity>
+            <View style={styles.row}>
+              <TouchableOpacity
+                style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+                onPress={() => navigation.replace("ChildTabs", { childId: item.id })}>
+                <Text style={styles.btnText}>Open</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
-        >
-          <Text style={styles.btnText}>Edit Avatar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  )}
-/>
+              <TouchableOpacity
+                style={[styles.secondaryBtn, { backgroundColor: colors.primary }]}
+                onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
+              >
+                <Text style={styles.btnText}>Edit Avatar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-     flex: 1, 
-     padding: 20, 
-     backgroundColor: "#fff" 
-    },
-  title: { 
-    fontSize: 24, 
-    fontWeight: "bold", 
-    marginBottom: 14 
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 14,
+    paddingHorizontal: 16,
   },
-  card: { 
-    borderWidth: 1, 
-    borderColor: "#ddd", 
-    padding: 14, 
-    borderRadius: 12, 
-    marginBottom: 12 
+  card: {
+    borderWidth: 1,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
   },
-  name: { 
-    fontSize: 18, 
-    fontWeight: "700", 
-    marginBottom: 10 
+  name: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 10,
   },
-  row: { 
-    flexDirection: "row", 
-    gap: 10 
+  row: {
+    flexDirection: "row",
+    gap: 10,
   },
-  primaryBtn: { 
-    backgroundColor: "#4CAF50", 
-    padding: 12, 
-    borderRadius: 10, 
-    flex: 1, 
-    alignItems: "center" 
+  primaryBtn: {
+    padding: 12,
+    borderRadius: 10,
+    flex: 1,
+    alignItems: "center",
   },
-  secondaryBtn: { 
-    backgroundColor: "#2D8CFF", 
-    padding: 12, 
-    borderRadius: 10, 
-    flex: 1, 
-    alignItems: "center" 
+  secondaryBtn: {
+    padding: 12,
+    borderRadius: 10,
+    flex: 1,
+    alignItems: "center",
   },
-  btnText: { 
-    color: "#fff", 
-    fontWeight: "700" 
+  btnText: {
+    color: "#fff",
+    fontWeight: "700",
   },
   safe: {
     flex: 1,
-    backgroundColor: "#fff" 
+    paddingTop: 16,
   },
 });

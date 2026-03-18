@@ -3,8 +3,11 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { db } from "../firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function GenericTaskLibrary({ navigation, onSelectTask }) {
+    const { theme } = useTheme();
+    const colors = theme.colors;
     const [genericTasks, setGenericTasks] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -25,9 +28,9 @@ export default function GenericTaskLibrary({ navigation, onSelectTask }) {
     if (loading) {
         return (
             <SafeAreaProvider>
-                <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-                    <View style={styles.outer}>
-                        <Text style={{ textAlign: "center", marginTop: 40 }}>Loading...</Text>
+                <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                    <View style={[styles.outer, { backgroundColor: colors.background }]}>
+                        <Text style={{ textAlign: "center", marginTop: 40, color: colors.muted }}>Loading...</Text>
                     </View>
                 </SafeAreaView>
             </SafeAreaProvider>
@@ -36,16 +39,16 @@ export default function GenericTaskLibrary({ navigation, onSelectTask }) {
 
     return (
         <SafeAreaProvider>
-            <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-                <View style={styles.outer}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <View style={[styles.outer, { backgroundColor: colors.background }]}>
                     <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => navigation?.goBack?.()}
                     >
-                        <Text style={styles.backText}>← Back</Text>
+                        <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
                     </TouchableOpacity>
 
-                    <Text style={styles.header}>Generic Task Library</Text>
+                    <Text style={[styles.header, { color: colors.text }]}>Generic Task Library</Text>
 
                     <FlatList
                         data={genericTasks}
@@ -53,22 +56,22 @@ export default function GenericTaskLibrary({ navigation, onSelectTask }) {
                         contentContainerStyle={styles.container}
                         renderItem={({ item }) => (
                             <TouchableOpacity
-                                style={styles.taskCard}
+                                style={[styles.taskCard, { backgroundColor: colors.card }]}
                                 onPress={() => {
                                     if (typeof onSelectTask === "function") {
                                         onSelectTask(item);
                                     }
                                 }}
                             >
-                                <Text style={styles.title}>{item.title || "Unknown Task"}</Text>
-                                <Text style={styles.desc}>{item.description || ""}</Text>
+                                <Text style={[styles.title, { color: colors.text }]}>{item.title || "Unknown Task"}</Text>
+                                <Text style={[styles.desc, { color: colors.muted }]}>{item.description || ""}</Text>
                                 {item.points !== undefined && item.points !== null && (
-                                    <Text style={styles.points}>{String(item.points)} pts</Text>
+                                    <Text style={[styles.points, { color: colors.primary }]}>{String(item.points)} pts</Text>
                                 )}
                             </TouchableOpacity>
                         )}
                         ListEmptyComponent={
-                            <Text style={{ textAlign: "center", color: "#888" }}>
+                            <Text style={{ textAlign: "center", color: colors.muted }}>
                                 No generic tasks yet.
                             </Text>
                         }
@@ -82,7 +85,6 @@ export default function GenericTaskLibrary({ navigation, onSelectTask }) {
 const styles = StyleSheet.create({
     outer: {
         flex: 1,
-        backgroundColor: "#fff",
     },
     container: {
         padding: 20,
@@ -93,11 +95,8 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         textAlign: "center",
         marginBottom: 20,
-        color: "#333",
     },
-    /*header: { fontSize: 22, fontWeight: "600", textAlign: "center", marginVertical: 10 },*/
     taskCard: {
-        backgroundColor: "#f1f1f1",
         borderRadius: 10,
         padding: 15,
         marginBottom: 15,
@@ -107,9 +106,9 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         elevation: 2,
     },
-    title: { fontSize: 18, fontWeight: "600", color: "#222" },
-    desc: { fontSize: 14, color: "#555", marginTop: 4 },
-    points: { color: "#388E3C", fontWeight: "600", marginTop: 6 },
+    title: { fontSize: 18, fontWeight: "600" },
+    desc: { fontSize: 14, marginTop: 4 },
+    points: { fontWeight: "600", marginTop: 6 },
     backButton: {
         alignSelf: "flex-start",
         marginLeft: 20,
@@ -118,7 +117,6 @@ const styles = StyleSheet.create({
     },
     backText: {
         fontSize: 16,
-        color: "#4CAF50",
         fontWeight: "bold",
     },
 });

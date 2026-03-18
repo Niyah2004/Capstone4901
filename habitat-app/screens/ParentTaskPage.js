@@ -28,8 +28,11 @@ import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { getAuth } from "firebase/auth";
 
 import { Picker } from "@react-native-picker/picker";
+import { useTheme } from "../theme/ThemeContext";
 
 export default function ParentTaskPage({ navigation, route }) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -183,24 +186,24 @@ export default function ParentTaskPage({ navigation, route }) {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>← Back</Text>
+            <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.header}>Create Task</Text>
+          <Text style={[styles.header, { color: colors.text }]}>Create Task</Text>
 
-          <View style={styles.formWrapper}>
+          <View style={[styles.formWrapper, { backgroundColor: colors.card }]}>
           {/* Dropdown for stockpile of tasks */}
-          <Text style={styles.label}>Select Existing Task</Text>
-          <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 5 }}>
+          <Text style={[styles.label, { color: colors.text }]}>Select Existing Task</Text>
+          <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, marginTop: 5, backgroundColor: colors.inputBg }}>
             <Picker
               selectedValue={selectedTaskId}
               onValueChange={setSelectedTaskId}
-              style={{ color: '#222' }} // Ensure text is visible
+              style={{ color: colors.text }}
             >
               <Picker.Item label="-- Select a task --" value="" color="#888" />
               {taskList.map(task => (
@@ -215,41 +218,44 @@ export default function ParentTaskPage({ navigation, route }) {
           </View>
 
           {/* Task Title */}
-          <Text style={styles.label}>Task Title</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Task Title</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             placeholder="e.g., Clean my room"
+            placeholderTextColor={colors.muted}
             value={title}
             onChangeText={setTitle}
           />
 
           {/* Description */}
-          <Text style={styles.label}>Description</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Description</Text>
           <TextInput
-            style={[styles.input, { height: 100 }]}
+            style={[styles.input, { height: 100, backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             multiline
             placeholder="e.g., Put away clothes, make the bed, vacuum..."
+            placeholderTextColor={colors.muted}
             value={description}
             onChangeText={setDescription}
           />
 
           {/* Points */}
-          <Text style={styles.label}>Points</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Points</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             placeholder="e.g., 10"
+            placeholderTextColor={colors.muted}
             keyboardType="numeric"
             value={points}
             onChangeText={setPoints}
           />
 
           {/* Schedule */}
-          <Text style={styles.label}>Schedule</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Schedule</Text>
           <TouchableOpacity
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
             onPress={() => setShowDatePicker(true)}
           >
-            <Text>{date.toISOString().split("T")[0]}</Text>
+            <Text style={{ color: colors.text }}>{date.toISOString().split("T")[0]}</Text>
           </TouchableOpacity>
           {showDatePicker && (
             <DateTimePicker
@@ -264,12 +270,12 @@ export default function ParentTaskPage({ navigation, route }) {
           )}
 
           {/* Time */}
-          <Text style={styles.label}>Time</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Time</Text>
           <TouchableOpacity
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
             onPress={() => setShowTimePicker(true)}
           >
-            <Text>
+            <Text style={{ color: colors.text }}>
               {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </Text>
           </TouchableOpacity>
@@ -286,30 +292,31 @@ export default function ParentTaskPage({ navigation, route }) {
           )}
 
           {/* Steps */}
-          <Text style={styles.label}>Steps</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Steps</Text>
           {steps.map((step, index) => (
             <View key={index} style={styles.stepRow}>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, { flex: 1, backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
                 placeholder={`Step ${index + 1} description`}
+                placeholderTextColor={colors.muted}
                 value={step}
                 onChangeText={(text) => handleStepChange(text, index)}
               />
               {steps.length > 1 && (
                 <TouchableOpacity onPress={() => handleRemoveStep(index)}>
-                  <Ionicons name="close" size={20} color="gray" />
+                  <Ionicons name="close" size={20} color={colors.muted} />
                 </TouchableOpacity>
               )}
             </View>
           ))}
 
-          <TouchableOpacity style={styles.addStep} onPress={handleAddStep}>
-            <Ionicons name="add" size={20} color="black" />
-            <Text style={styles.addStepText}>Add Step</Text>
+          <TouchableOpacity style={[styles.addStep, { backgroundColor: colors.inputBg }]} onPress={handleAddStep}>
+            <Ionicons name="add" size={20} color={colors.text} />
+            <Text style={[styles.addStepText, { color: colors.text }]}>Add Step</Text>
           </TouchableOpacity>
 
           {/* Save Task */}
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
+          <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSaveTask}>
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
           </View>
@@ -324,17 +331,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: "#fff",
   },
   header: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
-    color: "#333",
   },
   formWrapper: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
     shadowColor: "#000",
@@ -348,15 +352,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginTop: 15,
-    color: "#333",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 10,
     padding: 10,
     marginBottom: 5,
-    backgroundColor: "#fafafa",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 3,
@@ -366,20 +367,18 @@ const styles = StyleSheet.create({
   stepRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 5
+    marginTop: 5,
   },
   addStep: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 10,
-    backgroundColor: "#f1f1f1",
     padding: 10,
     borderRadius: 8,
     justifyContent: "center",
   },
   addStepText: { marginLeft: 5, fontWeight: "500" },
   saveButton: {
-    backgroundColor: "#5CB85C",
     marginTop: 25,
     paddingVertical: 15,
     borderRadius: 12,
@@ -398,8 +397,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#4CAF50",
     fontWeight: "bold",
   },
-
 });

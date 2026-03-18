@@ -119,8 +119,8 @@ export default function SelectAvatarsScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+      <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -131,27 +131,28 @@ export default function SelectAvatarsScreen({ navigation }) {
         {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#4CAF50" />
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
           </TouchableOpacity>
           <Text style={[styles.header, { color: colors.text }]}>Choose Your Character</Text>
           <View style={{ width: 40 }} />
         </View>
 
         {/* Stars banner */}
-        <View style={styles.starsBanner}>
-          <Text style={styles.starsText}>⭐ {totalPoints} Stars Earned</Text>
+        <View style={[styles.starsBanner, { backgroundColor: colors.starsBanner, borderColor: colors.starsBannerBorder }]}>
+          <Text style={[styles.starsText, { color: colors.starsBannerText }]}>⭐ {totalPoints} Stars Earned</Text>
         </View>
 
         {/* Next unlock progress */}
         {nextLocked && (
-          <View style={styles.progressCard}>
-            <Text style={styles.progressTitle}>
+          <View style={[styles.progressCard, { backgroundColor: colors.progressCard, borderColor: colors.progressCardBorder }]}>
+            <Text style={[styles.progressTitle, { color: colors.progressCardText }]}>
               {nextLocked.emoji} Next unlock: <Text style={styles.progressBold}>{nextLocked.name}</Text>
             </Text>
-            <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarBg, { backgroundColor: colors.progressBarBg }]}>
               <View
                 style={[
                   styles.progressBarFill,
+                  { backgroundColor: colors.primary },
                   {
                     width: `${Math.min(
                       100,
@@ -161,7 +162,7 @@ export default function SelectAvatarsScreen({ navigation }) {
                 ]}
               />
             </View>
-            <Text style={styles.progressLabel}>
+            <Text style={[styles.progressLabel, { color: colors.progressCardText }]}>
               {totalPoints} / {nextLocked.milestoneRequired} ⭐
             </Text>
           </View>
@@ -180,7 +181,7 @@ export default function SelectAvatarsScreen({ navigation }) {
                   style={[
                     styles.avatarCard,
                     { backgroundColor: colors.card },
-                    isSelected && styles.avatarCardSelected,
+                    isSelected && [styles.avatarCardSelected, { borderColor: colors.primary, shadowColor: colors.primary }],
                     !isUnlocked && styles.avatarCardLocked,
                   ]}
                   onPress={() => {
@@ -236,9 +237,8 @@ export default function SelectAvatarsScreen({ navigation }) {
                   <Text
                     style={[
                       styles.avatarName,
-                      { color: colors.text },
+                      { color: isSelected ? colors.primary : colors.text },
                       !isUnlocked && styles.avatarNameLocked,
-                      isSelected && styles.avatarNameSelected,
                     ]}
                   >
                     {avatar.name}
@@ -270,10 +270,11 @@ export default function SelectAvatarsScreen({ navigation }) {
         </ScrollView>
 
         {/* Choose button */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { borderTopColor: colors.border }]}>
           <TouchableOpacity
             style={[
               styles.chooseButton,
+              { backgroundColor: colors.primary, shadowColor: colors.primary },
               (!selected || selected === currentAvatar) && styles.chooseButtonDisabled,
             ]}
             onPress={handleChoose}
@@ -320,7 +321,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   starsBanner: {
-    backgroundColor: "#FFF8E1",
     marginHorizontal: 20,
     borderRadius: 20,
     paddingVertical: 8,
@@ -328,25 +328,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#FFE082",
   },
   starsText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#C17F00",
   },
   progressCard: {
-    backgroundColor: "#E8F5E9",
     marginHorizontal: 20,
     borderRadius: 14,
     padding: 12,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#C8E6C9",
   },
   progressTitle: {
     fontSize: 13,
-    color: "#388E3C",
     marginBottom: 6,
     fontWeight: "600",
   },
@@ -355,19 +350,16 @@ const styles = StyleSheet.create({
   },
   progressBarBg: {
     height: 10,
-    backgroundColor: "#C8E6C9",
     borderRadius: 8,
     overflow: "hidden",
     marginBottom: 4,
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: "#4CAF50",
     borderRadius: 8,
   },
   progressLabel: {
     fontSize: 11,
-    color: "#388E3C",
     textAlign: "right",
     fontWeight: "600",
   },
@@ -395,8 +387,6 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   avatarCardSelected: {
-    borderColor: "#4CAF50",
-    shadowColor: "#4CAF50",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
@@ -467,9 +457,7 @@ const styles = StyleSheet.create({
   avatarNameLocked: {
     color: "#999",
   },
-  avatarNameSelected: {
-    color: "#4CAF50",
-  },
+  avatarNameSelected: {},
   badge: {
     borderRadius: 12,
     paddingHorizontal: 10,
@@ -493,14 +481,11 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 24,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
   },
   chooseButton: {
-    backgroundColor: "#4CAF50",
     paddingVertical: 16,
     borderRadius: 28,
     alignItems: "center",
-    shadowColor: "#4CAF50",
     shadowOpacity: 0.35,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
