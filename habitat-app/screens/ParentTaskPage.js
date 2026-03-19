@@ -123,16 +123,19 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
+      const scheduleDateKey = `${dateStart.getFullYear()}-${String(dateStart.getMonth() + 1).padStart(2, "0")}-${String(dateStart.getDate()).padStart(2, "0")}`;
+
       // 1) Save task with points + status
       const taskRef = await addDoc(collection(db, "tasks"), {
         title,
         description,
-        scheduleDate: date.toISOString().split("T")[0], // YYYY-MM-DD
+        scheduleDate: scheduleDateKey, // YYYY-MM-DD (local)
         dateTimestamp: Timestamp.fromDate(dateStart),
         time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: parentId,
         userId: user.uid, // Always set userId to the currently logged-in user's UID
+        isRecurring: false,
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
@@ -165,11 +168,15 @@ export default function ParentTaskPage({ navigation, route }) {
 
   async function childTasksSave({ title, description, date, childId }) {
     const start = startOfDay(date);
+    const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
     await addDoc(collection(db, "tasks"), {
       title,
       description,
+      scheduleDate: key,
       dateTimestamp: Timestamp.fromDate(start),
       childId,
+      isRecurring: false,
+      userId: getAuth().currentUser?.uid || null,
       createdAt: serverTimestamp(),
     });
   }
@@ -184,8 +191,9 @@ export default function ParentTaskPage({ navigation, route }) {
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.header}>Task Management</Text>
+          <Text style={styles.header}>Create Task</Text>
 
+          <View style={styles.formWrapper}>
           {/* Dropdown for stockpile of tasks */}
           <Text style={styles.label}>Select Existing Task</Text>
           <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 5 }}>
@@ -304,6 +312,7 @@ export default function ParentTaskPage({ navigation, route }) {
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -384,7 +393,7 @@ const styles = StyleSheet.create({
   backButton: {
     alignSelf: "flex-start",
     marginLeft: 20,
-    marginTop: 15,
+    marginTop: 10,
     marginBottom: 10,
   },
   backText: {

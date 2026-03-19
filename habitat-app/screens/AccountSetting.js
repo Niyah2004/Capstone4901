@@ -25,14 +25,18 @@ export default function AccountSetting({navigation}) {
    
   const handleLogOut = async() => {
     try {
-      const auth = getAuth();
-      await signOut(auth);
-      console.log("User logged out");
-      navigation.navigate("LoginScreen");
-    } catch (error) {
-      console.error("Error logging out: ", error);
-    }
-  };
+       const auth = getAuth();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "LoginScreen" }],
+    });
+
+    await signOut(auth);
+    console.log("User logged out");
+  } catch (error) {
+    console.error("Error logging out: ", error);
+  }
+};
   // Fetch parent profile data
   useFocusEffect(
   useCallback(() => {

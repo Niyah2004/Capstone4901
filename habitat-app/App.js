@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from './firebaseConfig';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
-import * as ScreenOrientation from "expo-screen-orientation";
+import { useRoute } from "@react-navigation/native";
 
 
 // --- Screen Imports ---
@@ -21,21 +26,31 @@ import ParentDashBoard from "./screens/ParentDashBoard";
 import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
+import ParentReviewRewards from "./screens/parentReviewRewards";
 import AccountSetting from "./screens/AccountSetting";
 import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
 import ForgotPassword from "./screens/ForgotPassword";
-
+import ChildSelection from "./screens/ChildSelection";
+import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 
-
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 
 function ParentStackScreen() {
@@ -65,6 +80,10 @@ function ParentStackScreen() {
         component={ParentReward}
       />
       <ParentStack.Screen
+        name="parentReviewRewards"
+        component={ParentReviewRewards}
+      />
+      <ParentStack.Screen
         name="AccountSetting"
         component={AccountSetting}
       />
@@ -84,7 +103,14 @@ function ParentStackScreen() {
         name="ChangePin"
         component={ChangePin}
       />
-
+      <ParentStack.Screen
+        name="GenericTaskLibrary"
+        component={GenericTaskLibrary}
+      />
+      <ParentStack.Screen
+        name="ForgotPassword"
+        component={ForgotPassword}
+      />
     </ParentStack.Navigator>
   );
 }
@@ -93,6 +119,9 @@ function ParentStackScreen() {
 function ChildTabs() {
   const { lockParent } = useParentLock();
   const { theme } = useTheme();
+  const route = useRoute();
+  const childId = route?.params?.childId;
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -120,7 +149,11 @@ function ChildTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={ChildHome} />
+      <Tab.Screen 
+        name="Home" 
+        component={ChildHome}
+        initialParams={{ childId }}
+      />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
       <Tab.Screen name="Parent" component={ParentStackScreen}
@@ -138,33 +171,84 @@ function ChildTabs() {
 /**
  * Main app navigation stack
  */
+
 function AppNavigator() {
-  const [orientation, setOrientation] = useState();
   const { theme } = useTheme();
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState(false);
 
   useEffect(() => {
-    const getOrientation = async () => {
-      const current = await ScreenOrientation.getOrientationAsync();
-      setOrientation(current);
+    let unsubAuth = () => { };
+    let receivedSub = null;
+
+    (async () => {
+      const token = await registerForPushNotificationsAsync();
+      if (token) setExpoPushToken(token);
+
+      unsubAuth = onAuthStateChanged(getAuth(), async (user) => {
+        if (!user || !token) return;
+        try {
+          const tokenRef = doc(db, 'userPushTokens', user.uid);
+          await setDoc(
+            tokenRef,
+            {
+              expoPushToken: token,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch (e) {
+          console.error('Error saving expoPushToken:', e);
+        }
+      });
+
+      receivedSub = Notifications.addNotificationReceivedListener((incoming) => {
+        setNotification(incoming);
+      });
+    })();
+
+    return () => {
+      try { if (typeof unsubAuth === 'function') unsubAuth(); } catch { }
+      try { receivedSub?.remove?.(); } catch { }
     };
-    getOrientation();
   }, []);
 
   return (
-      <ParentLockProvider>
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-        <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
-        <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
-        <Stack.Screen name="ChildHome" component={ChildHome} />
-        <Stack.Screen name="ChildTabs" component={ChildTabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ParentLockProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="LoginScreen" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="ChildSelection" component={ChildSelection} />
+          <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
+          <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
+          <Stack.Screen name="ChildHome" component={ChildHome} />
+          <Stack.Screen name="ChildTabs" component={ChildTabs} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </ParentLockProvider>
   );
+}
+
+async function registerForPushNotificationsAsync() {
+  let token;
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token for push notification!');
+      return;
+    }
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+  } else {
+    alert('Must use physical device for Push Notifications');
+  }
+  return token;
 }
 
 

@@ -10,6 +10,9 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+import { getAuth } from "firebase/auth";
 import { signIn } from "../auth"; 
 
 export default function LoginScreen({ navigation }) {
@@ -17,26 +20,47 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Missing Information", "Please enter both email and password.");
+ const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert("Missing Information", "Please enter both email and password.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const user = await signIn(email.trim(), password);
+    if (!user) return;
+
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+
+    if (!userId) {
+      Alert.alert("Error", "No logged-in parent user found.");
       return;
     }
 
-    try {
-      setLoading(true);
-      const user = await signIn(email.trim(), password);
-      if (user) {
-        Alert.alert("Welcome Back!", "You have successfully logged in.");
-        navigation.navigate("ChildTabs"); // change if needed
-      }
-    } catch (error) {
-      console.error("Login error:", error.message);
-      Alert.alert("Login Failed", error.message);
-    } finally {
-      setLoading(false);
+    const q = query(collection(db, "children"), where("userId", "==", userId));
+    const snap = await getDocs(q);
+
+    const childIds = snap.docs.map((d) => d.id);
+
+    Alert.alert("Welcome Back!", "You have successfully logged in.");
+
+    if (childIds.length === 0) {
+      navigation.replace("ChildProfileSetup");
+    } else if (childIds.length === 1) {
+      navigation.replace("ChildTabs", { childId: childIds[0] });
+    } else {
+      navigation.replace("ChildSelection", { childIds });
     }
-  };
+  } catch (error) {
+    console.error("Login error:", error.message);
+    Alert.alert("Login Failed", error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -62,15 +86,6 @@ export default function LoginScreen({ navigation }) {
           onChangeText={setPassword}
         />
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate("ForgotPassword")}
-        >
-        <Text style={styles.forgotText}>
-          Forgot Password?
-          </Text>
-        </TouchableOpacity>
-
-
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -78,7 +93,15 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.buttonText}>Log In</Text>
           )}
         </TouchableOpacity>
-
+        
+        <TouchableOpacity
+          onPress={() => navigation.navigate("ForgotPassword")}
+        >
+        <Text style={styles.forgotText}>
+          Forgot Password?
+          </Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
           <Text style={styles.loginText}>Don’t have an account? Sign Up</Text>
         </TouchableOpacity>
