@@ -10,6 +10,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
+import { useRoute } from "@react-navigation/native";
 
 
 // --- Screen Imports ---
@@ -25,17 +26,18 @@ import ParentDashBoard from "./screens/ParentDashBoard";
 import ParentTaskPage from "./screens/ParentTaskPage";
 import ParentReviewTask from "./screens/parentReviewTask";
 import ParentReward from "./screens/parentReward";
+import ParentReviewRewards from "./screens/parentReviewRewards";
 import AccountSetting from "./screens/AccountSetting";
 import ForgotPinScreen from "./screens/ForgotPin";
 import ChangePassword from "./screens/ChangePassword";
 import ChangeEmail from "./screens/ChangeEmail";
 import ChangePin from "./screens/ChangePin";
+import ForgotPassword from "./screens/ForgotPassword";
+import ChildSelection from "./screens/ChildSelection";
 import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
-import ForgotPassword from "./screens/ForgotPassword";
-
 
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
@@ -43,7 +45,8 @@ const Tab = createBottomTabNavigator();
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -75,6 +78,10 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="parentReward"
         component={ParentReward}
+      />
+      <ParentStack.Screen
+        name="parentReviewRewards"
+        component={ParentReviewRewards}
       />
       <ParentStack.Screen
         name="AccountSetting"
@@ -112,6 +119,9 @@ function ParentStackScreen() {
 function ChildTabs() {
   const { lockParent } = useParentLock();
   const { theme } = useTheme();
+  const route = useRoute();
+  const childId = route?.params?.childId;
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -139,7 +149,11 @@ function ChildTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={ChildHome} />
+      <Tab.Screen 
+        name="Home" 
+        component={ChildHome}
+        initialParams={{ childId }}
+      />
       <Tab.Screen name="Tasks" component={childTask} />
       <Tab.Screen name="Rewards" component={ChildReward} />
       <Tab.Screen name="Parent" component={ParentStackScreen}
@@ -206,6 +220,7 @@ function AppNavigator() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="ChildSelection" component={ChildSelection} />
           <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />
           <Stack.Screen name="AvatarSelection" component={AvatarSelection} />
           <Stack.Screen name="ChildHome" component={ChildHome} />

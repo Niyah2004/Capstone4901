@@ -16,7 +16,6 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@expo/cli": "^54.0.8",
     "baseline-browser-mapping": "^2.9.18"
   },
   "dependencies": {
@@ -25,13 +24,13 @@
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
-    "@react-native-community/slider": "^5.1.2",
+    "@react-native-community/slider": "5.0.1",
     "@react-native-firebase/analytics": "^23.4.1",
     "@react-native-firebase/app": "^23.4.1",
     "@react-native-firebase/auth": "^23.4.1",
     "@react-native-firebase/firestore": "^23.4.1",
     "@react-native-firebase/storage": "^23.4.1",
-    "@react-native-masked-view/masked-view": "^0.3.2",
+    "@react-native-masked-view/masked-view": "0.3.2",
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/bottom-tabs": "^7.4.8",
     "@react-navigation/native": "^7.1.18",
