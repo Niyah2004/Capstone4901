@@ -39,10 +39,11 @@ useEffect(() => {
   <SafeAreaView style={styles.safe} edges={["top"]}>
     <View style={styles.container}>
       <Text style={styles.title}>Who's Playing?</Text>
+{/*
 <Text style={{ marginBottom: 10, opacity: 0.6 }}>
   Logged in as: {userId || "NO USER"}
 </Text>
-
+*/}
 <FlatList
   data={children}
   keyExtractor={(item) => item.id}
@@ -67,8 +68,11 @@ useEffect(() => {
           style={styles.secondaryBtn}
           onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
         >
-          <Text style={styles.btnText}>Edit Avatar</Text>
+          <Text style={styles.SecondbtnText}>Edit Avatar</Text>
         </TouchableOpacity>
+        {/*maybe this will work */}
+        
+        
       </View>
     </View>
   )}
@@ -113,7 +117,7 @@ const styles = StyleSheet.create({
     alignItems: "center" 
   },
   secondaryBtn: { 
-    backgroundColor: "#2D8CFF", 
+    backgroundColor: "#ffff", 
     padding: 12, 
     borderRadius: 10, 
     flex: 1, 
@@ -121,6 +125,10 @@ const styles = StyleSheet.create({
   },
   btnText: { 
     color: "#fff", 
+    fontWeight: "700" 
+  },
+  SecondbtnText: { 
+    color: "#4CAF50", 
     fontWeight: "700" 
   },
   safe: {

@@ -401,12 +401,19 @@ export default function ParentDashBoard({ navigation, route }) {
                 <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
                 <Text style={[styles.manageText, { color: colors.text }]}>Review Task</Text>
               </TouchableOpacity>
+                <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                onPress={() => navigation.navigate("ChildSelection")}
+              >
+                <Ionicons name="people-circle-outline" size={24} color={colors.text} />
+                <Text style={[styles.manageText, { color: colors.text }]}>Child Selection</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("AccountSetting")}
               >
                 <Ionicons name="settings-outline" size={24} color={colors.text} />
                 <Text style={[styles.manageText, { color: colors.text }]}>Settings</Text>
               </TouchableOpacity>
+            
             </View>
           </View>
         </ScrollView>
