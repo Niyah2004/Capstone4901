@@ -70,9 +70,6 @@ useEffect(() => {
         >
           <Text style={styles.SecondbtnText}>Edit Avatar</Text>
         </TouchableOpacity>
-        {/*maybe this will work */}
-        
-        
       </View>
     </View>
   )}
