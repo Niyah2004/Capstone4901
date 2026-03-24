@@ -51,6 +51,11 @@ export const AVATARS = {
                 cost: 1000,
                 position: { top: -43, left: -37, size: 375 },
             },
+            turtle_bowtie: {
+                image: require("../assets/turtle/accessories/turtle_bowtie.png"),
+                cost: 1000,
+                position: { top: 120, left: -20, size: 200 },
+            },
         },
     },
     dino: {
