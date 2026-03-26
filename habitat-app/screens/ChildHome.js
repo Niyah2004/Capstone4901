@@ -16,7 +16,7 @@ export default function ChildHome({ navigation, route }) {
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
-      const [totalPointsEarned, setTotalPointsEarned] = useState(0);
+    const [totalPointsEarned, setTotalPointsEarned] = useState(0);
     const [verifiedTaskCount, setVerifiedTaskCount] = useState(0);
     const [totalAssignedPoints, setTotalAssignedPoints] = useState(0);
     const parentUnsubRef = useRef(null);
@@ -25,6 +25,9 @@ export default function ChildHome({ navigation, route }) {
     const [stars, setStars] = useState(0);
     const [showPopup, setShowPopup] = useState(false);
     const [popupMsg, setPopupMsg] = useState("");
+    const [showCheckPopup, setShowCheckPopup] = useState(false);
+    const [checkPopupMsg, setCheckPopupMsg] = useState("");
+    const [pendingUnlock, setPendingUnlock] = useState(null);
     const progress = useRef(new Animated.Value(0)).current;
     const { theme } = useTheme();
     const colors = theme.colors;
@@ -149,6 +152,51 @@ export default function ChildHome({ navigation, route }) {
             </SafeAreaView>
         );
     }
+
+    const confirmUnlock = async () => {
+        if (!pendingUnlock || !childDocId) {
+            setShowCheckPopup(false);
+            return;
+        }
+
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            setShowCheckPopup(false);
+            setPendingUnlock(null);
+            return;
+        }
+
+        const { category, itemId, itemCost } = pendingUnlock;
+        const childRef = doc(db, "children", childDocId);
+        const pointsRef = doc(db, "childPoints", user.uid);
+        const updates = {};
+
+        if (category !== "accessories") {
+            Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
+                updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
+            });
+        }
+
+        updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
+            unlocked: true,
+            equipped: true,
+        };
+
+        await updateDoc(childRef, updates);
+        await updateDoc(pointsRef, {
+            points: childPoints - itemCost,
+        });
+
+        setShowCheckPopup(false);
+        setPendingUnlock(null);
+    };
+
+    const cancelUnlock = () => {
+        setShowCheckPopup(false);
+        setPendingUnlock(null);
+    };
+
     const handleWardrobePress = async (category, itemId, itemCost) => {
         if (!childDocId) return;
         const auth = getAuth();
@@ -165,33 +213,15 @@ export default function ChildHome({ navigation, route }) {
         // Not unlocked → try to buy
         if (!unlocked) {
             if (childPoints < itemCost) {
-            setPopupMsg(`You need ${itemCost - childPoints} more ⭐ to unlock this item!`);
-            setShowPopup(true);
-            return;
+                setPopupMsg(`You need ${itemCost - childPoints} more ⭐ to unlock this item!`);
+                setShowPopup(true);
             }
-
-            const updates = {};
-
-            // Unequip everything else in category (except for accessories - can have multiple)
-            if (category !== "accessories") {
-                Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
-                    updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
-                });
+            else {
+                setCheckPopupMsg(`Are you sure you want to unlock this item?`);
+                setPendingUnlock({ category, itemId, itemCost });
+                setShowCheckPopup(true);
+                return;
             }
-
-            // Unlock and auto-equip
-            updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
-            unlocked: true,
-            equipped: true,
-            };
-
-            await updateDoc(childRef, updates);
-
-            // Deduct stars
-            await updateDoc(pointsRef, {
-            points: childPoints - itemCost,
-            });
-
             return;
         }
 
@@ -374,7 +404,32 @@ export default function ChildHome({ navigation, route }) {
                     </TouchableOpacity>
                     </View>
                 </View>
-                </Modal>
+            </Modal>
+            <Modal transparent visible={showCheckPopup} animationType="fade">
+                <View style={styles.popupOverlay}>
+                    <View style={styles.popup}>
+                    <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
+                    <Text style={styles.popupText}>{checkPopupMsg}</Text>
+                    <View style={styles.popupButtonRow}>
+                    <TouchableOpacity
+                        style={styles.popupButton}
+                        onPress={confirmUnlock}
+                    >
+                        <Text style={styles.popupButtonText}>Yes</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.popupButton}
+                        onPress={cancelUnlock}
+                    >
+                        <Text style={styles.popupButtonText}>No</Text>
+                    </TouchableOpacity>
+                    </View>
+                    
+                    
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -405,22 +460,12 @@ const styles = StyleSheet.create({
     popupOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
     popup: { width: 260, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
     popupText: { marginTop: 10, fontSize: 14, textAlign: "center" },
-    popupButton: { marginTop: 15, backgroundColor: "#ffea00", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
+    popupButtonRow: { flexDirection: "row", gap: 20, marginTop: 15 },
+    popupButton: { backgroundColor: "#ffea00ff", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
     popupButtonText: { fontWeight: "bold", },
     wardrobeRow: { flexDirection: "row", paddingVertical: 10, paddingHorizontal: 5, gap: 12 },
     wardrobeItem: { width: 80, height: 80, borderRadius: 20, alignItems: "center", justifyContent: "center", overflow: "hidden" },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
     lockOverlay: { position: "absolute", backgroundColor: "transparent", alignItems: "center", justifyContent: "center", width: "100%", height: "70%" },
-    costText: {
-      position: "absolute",
-      bottom: -5,
-      fontSize: 15,
-      color: "#fff",
-      fontWeight: "bold",
-      textAlign: "center",
-      alignContent: "center",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "100%",
-    },
+    costText: { position: "absolute", bottom: -5, fontSize: 15, color: "#fff", fontWeight: "bold", textAlign: "center", alignContent: "center", alignItems: "center", justifyContent: "center", width: "100%", },
 });
