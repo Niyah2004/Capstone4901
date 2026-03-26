@@ -356,10 +356,10 @@ export default function ParentDashBoard({ navigation, route }) {
 
       {/* Rewards Claimed by Child */}
       <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Rewards to Give Out</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Rewards Awaiting Completion</Text>
         <Text style={styles.pendingCount}>{pendingClaimsCount}</Text>
         <Text style={[styles.pendingText, { color: colors.muted }]}>
-          {pendingClaimsCount === 1 ? "reward waiting" : "rewards waiting"}
+          {pendingClaimsCount === 1 ? "pending reward" : "pending rewards"}
         </Text>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#C19A00" }]}
