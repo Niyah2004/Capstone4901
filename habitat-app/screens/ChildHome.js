@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10,  justifyContent: "center" },
     progressBarContainer: {  height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", width: '80%', marginVertical: 10 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
-    progressText: { fontSize: 12, color: "#333", marginLeft: 10 },
+    progressText: { fontSize: 11, color: "#333", marginLeft: 4, flexShrink: 0, width: "100%" },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative" },
     scrollContent: { paddingBottom: 30 },
