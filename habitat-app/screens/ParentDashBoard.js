@@ -309,10 +309,6 @@ export default function ParentDashBoard({ navigation, route }) {
                 {childPoints.loading ? "--" : childPoints.points}
               </Text>
               <Text style={[styles.starLabel, { color: colors.text }]}>Star Points</Text>
-              <Text style={[styles.points, { color: colors.muted }]}>
-                {childPoints.loading ? "Loading..." : "Current Balance"}
-              </Text>
-
             </TouchableOpacity>
           </View>
 
