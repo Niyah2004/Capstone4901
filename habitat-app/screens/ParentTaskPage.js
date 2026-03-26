@@ -41,6 +41,9 @@ export default function ParentTaskPage({ navigation, route }) {
   const [points, setPoints] = useState("");
   const [isPointsDropdownOpen, setIsPointsDropdownOpen] = useState(false);
   const [isCustomPointsMode, setIsCustomPointsMode] = useState(false);
+  const [frequency, setFrequency] = useState("One-Time");
+  const [endDate, setEndDate] = useState(null);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   // No childId requirement. Tasks are for the logged-in user.
 
 
@@ -125,7 +128,47 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
+      // Validate end date for repeating tasks
+      if (frequency !== "One-Time") {
+        if (!endDate) {
+          Alert.alert("Missing End Date", "Please select an end date for repeating tasks.");
+          return;
+        }
+
+        const endDateStart = new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          0,
+          0,
+          0,
+          0
+        );
+
+        if (endDateStart < dateStart) {
+          Alert.alert("Invalid End Date", "End date cannot be before the start date.");
+          return;
+        }
+      }
+
       const scheduleDateKey = `${dateStart.getFullYear()}-${String(dateStart.getMonth() + 1).padStart(2, "0")}-${String(dateStart.getDate()).padStart(2, "0")}`;
+
+      const endDateStartForSave =
+        endDate && frequency !== "One-Time"
+          ? new Date(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate(),
+            0,
+            0,
+            0,
+            0
+          )
+          : null;
+
+      const endDateKey = endDateStartForSave
+        ? `${endDateStartForSave.getFullYear()}-${String(endDateStartForSave.getMonth() + 1).padStart(2, "0")}-${String(endDateStartForSave.getDate()).padStart(2, "0")}`
+        : null;
 
       // 1) Save task with points + status
       const taskRef = await addDoc(collection(db, "tasks"), {
@@ -137,7 +180,10 @@ export default function ParentTaskPage({ navigation, route }) {
         steps,
         ownerId: parentId,
         userId: user.uid, // Always set userId to the currently logged-in user's UID
-        isRecurring: false,
+        frequency,
+        isRecurring: frequency !== "One-Time",
+        endDate: endDateStartForSave ? Timestamp.fromDate(endDateStartForSave) : null,
+        endDateKey,
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
@@ -161,6 +207,8 @@ export default function ParentTaskPage({ navigation, route }) {
       setDescription("");
       setSteps([""]);
       setPoints("");
+      setFrequency("One-Time");
+      setEndDate(null);
       navigation.goBack();
     } catch (error) {
       console.error("Error saving task:", error);
@@ -234,6 +282,30 @@ export default function ParentTaskPage({ navigation, route }) {
               value={description}
               onChangeText={setDescription}
             />
+
+            {/* Task Frequency */}
+            <Text style={styles.label}>Task Frequency</Text>
+            <View style={styles.frequencyContainer}>
+              {["One-Time", "Daily", "Weekly", "Monthly", "Milestone"].map((freq) => (
+                <TouchableOpacity
+                  key={freq}
+                  style={[
+                    styles.freqButton,
+                    frequency === freq && styles.freqButtonActive,
+                  ]}
+                  onPress={() => setFrequency(freq)}
+                >
+                  <Text
+                    style={[
+                      styles.freqText,
+                      frequency === freq && styles.freqTextActive,
+                    ]}
+                  >
+                    {freq}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             {/* Points */}
             <Text style={styles.label}>Points</Text>
@@ -348,6 +420,34 @@ export default function ParentTaskPage({ navigation, route }) {
                   if (selectedTime) setTime(selectedTime);
                 }}
               />
+            )}
+
+            {/* End Date for repeating tasks */}
+            {frequency !== "One-Time" && (
+              <>
+                <Text style={styles.label}>End Date</Text>
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => setShowEndDatePicker(true)}
+                >
+                  <Text>
+                    {endDate
+                      ? endDate.toISOString().split("T")[0]
+                      : "Select end date"}
+                  </Text>
+                </TouchableOpacity>
+                {showEndDatePicker && (
+                  <DateTimePicker
+                    value={endDate || date}
+                    mode="date"
+                    display="default"
+                    onChange={(e, selectedEndDate) => {
+                      setShowEndDatePicker(false);
+                      if (selectedEndDate) setEndDate(selectedEndDate);
+                    }}
+                  />
+                )}
+              </>
             )}
 
             {/* Steps */}
