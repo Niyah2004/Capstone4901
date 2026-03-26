@@ -520,11 +520,10 @@ export default function ChildReward() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F7F7F7", paddingHorizontal: 20, paddingTop: 48 },
     title: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: "600",
-        alignItems: "center",
+        alignSelf: "center",
         marginBottom: 10,
-        marginLeft: 140
     },
 
     RewardCard: {
