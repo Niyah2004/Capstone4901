@@ -341,9 +341,6 @@ export default function ChildReward() {
                         <Text style={styles.charModalSubtitle}>
                             Earn more stars to unlock new characters!
                         </Text>
-                        <Text style={styles.charModalStars}>
-                            Lifetime Stars Earned: ⭐ {lifetimeStars}
-                        </Text>
 
                         <View style={styles.characterGrid}>
                             {CHARACTER_ROSTER.map((character) => {
@@ -404,8 +401,9 @@ export default function ChildReward() {
             </Modal>
 
             <Text style={styles.title}>Reward</Text>
-            <View style={styles.RewardCard}>
-
+            <View style={styles.greetingRow}>
+                    <Text style={styles.greetingTitle}>Amazing job, {childName}!</Text>
+            </View>
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image - show selected avatar only when loaded */}
                     {!avatarLoading && avatar ? (
@@ -417,22 +415,12 @@ export default function ChildReward() {
                     ) : (
                         <View style={[styles.avatar, { backgroundColor: "#f0f0f0" }]} />
                     )}
-                </View>
-
+                
                 <View style={styles.pointsRow}>
-                    <Icon name="star" style={{ color: "#ffd700", fontSize: 24, marginRight: 6 }} />
                     <Text style={styles.pointsNumber}>{totalStars}</Text>
-                    <Text style={styles.pointsLabel}>Star Points</Text>
-                </View>
-
-
-                <View style={styles.greetingRow}>
-                    <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits</Text>
+                    <Icon name="star" style={{ color: "#ffd700", fontSize: 30, marginLeft: 6 }} />
                 </View>
             </View>
-
-
-
 
             <Text style={styles.unlockTitle}>Unlock More Items</Text>
 
@@ -451,8 +439,10 @@ export default function ChildReward() {
                                         </View>
                                     )}
                                 </View>
-                                <Text style={styles.unlockItemCost}>⭐ {item.cost}</Text>
-                                <Text style={styles.unlockItemLabel}>{itemId}</Text>
+                                <View style={styles.costRow}>
+                                    <Text style={styles.unlockItemCost}> {item.cost}</Text>
+                                    <Icon name="star" style={{ color: "#ffd700", fontSize: 18 }} />
+                                </View>
                             </View>
                         );
                     });
@@ -523,11 +513,10 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: "600",
         alignSelf: "center",
-        marginBottom: 10,
     },
 
     RewardCard: {
-        backgroundColor: "#fff",
+        backgroundColor: "transparent",
         borderRadius: 20,
         paddingVertical: 6,
         paddingHorizontal: 20,
@@ -545,12 +534,12 @@ const styles = StyleSheet.create({
         color: "#999",
     },
 
-    pointsRow: { alignItems: "center", marginTop: 12, marginBottom: 6, flexDirection: "row", justifyContent: "center" },
+    pointsRow: { alignSelf: "center", marginTop: 10, marginBottom: 6, flexDirection: "row", marginLeft: 4 },
     starIcon: {
         fontSize: 24,
         marginRight: 6,
     },
-    pointsNumber: { fontSize: 28, fontWeight: "700" },
+    pointsNumber: { fontSize: 28, fontWeight: "600", marginTop: -4, },
     pointsLabel: { fontSize: 12, color: "#777" },
     greetingRow: { alignItems: "center", marginTop: 8 },
     greetingTitle: { fontSize: 16, fontWeight: "600", textAlign: "center" },
@@ -650,9 +639,11 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     avatar: {
-        width: 140,
-        height: 140,
-        borderRadius: 70,
+        width: 215,
+        height: 210,
+        borderRadius: 90,
+        alignSelf: "center",
+        
     },
     
     //missing modal styles that control the reward popup layout
@@ -742,6 +733,7 @@ const styles = StyleSheet.create({
     unlockTitle: {
         fontSize: 20,
         fontWeight: "700",
+        marginTop: 15,
         marginBottom: 12,
     },
 
@@ -787,10 +779,14 @@ const styles = StyleSheet.create({
     },
 
     unlockItemCost: {
-        fontSize: 11,
-        fontWeight: "700",
+        fontSize: 15,
+        fontWeight: "600",
         color: "#555",
-        marginTop: 5,
+    },
+    costRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 6,
     },
 
     unlockItemLabel: {
@@ -878,8 +874,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#eee",
     },
     characterImage: {
-        width: 50,
-        height: 50,
+        width: 70,
+        height: 70,
         borderRadius: 25,
     },
     characterEmoji: {
@@ -920,9 +916,16 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     avatarContainer: {
-        alignItems: "center",
-        marginVertical: 8,
-    },
+        alignSelf: "center",
+        justifyContent: "flex-start",
+        overflow: "hidden",
+        width: "100%",
+        height: 260,
+        backgroundColor: "#f0f0f0",
+        borderRadius: 30,
+        elevation: 2,
+        marginTop: 12,
+        },
 
     emojiAvatarContainer: {
         backgroundColor: "#FFF3E0",
