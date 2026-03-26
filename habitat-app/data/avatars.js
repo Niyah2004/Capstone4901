@@ -82,24 +82,40 @@ export const AVATARS = {
             },
         },
    },
-//   lion: {
-//     base: require("../assets/lion.png"),
-//     hats: {
-//       crown: {
-//         image: require("../assets/lion/hats/crown.png"),
-//         cost: 20,
-//         position: { top: -70, left: 75, size: 180 },
-//       },
-//     },
-//   },
-//   penguin: {
-//     base: require("../assets/penguin.png"),
-//     hats: {
-//       cap: {
-//         image: require("../assets/penguin/hats/cap.png"),
-//         cost: 5,
-//         position: { top: -25, left: 60, size: 140 },
-//       },
-//     },
-//   },
+    lion: {
+        base: require("../assets/lion.png"),
+        hats: {
+            crown: {
+                image: require("../assets/lion/hats/crown.png"),
+                cost: 20,
+                position: { top: -55, left: 60, size: 190 },
+            },
+        },
+        accessories: {
+            sunglasses: {
+                image: require("../assets/lion/accessories/sunglasses.png"),
+                cost: 15,
+                position: { top: 70, left: 65, size: 170 },
+            },
+            bowtie: {
+                image: require("../assets/lion/accessories/bowtie.png"),
+                cost: 10,
+                position: { top: 170, left: 85, size: 130 },
+            },
+        },
+        tops: {
+            cape: {
+                image: require("../assets/lion/tops/cape.png"),
+                cost: 25,
+                position: { top: 120, left: 55, size: 200 },
+            },
+        },
+        shoes: {
+            sneakers: {
+                image: require("../assets/lion/shoes/sneakers.png"),
+                cost: 15,
+                position: { top: 220, left: 80, size: 140 },
+            },
+        },
+    },
 };
