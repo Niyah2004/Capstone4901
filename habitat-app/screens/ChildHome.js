@@ -32,7 +32,7 @@ export default function ChildHome({ navigation, route }) {
     const { theme } = useTheme();
     const colors = theme.colors;
     const childIdFromRoute = route?.params?.childId;
-
+    const progressGoal = totalAssignedPoints > 0 ? totalAssignedPoints : 100;
     useEffect(() => {
         const auth = getAuth();
         const user = auth.currentUser;
@@ -280,10 +280,11 @@ export default function ChildHome({ navigation, route }) {
                                     },
                                 ]}
                             />
-                        </View>
-                        <Text style={[styles.progressText, { color: colors.text }]}>
-                            {childPoints} pts</Text>
+                        <Text style={styles.progressBarLabel}>
+                            {childPoints} / {progressGoal} pts
+                        </Text>
                     </View>
+                </View>
                 </View>
                 {/* Middle Section: Avatar — tap to change character */}
                 <View style={styles.avatarContainer}>
@@ -349,43 +350,36 @@ export default function ChildHome({ navigation, route }) {
                     >
                     {Object.entries(AVATARS[avatar] || {}).map(([category, items]) => {
                         if (category === "base") return null;
-
                         return Object.entries(items).map(([itemId, item]) => {
-                        const itemData = wardrobe?.[avatar]?.[category]?.[itemId];
-                        const unlocked = itemData?.unlocked ?? false;
+                        const unlocked = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
 
                         return (
                             <TouchableOpacity
                             key={`${category}-${itemId}`}
-                            style={[
-                                styles.wardrobeItem,
-                                {
-                                    backgroundColor: unlocked ? "#ffffff" : "#adadade8",
-                                    borderWidth: unlocked ? 0 : 1,
-                                    borderColor: "#707070",
-                                }
-                            ]}
+                            style={styles.wardrobeItem}
                             onPress={() => handleWardrobePress(category, itemId, item.cost)}
                             >
-                            <View style={{ alignItems: "center", justifyContent: "center" }}>
+                            <View style={styles.wardrobeImageWrap}>
                             <Image
                                 source={item.image}
-                                style={{ width: 70, height: 70, opacity: unlocked ? 1 : 0.8 }}
+                                style={[styles.wardrobeImage, !unlocked && { opacity: 0.85 }]}
                                 resizeMode="contain"
                             />
 
                             {!unlocked && (
                                 <View style={styles.lockOverlay}>
-                                    <Ionicons name="lock-closed" size={24} color={colors.muted} />
+                                    <Ionicons name="lock-closed" size={22} color="#fff" />
                                 </View>
                             )}
-                            {!unlocked && (
-                                <Text style={styles.costText}>{item.cost} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 15 }} />
-                                </Text>
-                            )}
                             </View>
+                            {!unlocked && (
+                                <View style={styles.costRow}>
+                                    <Text style={styles.costText}>{item.cost}</Text>
+                                    <Ionicons name="star" style={{ color: "#ffd700", fontSize: 18 }} />
+                                </View>
+                            )}
                             </TouchableOpacity>
-                        );
+                            );
                         });
                     })}
                     </ScrollView>
@@ -452,20 +446,22 @@ const styles = StyleSheet.create({
     changeCharacterBadge: { position: "absolute", bottom: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
     changeCharacterText: { color: "#fff", fontSize: 12, fontWeight: "700" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
-    subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
+    subtitle: { fontSize: 18, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
     milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
-    wardrobeScroll: { paddingVertical: 10, alignItems: "center", },
     popupOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
     popup: { width: 260, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
     popupText: { marginTop: 10, fontSize: 14, textAlign: "center" },
     popupButtonRow: { flexDirection: "row", gap: 20, marginTop: 15 },
-    popupButton: { backgroundColor: "#ffea00ff", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
+    popupButton: { backgroundColor: "#b0b0b0", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
     popupButtonText: { fontWeight: "bold", },
-    wardrobeRow: { flexDirection: "row", paddingVertical: 10, paddingHorizontal: 5, gap: 12 },
-    wardrobeItem: { width: 80, height: 80, borderRadius: 20, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    wardrobeRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 5, gap: 25 },
+    wardrobeItem: { alignItems: "center", width: 80 },
+    wardrobeImageWrap: { width: 92, height: 92, borderRadius: 20, backgroundColor: "#f0f0f0", justifyContent: "center", alignItems: "center", overflow: "hidden"},
+    wardrobeImage: { width: 74, height: 74, },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
-    lockOverlay: { position: "absolute", backgroundColor: "transparent", alignItems: "center", justifyContent: "center", width: "100%", height: "70%" },
-    costText: { position: "absolute", bottom: -5, fontSize: 15, color: "#fff", fontWeight: "bold", textAlign: "center", alignContent: "center", alignItems: "center", justifyContent: "center", width: "100%", },
+    lockOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", },
+    costRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 4, },
+    costText: { fontSize: 16, fontWeight: "600", color: "#555"},
 });
