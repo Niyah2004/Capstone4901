@@ -56,7 +56,7 @@ export default function ChildReward() {
     const [avatar, setAvatar] = useState(null);
     const [avatarLoading, setAvatarLoading] = useState(true);
     const confettiRef = useRef(null);
-
+    const [showConfetti, setShowConfetti] = useState(false);
     // Character unlock state
     const [characterModalVisible, setCharacterModalVisible] = useState(false);
     const [lifetimeStars, setLifetimeStars] = useState(0);
@@ -225,12 +225,12 @@ export default function ChildReward() {
 
         // Check if child has enough stars
         if (totalStars < selectedReward.cost) {
-            Alert.alert("Not Enough Stars", `You need ${selectedReward.cost} stars but only have ${totalStars} stars.`);
+            Alert.alert("Not Enough Stars", `You need ${selectedReward.cost - totalStars} more stars to claim this reward.`);
             return;
         }
-
-        // 🎉 Trigger confetti immediately for instant gratification!
-        confettiRef.current?.start();
+        setShowConfetti(true);
+        requestAnimationFrame(() => confettiRef.current?.start());
+        setTimeout(() => setShowConfetti(false), 1800);
 
         try {
             // Update childPoints collection
@@ -281,18 +281,20 @@ export default function ChildReward() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
-
-                        <ConfettiCannon
-                            ref={confettiRef}
-                            count={200}
-                            origin={{ x: 0, y: 0 }}
-                            explosionSpeed={450}
-                            fallSpeed={2500}
-                            autoStart={false}
-                            fadeOut={true}
-                            colors={['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']}
-                        />
-
+                         {showConfetti && (
+                            <View pointerEvents="none" style={styles.confettiLayer}>        
+                                <ConfettiCannon
+                                    ref={confettiRef}
+                                    count={200}
+                                    origin={{ x: 50, y: 10 }}
+                                    explosionSpeed={450}
+                                    fallSpeed={2500}
+                                    autoStart={false}
+                                    fadeOut={true}
+                                    colors={['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']}
+                                />
+                            </View>
+                         )}
                         <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
 
                         <View style={styles.modalImagePlaceholder}>
@@ -303,27 +305,28 @@ export default function ChildReward() {
                             {selectedReward?.description || "No description provided."}
                         </Text>
                         <Text style={styles.modalPoints}>
-                            ⭐ {selectedReward?.cost} Points
+                            {selectedReward?.cost} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 18 }} /> 
                         </Text>
 
+                        <View style={styles.popupButtonRow}>
+                            <TouchableOpacity
+                                style={styles.modalCloseButton}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles.modalCloseText}>Close</Text>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.modalCloseButton}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <Text style={styles.modalCloseText}>Close</Text>
-                        </TouchableOpacity>
+                            {/*claim button */}
+                            <TouchableOpacity
+                                style={styles.modalClaimButton}
 
-                        {/*claim button */}
-                        <TouchableOpacity
-                            style={styles.modalClaimButton}
-
-                            onPress={handleClaimReward}
-                        //setModalVisible(false)}
-                        //make it update the firebase
-                        >
-                            <Text style={styles.modalClaimText}>Claim</Text>
-                        </TouchableOpacity>
+                                onPress={handleClaimReward}
+                            //setModalVisible(false)}
+                            //make it update the firebase
+                            >
+                                <Text style={styles.modalClaimText}>Claim</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -376,7 +379,7 @@ export default function ChildReward() {
                                         {!isUnlocked && (
                                             <View style={styles.lockBadge}>
                                                 <Ionicons name="lock-closed" size={12} color="#fff" />
-                                                <Text style={styles.lockBadgeText}>{character.milestone} ⭐</Text>
+                                                <Text style={styles.lockBadgeText}>{character.milestone} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 10 }} /></Text>
                                             </View>
                                         )}
 
@@ -710,7 +713,7 @@ const styles = StyleSheet.create({
         fontWeight: "500",
         marginBottom: 12,
     },
-
+    popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 15 },
     modalCloseButton: {
         backgroundColor: "#ccc",
         paddingVertical: 10,
@@ -729,7 +732,7 @@ const styles = StyleSheet.create({
         color: "#ffffffff",
         fontWeight: "600",
     },
-
+    confettiLayer: { ...StyleSheet.absoluteFillObject, overflow: "hidden"},
     unlockTitle: {
         fontSize: 20,
         fontWeight: "700",
