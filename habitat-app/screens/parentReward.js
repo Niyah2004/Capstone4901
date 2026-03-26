@@ -1,14 +1,20 @@
 // Comfort page for parents to create and manage rewards for their children
 import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
-import { db, storage } from "../firebaseConfig";
-import React, { useEffect, useState } from 'react'; 
+import { db } from "../firebaseConfig";
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
-import {ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { arrayRemove } from "firebase/firestore";
 
+
+const REWARD_PRESETS = [
+  { id: 'gift',       label: 'Gift',         image: require('../assets/Gifts.png') },
+  { id: 'gamenight',  label: 'Game Night',   image: require('../assets/Gamenight.png') },
+  { id: 'movie',      label: 'Movie Night',  image: require('../assets/Movienight.png') },
+  { id: 'treat',      label: 'Sweet Treats', image: require('../assets/SweetTreats.png') },
+  { id: 'outside',   label: 'Outside',      image: require('../assets/outside.png') },
+];
 
 export default function ParentReward({navigation}) {
   const auth = getAuth();
@@ -16,9 +22,7 @@ export default function ParentReward({navigation}) {
   const [description, setDescription] = useState("");
   const [points, setPoints] = useState("");
   const [frequency, setFrequency] = useState("One-Time");
-  const [rewardImage, setRewardImage] = useState (null);
-  const [imageUri, setImageUri] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState(null);
   const [rewards, setRewards] = useState([]);
 
   useEffect(() => {
@@ -52,37 +56,6 @@ export default function ParentReward({navigation}) {
   }, [auth.currentUser?.uid]);
 
   
-  //adding the picture to the reward
-const pickImage = async () => {
-  let result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes:ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: [1,1],
-    quality: 0.7,
-  });
-
-  if (!result.canceled){
-    setRewardImage(result.assets[0].uri);
-  }
-};
-
-  //uploading image to the firebase
-const uploadImageAsync = async (uri) => {
-  //setUploading(true);
-
-  const response = await fetch(uri);
-  const blob = await response.blob();
-
-  const filename = `rewardImages/${Date.now()}.jpg`;
-  const storageRef = ref(storage, filename);
-
-  await uploadBytes(storageRef, blob);
-  //const downloadUrl = await getDownloadURL(storageRef);
-  //setUploading(false);
-  return await getDownloadURL(storageRef);
-
-};
-  
   const saveReward = async () => {
     if (!rewardName || !points) {
       Alert.alert("Missing info", "Please fill in both Reward Name and Points.");
@@ -90,32 +63,7 @@ const uploadImageAsync = async (uri) => {
     }
 
     try {
-      let imageURL = null;
-
-      // Try to upload image, but don't block if it fails
-      if (rewardImage) {
-        try {
-          imageURL = await uploadImageAsync(rewardImage);
-        } catch (imageError) {
-          console.warn("Image upload failed, saving reward without image:", imageError);
-          Alert.alert(
-            "Image Upload Failed",
-            "The image couldn't be uploaded, but we'll save your reward without it. Continue?",
-            [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: "Save Without Image",
-                onPress: async () => {
-                  await saveRewardToFirestore(null);
-                }
-              }
-            ]
-          );
-          return;
-        }
-      }
-
-      await saveRewardToFirestore(imageURL);
+      await saveRewardToFirestore(selectedPreset);
     } catch (error) {
       console.error("Error saving reward:", error);
       Alert.alert("Error", "Could not save reward. Please try again.");
@@ -137,7 +85,7 @@ const uploadImageAsync = async (uri) => {
     setRewardName("");
     setDescription("");
     setPoints("");
-    setRewardImage(null);
+    setSelectedPreset(null);
     navigation.goBack();
   };
   
@@ -228,9 +176,19 @@ const confirmRemoveReward = (rewardId) => {
       ))}
     </View>
 
-<TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
-    <Text style={styles.addImageButtonText}>Add Image</Text>
-    </TouchableOpacity>
+    <Text style={styles.label}>Reward Icon</Text>
+    <View style={styles.presetGrid}>
+      {REWARD_PRESETS.map((preset) => (
+        <TouchableOpacity
+          key={preset.id}
+          style={[styles.presetCard, selectedPreset === preset.id && styles.presetCardSelected]}
+          onPress={() => setSelectedPreset(preset.id)}
+        >
+          <Image source={preset.image} style={styles.presetImage} resizeMode="contain" />
+          <Text style={styles.presetLabel}>{preset.label}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
 
     <TouchableOpacity style={styles.saveButton} onPress={saveReward}>
       <Text style={styles.saveButtonText}>Save Reward</Text>
@@ -242,7 +200,10 @@ const confirmRemoveReward = (rewardId) => {
         {rewards.map((reward) => (
           <View key={reward.id} style={styles.rewardCard}>
             <View style={styles.rewardCardLeft}>
-              <Text style={styles.rewardCardEmoji}>🎁</Text>
+              {REWARD_PRESETS.find(p => p.id === reward.image)
+                ? <Image source={REWARD_PRESETS.find(p => p.id === reward.image).image} style={styles.rewardCardIcon} resizeMode="contain" />
+                : <Text style={styles.rewardCardEmoji}>🎁</Text>
+              }
               <View style={styles.rewardCardInfo}>
                 <Text style={styles.rewardCardName}>{reward.name || "Untitled Reward"}</Text>
                 <View style={styles.rewardCardBadges}>
@@ -274,20 +235,6 @@ const confirmRemoveReward = (rewardId) => {
 
 
 
-{rewardImage && (
-  <View style={styles.imagePreviewContainer}>
-    <Image
-      source={{ uri: rewardImage }}
-      style={styles.imagePreview}
-    />
-    <TouchableOpacity
-      style={styles.removeImageButton}
-      onPress={() => setRewardImage(null)}
-    >
-      <Text style={styles.removeImageText}>✕</Text>
-    </TouchableOpacity>
-  </View>
-)}
 
   </View>
     </ScrollView>
@@ -387,47 +334,41 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  addImageButton: {
-  backgroundColor: "#4CAF50",
-  padding: 15,
-  borderRadius: 10,
+  presetGrid: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  justifyContent: "space-between",
+  marginBottom: 20,
+  marginTop: 4,
+},
+presetCard: {
+  width: "48%",
+  backgroundColor: "#fafafa",
+  borderWidth: 2,
+  borderColor: "#e0e0e0",
+  borderRadius: 12,
+  paddingVertical: 14,
   alignItems: "center",
-  marginTop: 10,
+  marginBottom: 10,
 },
-addImageButtonText: {
-  color: "#fff",
-  fontWeight: "bold",
+presetCardSelected: {
+  borderColor: "#4CAF50",
+  backgroundColor: "#e8f5e9",
 },
-imagePreviewContainer: {
-  position: "relative",
-  marginTop: 10,
-  alignSelf: "center",
+presetImage: {
+  width: 56,
+  height: 56,
+  marginBottom: 4,
 },
-imagePreview: {
-  width: 100,
-  height: 100,
-  borderRadius: 10,
+rewardCardIcon: {
+  width: 40,
+  height: 40,
+  marginRight: 10,
 },
-removeImageButton: {
-  position: "absolute",
-  top: -8,
-  right: -8,
-  backgroundColor: "#FF4444",
-  width: 28,
-  height: 28,
-  borderRadius: 14,
-  justifyContent: "center",
-  alignItems: "center",
-  shadowColor: "#000",
-  shadowOpacity: 0.3,
-  shadowRadius: 3,
-  shadowOffset: { width: 0, height: 2 },
-  elevation: 3,
-},
-removeImageText: {
-  color: "#fff",
-  fontSize: 16,
-  fontWeight: "bold",
+presetLabel: {
+  fontSize: 13,
+  fontWeight: "600",
+  color: "#333",
 },
 existingRewardsSection: {
   marginTop: 24,
