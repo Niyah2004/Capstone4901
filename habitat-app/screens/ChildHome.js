@@ -213,7 +213,7 @@ export default function ChildHome({ navigation, route }) {
         // Not unlocked → try to buy
         if (!unlocked) {
             if (childPoints < itemCost) {
-                setPopupMsg(`You need ${itemCost - childPoints} more ⭐ to unlock this item!`);
+                setPopupMsg(`You need ${itemCost - childPoints} more stars to unlock this item!`);
                 setShowPopup(true);
             }
             else {
