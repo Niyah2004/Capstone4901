@@ -336,13 +336,6 @@ export default function ChildReward() {
                         </Text>
 
                         <View style={styles.popupButtonRow}>
-                            <TouchableOpacity
-                                style={styles.modalCloseButton}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={styles.modalCloseText}>Close</Text>
-                            </TouchableOpacity>
-
                             {/*claim button */}
                             <TouchableOpacity
                                 style={styles.modalClaimButton}
@@ -353,7 +346,15 @@ export default function ChildReward() {
                             >
                                 <Text style={styles.modalClaimText}>Claim</Text>
                             </TouchableOpacity>
-                        </View>
+                        
+                            <TouchableOpacity
+                                style={styles.modalCloseButton}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles.modalCloseText}>Close</Text>
+                            </TouchableOpacity>
+
+                         </View>   
                     </View>
                 </View>
             </Modal>
@@ -763,14 +764,20 @@ const styles = StyleSheet.create({
         fontWeight: "500",
         marginBottom: 12,
     },
-    popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 15 },
+    popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 5 },
     modalCloseButton: {
         backgroundColor: "#ccc",
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 10,
-        marginTop: 8,
+        marginTop: 10,
         color: "#4CAF50",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.25,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 5,
     },
 
     modalCloseText: {

@@ -173,6 +173,10 @@ export default function ChildHome({ navigation, route }) {
             return;
         }
 
+        // Close modal immediately for better UX
+        setShowCheckPopup(false);
+        setPendingUnlock(null);
+
         const { category, itemId, itemCost } = pendingUnlock;
         const childRef = doc(db, "children", childDocId);
         const pointsRef = doc(db, "childPoints", user.uid);
@@ -189,13 +193,11 @@ export default function ChildHome({ navigation, route }) {
             equipped: true,
         };
 
-        await updateDoc(childRef, updates);
-        await updateDoc(pointsRef, {
+        // Fire updates in background - don't wait for them
+        updateDoc(childRef, updates).catch(err => console.error("Error updating wardrobe:", err));
+        updateDoc(pointsRef, {
             points: childPoints - itemCost,
-        });
-
-        setShowCheckPopup(false);
-        setPendingUnlock(null);
+        }).catch(err => console.error("Error updating points:", err));
     };
 
     const cancelUnlock = () => {
@@ -425,14 +427,14 @@ export default function ChildHome({ navigation, route }) {
                         style={styles.popupButton}
                         onPress={confirmUnlock}
                     >
-                        <Text style={styles.popupButtonText}>Yes</Text>
+                        <Text style={styles.popupButtonText}>Unlock</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.popupButton}
+                        style={styles.popupButton2}
                         onPress={cancelUnlock}
                     >
-                        <Text style={styles.popupButtonText}>No</Text>
+                        <Text style={styles.popupButton2Text}>Close</Text>
                     </TouchableOpacity>
                     </View>
                     
@@ -515,9 +517,11 @@ const styles = StyleSheet.create({
     popupOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
     popup: { width: 260, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
     popupText: { marginTop: 10, fontSize: 14, textAlign: "center" },
-    popupButtonRow: { flexDirection: "row", gap: 20, marginTop: 15 },
-    popupButton: { backgroundColor: "#b0b0b0", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
-    popupButtonText: { fontWeight: "bold", },
+    popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 15 },
+    popupButton: { backgroundColor: "#4CAF50", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
+    popupButton2: { backgroundColor: "#ccc", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
+    popupButtonText: { color: "#ffffffff", fontWeight: "600", },
+    popupButton2Text: { color: "#000", fontWeight: "600" },
     wardrobeRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 5, gap: 25 },
     wardrobeItem: { alignItems: "center", width: 80 },
     wardrobeImageWrap: { width: 92, height: 92, borderRadius: 20, backgroundColor: "#f0f0f0", justifyContent: "center", alignItems: "center", overflow: "hidden"},
