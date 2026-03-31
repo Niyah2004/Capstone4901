@@ -62,14 +62,14 @@ export default function ParentReward({navigation}) {
       return;
     }
 
-    const parsedPoints = parseInt(points);
+    const parsedPoints = parseInt(points, 10);
     if (isNaN(parsedPoints) || parsedPoints <= 0) {
       Alert.alert("Invalid Points", "Points must be a number greater than 0.");
       return;
     }
 
     try {
-      await saveRewardToFirestore(selectedPreset);
+      await saveRewardToFirestore(selectedPreset, parsedPoints);
     } catch (error) {
       console.error("Error saving reward:", error);
       Alert.alert("Error", "Could not save reward. Please try again.");
