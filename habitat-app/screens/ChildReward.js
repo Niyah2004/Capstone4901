@@ -12,6 +12,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AVATARS } from "../data/avatars";
 
+const REWARD_ICON_MAP = {
+  gift:      require('../assets/Gifts.png'),
+  gamenight: require('../assets/Gamenight.png'),
+  movie:     require('../assets/Movienight.png'),
+  treat:     require('../assets/SweetTreats.png'),
+  outside:   require('../assets/outside.png'),
+};
+
 // Character roster - starters are free, others unlock at milestone thresholds
 const CHARACTER_ROSTER = [
     { id: "panda", name: "Panda", emoji: "🐼", milestone: 0, image: require("../assets/panda.png") },
@@ -23,23 +31,41 @@ const CHARACTER_ROSTER = [
 
 const STARTER_IDS = CHARACTER_ROSTER.filter(c => c.milestone === 0).map(c => c.id);
 
-function AnimatedHeart({ delay }) {
+const STAR_SIZES = [20, 28, 22, 32, 22, 28, 20];
+
+function AnimatedStar({ delay, size = 24 }) {
     const scale = useRef(new Animated.Value(1)).current;
+    const rotation = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         const pulse = Animated.loop(
             Animated.sequence([
-                Animated.timing(scale, { toValue: 1.35, duration: 500, delay, useNativeDriver: true }),
-                Animated.timing(scale, { toValue: 1, duration: 500, useNativeDriver: true }),
+                Animated.parallel([
+                    Animated.timing(scale, { toValue: 1.5, duration: 400, delay, useNativeDriver: true }),
+                    Animated.timing(rotation, { toValue: 20, duration: 400, delay, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(scale, { toValue: 1, duration: 400, useNativeDriver: true }),
+                    Animated.timing(rotation, { toValue: -20, duration: 400, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(scale, { toValue: 1, duration: 200, useNativeDriver: true }),
+                    Animated.timing(rotation, { toValue: 0, duration: 200, useNativeDriver: true }),
+                ]),
             ])
         );
         pulse.start();
         return () => pulse.stop();
     }, []);
 
+    const spin = rotation.interpolate({
+        inputRange: [-20, 0, 20],
+        outputRange: ['-20deg', '0deg', '20deg'],
+    });
+
     return (
-        <Animated.View style={{ transform: [{ scale }] }}>
-            <Ionicons name="heart" size={22} color="#e53935" />
+        <Animated.View style={{ transform: [{ scale }, { rotate: spin }] }}>
+            <Ionicons name="star" size={size} color="#FFD700" />
         </Animated.View>
     );
 }
@@ -92,6 +118,7 @@ export default function ChildReward() {
                 description: doc.data().description || "",
                 gradient: gradientPresets[index % gradientPresets.length],
                 parentId: doc.data().parentId || null,
+                image: doc.data().image || null,
             }));
             setRewards(rewardList);
         }, (error) => {
@@ -426,13 +453,16 @@ export default function ChildReward() {
                 </View>
 
 
-                <View style={styles.greetingRow}>
-                    <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits</Text>
-                </View>
             </View>
 
-
-
+            <LinearGradient
+                colors={["#4CAF50", "#4CAF50"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.greetingBanner}
+            >
+                <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits</Text>
+            </LinearGradient>
 
             <Text style={styles.unlockTitle}>Unlock More Items</Text>
 
@@ -460,8 +490,8 @@ export default function ChildReward() {
             </ScrollView>
 
             <View style={styles.heartsRow}>
-                {[...Array(7)].map((_, i) => (
-                    <AnimatedHeart key={i} delay={i * 150} />
+                {STAR_SIZES.map((size, i) => (
+                    <AnimatedStar key={i} delay={i * 150} size={size} />
                 ))}
             </View>
 
@@ -489,7 +519,10 @@ export default function ChildReward() {
                         <View>
 
                             <View style={styles.rewardIconPlaceholder}>
-                                <Text style={styles.placeholderText}>Icon</Text>
+                                {REWARD_ICON_MAP[reward.image]
+                                  ? <Image source={REWARD_ICON_MAP[reward.image]} style={styles.rewardIconImage} resizeMode="contain" />
+                                  : <Text style={styles.placeholderText}>🎁</Text>
+                                }
                             </View>
 
                             <Text style={styles.rewardTitle} numberOfLines={2}>{reward.title}</Text>
@@ -545,6 +578,10 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: "#999",
     },
+    rewardIconImage: {
+        width: 64,
+        height: 64,
+    },
 
     pointsRow: { alignItems: "center", marginTop: 12, marginBottom: 6, flexDirection: "row", justifyContent: "center" },
     starIcon: {
@@ -553,8 +590,14 @@ const styles = StyleSheet.create({
     },
     pointsNumber: { fontSize: 28, fontWeight: "700" },
     pointsLabel: { fontSize: 12, color: "#777" },
-    greetingRow: { alignItems: "center", marginTop: 8 },
-    greetingTitle: { fontSize: 16, fontWeight: "600", textAlign: "center" },
+    greetingBanner: {
+        borderRadius: 30,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        alignItems: "center",
+        marginBottom: 16,
+    },
+    greetingTitle: { fontSize: 16, fontWeight: "700", textAlign: "center", color: "#fff" },
 
     switchButton: {
         backgroundColor: "#4CAF50",
