@@ -50,26 +50,26 @@ export const AVATARS = {
             turtle_mask: {
                 image: require("../assets/turtle/accessories/turtle_mask.png"),
                 cost: 0,
-                position: { top: -43, left: -37, size: 375 },
+                position: { top: 4, left: 12, size: 240 },
             },
             turtle_bowtie: {
                 image: require("../assets/turtle/accessories/turtle_bowtie.png"),
                 cost: 50,
-                position: { top: 140, left: 100, size: 100 },
+                position: { top: 142, left: 105, size: 100 },
             },
         },
         tops: {
             turtle_hoodie: {
                 cost: 100,
                 image: require("../assets/turtle/tops/turtle_hoodie.png"),
-                position: { top: -50, left: -50, size: 400 },
+                position: { top: 102, left: 57, size: 200 },
             }
         },
         pants: {
             turtle_pants: {
-                cost: 200,
+                cost: 0,
                 image: require("../assets/turtle/pants/turtle_sweatpants.png"),
-                position: { top: -60, left: -50, size: 400 },
+                position: { top: 198, left: 86, size: 136 },
             }
         },
     },
