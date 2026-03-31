@@ -49,25 +49,25 @@ export const AVATARS = {
         accessories: {
             turtle_mask: {
                 image: require("../assets/turtle/accessories/turtle_mask.png"),
-                cost: 1000,
+                cost: 0,
                 position: { top: -43, left: -37, size: 375 },
             },
             turtle_bowtie: {
                 image: require("../assets/turtle/accessories/turtle_bowtie.png"),
-                cost: 1000,
+                cost: 50,
                 position: { top: 140, left: 100, size: 100 },
             },
         },
         tops: {
             turtle_hoodie: {
-                cost: 1000,
+                cost: 100,
                 image: require("../assets/turtle/tops/turtle_hoodie.png"),
                 position: { top: -50, left: -50, size: 400 },
             }
         },
         pants: {
             turtle_pants: {
-                cost: 1000,
+                cost: 200,
                 image: require("../assets/turtle/pants/turtle_sweatpants.png"),
                 position: { top: -60, left: -50, size: 400 },
             }
@@ -98,50 +98,52 @@ export const AVATARS = {
         hats: {
             hat: {
                 image: require("../assets/dino/hats/dinoHat.png"),
-                cost: 150,
+                cost: 50,
                 position: { top: -50, left: 54, size: 200 },
             },
         },
         shoes: {
             sneakers: {
                 image: require("../assets/dino/shoes/dinoSkates.png"),
-                cost: 15,
+                cost: 150,
                 position: { top: 213, left: 85, size: 135 },
             },
         },
     },
     lion: {
         base: require("../assets/lion.png"),
+        accessories: {
+            bowtie: {
+                image: require("../assets/lion/accessories/bowtie.png"),
+                cost: 0,
+                position: { top: 170, left: 103, size: 100 },
+            },
+            sunglasses: {
+                image: require("../assets/lion/accessories/sunglasses.png"),
+                cost: 50,
+                position: { top: 30, left: 65, size: 170 },
+            },
+            
+        },
         hats: {
             crown: {
                 image: require("../assets/lion/hats/crown.png"),
-                cost: 20,
+                cost: 200,
                 position: { top: -55, left: 60, size: 190 },
             },
         },
-        accessories: {
-            sunglasses: {
-                image: require("../assets/lion/accessories/sunglasses.png"),
-                cost: 15,
-                position: { top: 70, left: 65, size: 170 },
-            },
-            bowtie: {
-                image: require("../assets/lion/accessories/bowtie.png"),
-                cost: 10,
-                position: { top: 170, left: 85, size: 130 },
-            },
-        },
+        
         tops: {
             cape: {
                 image: require("../assets/lion/tops/cape.png"),
-                cost: 25,
+                cost: 150,
                 position: { top: 120, left: 55, size: 200 },
             },
         },
         shoes: {
             sneakers: {
                 image: require("../assets/lion/shoes/sneakers.png"),
-                cost: 15,
+                cost: 100,
                 position: { top: 220, left: 80, size: 140 },
             },
         },
