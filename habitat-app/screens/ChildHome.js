@@ -250,7 +250,7 @@ export default function ChildHome({ navigation, route }) {
             {/* Top Section: Greeting and Progress Bar */}
             <View style={styles.topSection}>
                     <LinearGradient
-                        colors={["#D4237A", "#6A1F9B", "#0D6B8A"]}
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.greetingBubble}
@@ -322,7 +322,7 @@ export default function ChildHome({ navigation, route }) {
 
                     {/* Level Card */}
                     <LinearGradient
-                        colors={["#D4237A", "#6A1F9B", "#0D6B8A"]}
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.levelCard}
@@ -419,7 +419,7 @@ export default function ChildHome({ navigation, route }) {
             <Modal transparent visible={showLevelUp} animationType="fade">
                 <View style={styles.popupOverlay}>
                     <LinearGradient
-                        colors={["#D4237A", "#6A1F9B", "#0D6B8A"]}
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.levelUpCard}
