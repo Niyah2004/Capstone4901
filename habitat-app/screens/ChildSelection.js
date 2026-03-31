@@ -75,14 +75,14 @@ useEffect(() => {
 
         <View style={styles.row}>
           <TouchableOpacity
-            style={styles.primaryBtn}
+            style={styles.openBtn}
             onPress={() => navigation.replace("ChildTabs", { childId: item.id })}
           >
             <Text style={styles.btnText}>Open</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.secondaryBtn}
+            style={styles.EditAvatarBtn}
             onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
           >
             <Text style={styles.SecondbtnText}>Edit Avatar</Text>
@@ -106,7 +106,8 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 24, 
     fontWeight: "bold", 
-    marginBottom: 14 
+    marginBottom: 20,
+    alignSelf: "center",
   },
   card: { 
     borderWidth: 1, 
@@ -116,22 +117,23 @@ const styles = StyleSheet.create({
     marginBottom: 12 
   },
   name: { 
-    fontSize: 18, 
+    fontSize: 20, 
     fontWeight: "700", 
-    marginBottom: 10 
+    marginBottom: 10,
+    marginTop: 5,
   },
   row: { 
     flexDirection: "row", 
     gap: 10 
   },
-  primaryBtn: { 
+  openBtn: { 
     backgroundColor: "#4CAF50", 
     padding: 12, 
     borderRadius: 10, 
     flex: 1, 
     alignItems: "center" 
   },
-  secondaryBtn: { 
+  EditAvatarBtn: { 
     backgroundColor: "#ffff", 
     padding: 12, 
     borderRadius: 10, 
@@ -151,8 +153,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff" 
   },
   avatar: {
-    width: 60,
-    height: 60,
-    marginRight: 12
+    width: 75,
+    height: 75,
+    marginRight: 12,
   },
 });
