@@ -108,22 +108,11 @@ export default function ChildHome({ navigation, route }) {
             }
             const data = snap.data();
             const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
-            const totalEarned = data.totalPoints ?? data.points ?? data.stars ?? 0;
-            const assigned = data.totalAssignedPoints ?? 0;
             setChildPoints(points);
-            setTotalPointsEarned(totalEarned);
-            if (assigned > 0) setTotalAssignedPoints(assigned);
-            const goal = assigned > 0 ? assigned : 100;
-            const clamped = Math.min(1, points / goal);
-            Animated.timing(progress, {
-                toValue: clamped,
-                duration: 600,
-                useNativeDriver: false,
-            }).start();
         });
 
         return () => unsub();
-    }, [progress]);
+    }, );
 
     useEffect(() => {
         const auth = getAuth();
@@ -290,24 +279,6 @@ export default function ChildHome({ navigation, route }) {
                         </Text>
                     </LinearGradient>
                     <Text style={[styles.date, { color: colors.muted }]}>{formattedDate}</Text>
-                    <View style={styles.progressBarRow}>
-                        <Icon name="star" style={{ color: "#ffea00", fontSize: 18 }} />
-                        <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
-                            <Animated.View
-                                style={[
-                                    styles.progressBar, {
-                                        width: progress.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: ['0%', '100%']
-                                        }),
-                                    },
-                                ]}
-                            />
-                        <Text style={styles.progressBarLabel}>
-                            {childPoints} / {progressGoal} pts
-                        </Text>
-                    </View>
-                </View>
                 </View>
                 {/* Middle Section: Avatar — tap to change character */}
                 <View style={styles.avatarContainer}>
@@ -384,6 +355,10 @@ export default function ChildHome({ navigation, route }) {
                     ))}
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
+                        <Text style={[styles.progressText, { color: colors.text }]}>
+                            Points: {childPoints} <Icon name="star" style={{ color: "#ffea00", fontSize: 10 }} />
+                        </Text>
+                    
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -523,7 +498,7 @@ const styles = StyleSheet.create({
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10, paddingHorizontal: 10 },
     progressBarContainer: { flex: 1, height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", marginHorizontal: 8 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
-    progressText: { fontSize: 11, color: "#333", marginLeft: 4, flexShrink: 0, width: "100%" },
+    progressText: { fontSize: 11, color: "#333", flexShrink: 0, width: "100%" },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative", overflow: "visible" },
     scrollContent: { paddingBottom: 30 },
@@ -533,7 +508,7 @@ const styles = StyleSheet.create({
     changeCharacterBadge: { position: "absolute", bottom: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
     changeCharacterText: { color: "#fff", fontSize: 12, fontWeight: "700" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
-    subtitle: { fontSize: 18, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
+    subtitle: { fontSize: 18, color: "#2d2d2d", marginTop: 20, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 14, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
     milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
