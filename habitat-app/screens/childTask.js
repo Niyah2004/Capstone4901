@@ -167,7 +167,6 @@ export default function ChildTask({ route, navigation }) {
           (snap) => {
             const list = snap.docs
               .map((d) => ({ id: d.id, ...d.data() }))
-              .filter((t) => t?.isRecurring !== true)
               .filter((t) => t?.completed !== true && t?.verified !== true)
               .map((t) => ({
                 ...t,
@@ -199,7 +198,6 @@ export default function ChildTask({ route, navigation }) {
             const legacy = snap.docs
               .map((d) => ({ id: d.id, ...d.data() }))
               .filter((t) => !t?.scheduleDate)
-              .filter((t) => t?.isRecurring !== true)
               .filter((t) => t?.completed !== true && t?.verified !== true)
               .map((t) => ({
                 ...t,
@@ -236,7 +234,6 @@ export default function ChildTask({ route, navigation }) {
           (snap) => {
             const list = snap.docs
               .map((d) => ({ id: d.id, ...d.data() }))
-              .filter((t) => t?.isRecurring !== true)
               .filter((t) => t?.completed !== true && t?.verified !== true)
               .map((t) => ({
                 ...t,

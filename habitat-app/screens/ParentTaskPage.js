@@ -286,7 +286,7 @@ export default function ParentTaskPage({ navigation, route }) {
             {/* Task Frequency */}
             <Text style={styles.label}>Task Frequency</Text>
             <View style={styles.frequencyContainer}>
-              {["One-Time", "Daily", "Weekly", "Monthly", "Milestone"].map((freq) => (
+              {[/*"One-Time"*/, "Daily", "Weekly", "Monthly"].map((freq) => (
                 <TouchableOpacity
                   key={freq}
                   style={[
@@ -527,6 +527,31 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  frequencyContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  freqButton: {
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginBottom: 6,
+  },
+  freqButtonActive: {
+    backgroundColor: "#4CAF50",
+  },
+  freqText: {
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  freqTextActive: {
+    color: "#fff",
   },
   dropdownButton: {
     borderWidth: 1,
