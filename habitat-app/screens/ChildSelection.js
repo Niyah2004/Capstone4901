@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { AVATARS } from "../data/avatars";
 
 export default function ChildSelectScreen({ navigation }) {
   const auth = getAuth();
@@ -53,27 +54,44 @@ useEffect(() => {
       matching this account, or Firestore rules are blocking reads.
     </Text>
   }
-  renderItem={({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.name}>{item.preferredName || item.fullName}</Text>
+  renderItem={({ item }) => {
+    const avatarKey =
+              typeof item.avatar === "string"
+                ? item.avatar
+                : item.avatar?.base || "panda";
 
-      <View style={styles.row}>
-        <TouchableOpacity
-        style={styles.primaryBtn}
-         onPress={() => navigation.replace("ChildTabs", { childId: item.id })}>
-       <Text style={styles.btnText}>Open</Text>
-        </TouchableOpacity>
+    return (
+      <View style={styles.card}>
+        <View style={styles.topRow}>
+          <Image
+            source={AVATARS[avatarKey]?.base}
+            style={styles.avatar}
+            resizeMode="contain"
+          />
+          <Text style={styles.name}>
+            {item.preferredName || item.fullName}
+          </Text>
+        </View>
 
-        <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
-        >
-          <Text style={styles.SecondbtnText}>Edit Avatar</Text>
-        </TouchableOpacity>
+        <View style={styles.row}>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => navigation.replace("ChildTabs", { childId: item.id })}
+          >
+            <Text style={styles.btnText}>Open</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
+          >
+            <Text style={styles.SecondbtnText}>Edit Avatar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  )}
-/>
+    );
+  }}
+    />
     </View>
     </SafeAreaView>
   );
@@ -131,5 +149,10 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#fff" 
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    marginRight: 12
   },
 });
