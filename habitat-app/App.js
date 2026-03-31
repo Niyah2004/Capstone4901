@@ -66,22 +66,27 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="ParentDashBoard"
         component={ParentDashBoard}
+        initialParams={{childId}}
       />
       <ParentStack.Screen
         name="ParentTaskPage"
         component={ParentTaskPage}
+        initialParams={{childId}}
       />
       <ParentStack.Screen
         name="parentReviewTask"
         component={ParentReviewTask}
+        initialParams={{childId}}
       />
       <ParentStack.Screen
         name="parentReward"
         component={ParentReward}
+        initialParams={{childId}}
       />
       <ParentStack.Screen
         name="parentReviewRewards"
         component={ParentReviewRewards}
+        initialParams={{childId}}
       />
       <ParentStack.Screen
         name="AccountSetting"
@@ -154,9 +159,18 @@ function ChildTabs() {
         component={ChildHome}
         initialParams={{ childId }}
       />
-      <Tab.Screen name="Tasks" component={childTask} />
-      <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen name="Parent" component={ParentStackScreen}
+      <Tab.Screen 
+      name="Tasks" 
+      component={childTask}
+      initialParams={{childId}} />
+
+      <Tab.Screen name="Rewards"
+      component={ChildReward}
+      initialParams={{childId}} />
+
+      <Tab.Screen name="Parent" 
+      component={ParentStackScreen}
+      initialParams={{childId}}
         listeners={{
           blur: () => {
             // whenever you leave the Parent tab, lock it
