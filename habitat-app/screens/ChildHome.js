@@ -9,6 +9,7 @@ import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import { AVATARS } from "../data/avatars";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ChildHome({ navigation, route }) {
     const [childName, setChildName] = useState("");
@@ -25,6 +26,9 @@ export default function ChildHome({ navigation, route }) {
     const [stars, setStars] = useState(0);
     const [showPopup, setShowPopup] = useState(false);
     const [popupMsg, setPopupMsg] = useState("");
+    const [showLevelUp, setShowLevelUp] = useState(false);
+    const [newLevel, setNewLevel] = useState(0);
+    const prevLevelRef = useRef(null);
     const progress = useRef(new Animated.Value(0)).current;
     const { theme } = useTheme();
     const colors = theme.colors;
@@ -128,11 +132,24 @@ export default function ChildHome({ navigation, route }) {
             where("verified", "==", true)
         );
         const unsub = onSnapshot(q, (snap) => {
-            setVerifiedTaskCount(snap.docs.length);
+            const count = snap.docs.length;
+            setVerifiedTaskCount(count);
+            if (prevLevelRef.current === null) {
+                prevLevelRef.current = Math.floor(count / 10);
+            }
         }, (err) => console.error("Error fetching verified tasks:", err));
         return () => unsub();
     }, []);
 
+    useEffect(() => {
+        if (prevLevelRef.current === null) return;
+        const currentLevel = Math.floor(verifiedTaskCount / 10);
+        if (currentLevel > prevLevelRef.current) {
+            prevLevelRef.current = currentLevel;
+            setNewLevel(currentLevel);
+            setShowLevelUp(true);
+        }
+    }, [verifiedTaskCount]);
 
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -216,6 +233,9 @@ export default function ChildHome({ navigation, route }) {
         await updateDoc(childRef, updates);
         };
 
+    const level = Math.floor(verifiedTaskCount / 10);
+    const tasksIntoLevel = verifiedTaskCount % 10;
+
     const milestones = [
         { id: "first_task", icon: "star", label: "First Task Complete", achieved: verifiedTaskCount >= 1 },
         { id: "five_tasks", icon: "ribbon", label: "5 Tasks Completed", achieved: verifiedTaskCount >= 5 },
@@ -229,13 +249,16 @@ export default function ChildHome({ navigation, route }) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Top Section: Greeting and Progress Bar */}
             <View style={styles.topSection}>
-                    {childPreferredName && childPreferredName.trim() ? (
-                        <Text style={[styles.title, { color: colors.text }]}>Hello {childPreferredName}!</Text>
-                    ) : childName ? (
-                        <Text style={[styles.title, { color: colors.text }]}>Hello {childName}!</Text>
-                    ) : (
-                        <Text style={[styles.title, { color: colors.text }]}>Hello Child!</Text>
-                    )}
+                    <LinearGradient
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.greetingBubble}
+                    >
+                        <Text style={styles.greetingText}>
+                            Hello {(childPreferredName && childPreferredName.trim()) ? childPreferredName : (childName || "there")}!
+                        </Text>
+                    </LinearGradient>
                     <Text style={[styles.date, { color: colors.muted }]}>{formattedDate}</Text>
                     <View style={styles.progressBarRow}>
                         <Icon name="star" style={{ color: "#ffea00", fontSize: 18 }} />
@@ -296,6 +319,24 @@ export default function ChildHome({ navigation, route }) {
                 {/* Bottom Section: Milestone Celebrations */}
                 <View style={styles.bottomSection}>
                     <Text style={[styles.subtitle, { color: colors.text }]}>Milestone Celebrations</Text>
+
+                    {/* Level Card */}
+                    <LinearGradient
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.levelCard}
+                    >
+                        <Ionicons name="flash" size={34} color="#ffd700" />
+                        <View style={{ marginLeft: 8, flex: 1 }}>
+                            <Text style={styles.levelCardTitle}>Level {level}</Text>
+                            <Text style={styles.levelCardSubtext}>{tasksIntoLevel} / 10 tasks to Level {level + 1}</Text>
+                            <View style={styles.levelProgressBarContainer}>
+                                <View style={[styles.levelProgressBar, { width: `${(tasksIntoLevel / 10) * 100}%` }]} />
+                            </View>
+                        </View>
+                    </LinearGradient>
+
                     {milestones.map((m) => (
                         <View key={m.id} style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
                             <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : "#ccc", fontSize: 30 }} />
@@ -375,6 +416,31 @@ export default function ChildHome({ navigation, route }) {
                     </View>
                 </View>
                 </Modal>
+            <Modal transparent visible={showLevelUp} animationType="fade">
+                <View style={styles.popupOverlay}>
+                    <LinearGradient
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.levelUpCard}
+                    >
+                        <Ionicons name="trophy" size={50} color="#ffd700" />
+                        <View style={styles.levelUpStars}>
+                            <Ionicons name="star" size={20} color="#ffd700" />
+                            <Ionicons name="star" size={20} color="#ffd700" />
+                            <Ionicons name="star" size={20} color="#ffd700" />
+                        </View>
+                        <Text style={styles.levelUpTitle}>You reached Level {newLevel}!</Text>
+                        <Text style={styles.levelUpSubtext}>Keep completing tasks to level up!</Text>
+                        <TouchableOpacity
+                            style={styles.levelUpButton}
+                            onPress={() => setShowLevelUp(false)}
+                        >
+                            <Text style={styles.levelUpButtonText}>Let's Go!</Text>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -382,7 +448,28 @@ export default function ChildHome({ navigation, route }) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
     topSection: { marginTop: 20, alignItems: "center" },
-    title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5,textAlign: "center" },
+    title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5, textAlign: "center" },
+    greetingBubble: {
+        borderRadius: 30,
+        paddingVertical: 12,
+        paddingHorizontal: 28,
+        alignItems: "center",
+        marginBottom: 4,
+        shadowColor: "#6A1F9B",
+        shadowOpacity: 0.45,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    greetingText: {
+        fontSize: 30,
+        fontWeight: "900",
+        color: "#fff",
+        letterSpacing: 0.5,
+        textShadowColor: "rgba(0,0,0,0.15)",
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 3,
+    },
     date: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10, paddingHorizontal: 10 },
     progressBarContainer: { flex: 1, height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", marginHorizontal: 8 },
@@ -398,7 +485,7 @@ const styles = StyleSheet.create({
     changeCharacterText: { color: "#fff", fontSize: 12, fontWeight: "700" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
     subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
-    milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
+    milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 14, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
     milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
     wardrobeScroll: { paddingVertical: 10, alignItems: "center", },
@@ -422,5 +509,78 @@ const styles = StyleSheet.create({
       alignItems: "center",
       justifyContent: "center",
       width: "100%",
+    },
+    levelCard: {
+        flexDirection: "row",
+        marginVertical: 5,
+        borderRadius: 8,
+        padding: 14,
+        alignItems: "center",
+    },
+    levelProgressBarContainer: {
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: "rgba(255,255,255,0.3)",
+        overflow: "hidden",
+        marginTop: 6,
+    },
+    levelProgressBar: {
+        height: "100%",
+        borderRadius: 4,
+        backgroundColor: "#ffd700",
+    },
+    levelCardRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    levelCardTitle: {
+        marginLeft: 10,
+        fontSize: 14,
+        fontWeight: "bold",
+        color: "#fff",
+    },
+    levelCardSubtext: {
+        marginLeft: 10,
+        fontSize: 10,
+        color: "rgba(255,255,255,0.85)",
+        paddingVertical: 1,
+        paddingHorizontal: 10,
+        borderRadius: 10,
+        alignSelf: "flex-start",
+    },
+    levelUpCard: {
+        width: 280,
+        borderRadius: 20,
+        padding: 28,
+        alignItems: "center",
+    },
+    levelUpStars: {
+        flexDirection: "row",
+        gap: 6,
+        marginVertical: 10,
+    },
+    levelUpTitle: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: "#fff",
+        textAlign: "center",
+        marginBottom: 6,
+    },
+    levelUpSubtext: {
+        fontSize: 14,
+        color: "rgba(255,255,255,0.85)",
+        textAlign: "center",
+        marginBottom: 18,
+    },
+    levelUpButton: {
+        backgroundColor: "#fff",
+        paddingHorizontal: 28,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    levelUpButtonText: {
+        fontWeight: "bold",
+        color: "#6A1F9B",
+        fontSize: 15,
     },
 });

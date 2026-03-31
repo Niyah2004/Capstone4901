@@ -360,7 +360,7 @@ export default function ParentDashBoard({ navigation, route }) {
 
       {/* Rewards Claimed by Child */}
       <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>🎁 Rewards to Give Out</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}> Rewards Given Out</Text>
         <Text style={styles.pendingCount}>{pendingClaimsCount}</Text>
         <Text style={[styles.pendingText, { color: colors.muted }]}>
           {pendingClaimsCount === 1 ? "reward waiting" : "rewards waiting"}
@@ -400,6 +400,12 @@ export default function ParentDashBoard({ navigation, route }) {
               >
                 <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
                 <Text style={[styles.manageText, { color: colors.text }]}>Review Task</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                onPress={() => navigation.navigate("parentReviewRewards")}
+              >
+                <Ionicons name="trophy-outline" size={24} color={colors.text} />
+                <Text style={[styles.manageText, { color: colors.text }]}>Review Rewards</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("AccountSetting")}
