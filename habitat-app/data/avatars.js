@@ -64,6 +64,13 @@ export const AVATARS = {
                 position: { top: -50, left: -50, size: 400 },
             }
         },
+        pants: {
+            turtle_pants: {
+                cost: 1000,
+                image: require("../assets/turtle/pants/turtle_sweatpants.png"),
+                position: { top: -60, left: -50, size: 400 },
+            }
+        },
     },
     dino: {
         base: require("../assets/dino.png"),
