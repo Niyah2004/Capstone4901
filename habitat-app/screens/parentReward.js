@@ -1,5 +1,5 @@
 // Comfort page for parents to create and manage rewards for their children
-import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, addDoc, updateDoc, getDoc, doc, deleteDoc, onSnapshot, query, where, serverTimestamp } from "firebase/firestore";
 import { db, storage } from "../firebaseConfig";
 import React, { useEffect, useState } from 'react'; 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from "react-native";
@@ -89,6 +89,12 @@ const uploadImageAsync = async (uri) => {
       return;
     }
 
+    const parsedPoints = parseInt(points);
+    if (isNaN(parsedPoints) || parsedPoints <= 0) {
+      Alert.alert("Invalid Points", "Points must be a number greater than 0.");
+      return;
+    }
+
     try {
       let imageURL = null;
 
@@ -106,7 +112,7 @@ const uploadImageAsync = async (uri) => {
               {
                 text: "Save Without Image",
                 onPress: async () => {
-                  await saveRewardToFirestore(null);
+                  await saveRewardToFirestore(null, parsedPoints);
                 }
               }
             ]
@@ -115,22 +121,22 @@ const uploadImageAsync = async (uri) => {
         }
       }
 
-      await saveRewardToFirestore(imageURL);
+      await saveRewardToFirestore(imageURL, parsedPoints);
     } catch (error) {
       console.error("Error saving reward:", error);
       Alert.alert("Error", "Could not save reward. Please try again.");
     }
   };
 
-  const saveRewardToFirestore = async (imageURL) => {
+  const saveRewardToFirestore = async (imageURL, parsedPoints) => {
     await addDoc(collection(db, "rewards"), {
-      parentId: auth.currentUser.uid,
+      parentId: auth.currentUser?.uid,
       name: rewardName,
       description: description,
-      points: parseInt(points),
+      points: parsedPoints,
       frequency: frequency,
       image: imageURL,
-      createdAt: new Date(),
+      createdAt: serverTimestamp(),
     });
 
     Alert.alert("Success!", "Reward has been added.");
