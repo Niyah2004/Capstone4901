@@ -430,10 +430,17 @@ export default function ChildReward() {
                 </View>
             </Modal>
 
-            <Text style={styles.title}>Reward</Text>
-            <View style={styles.greetingRow}>
-                    <Text style={styles.greetingTitle}>Amazing job, {childName}!</Text>
-            </View>
+            <Text style={styles.title}>Rewards</Text>
+            
+                <LinearGradient
+                colors={["#4CAF50", "#4CAF50"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.greetingBanner}
+            >
+                <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits!</Text>
+            </LinearGradient>
+            
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image - show selected avatar only when loaded */}
                     {!avatarLoading && avatar ? (
@@ -447,14 +454,12 @@ export default function ChildReward() {
                     )}
                 
                 <View style={styles.pointsRow}>
-                    <Text style={styles.pointsNumber}>{totalStars}</Text>
-                    <Text style={styles.pointsLabel}>Star Points</Text>
+                    <Text style={styles.pointsNumber}>{totalStars}</Text>    
+                    <Ionicons name="star" size={25} color="#ffd700" />
                 </View>
 
 
             </View>
-
-
 
 
             <Text style={styles.unlockTitle}>Unlock More Items</Text>
@@ -576,7 +581,7 @@ const styles = StyleSheet.create({
         height: 64,
     },
 
-    pointsRow: { alignSelf: "center", marginTop: 10, marginBottom: 6, flexDirection: "row", marginLeft: 4 },
+    pointsRow: { alignSelf: "center", marginTop: 10, marginBottom: 6, flexDirection: "row", gap: 4, alignItems: "center" },
     starIcon: {
         fontSize: 24,
         marginRight: 6,
@@ -972,7 +977,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#f0f0f0",
         borderRadius: 30,
         elevation: 2,
-        marginTop: 12,
+        marginTop: 6,
         },
 
     emojiAvatarContainer: {
