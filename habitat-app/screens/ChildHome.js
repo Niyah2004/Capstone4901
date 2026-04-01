@@ -9,6 +9,7 @@ import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import { AVATARS } from "../data/avatars";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ChildHome({ navigation, route }) {
     const [childName, setChildName] = useState("");
@@ -16,7 +17,7 @@ export default function ChildHome({ navigation, route }) {
     const [avatar, setAvatar] = useState("panda"); // default avatar
     const [loading, setLoading] = useState(true);
     const [childPoints, setChildPoints] = useState(0);
-      const [totalPointsEarned, setTotalPointsEarned] = useState(0);
+    const [totalPointsEarned, setTotalPointsEarned] = useState(0);
     const [verifiedTaskCount, setVerifiedTaskCount] = useState(0);
     const [totalAssignedPoints, setTotalAssignedPoints] = useState(0);
     const parentUnsubRef = useRef(null);
@@ -25,11 +26,17 @@ export default function ChildHome({ navigation, route }) {
     const [stars, setStars] = useState(0);
     const [showPopup, setShowPopup] = useState(false);
     const [popupMsg, setPopupMsg] = useState("");
+    const [showLevelUp, setShowLevelUp] = useState(false);
+    const [newLevel, setNewLevel] = useState(0);
+    const prevLevelRef = useRef(null);
+    const [showCheckPopup, setShowCheckPopup] = useState(false);
+    const [checkPopupMsg, setCheckPopupMsg] = useState("");
+    const [pendingUnlock, setPendingUnlock] = useState(null);
     const progress = useRef(new Animated.Value(0)).current;
     const { theme } = useTheme();
     const colors = theme.colors;
     const childIdFromRoute = route?.params?.childId;
-
+    const progressGoal = totalAssignedPoints > 0 ? totalAssignedPoints : 100;
     useEffect(() => {
         const auth = getAuth();
         const user = auth.currentUser;
@@ -101,22 +108,11 @@ export default function ChildHome({ navigation, route }) {
             }
             const data = snap.data();
             const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
-            const totalEarned = data.totalPoints ?? data.points ?? data.stars ?? 0;
-            const assigned = data.totalAssignedPoints ?? 0;
             setChildPoints(points);
-            setTotalPointsEarned(totalEarned);
-            if (assigned > 0) setTotalAssignedPoints(assigned);
-            const goal = assigned > 0 ? assigned : 100;
-            const clamped = Math.min(1, points / goal);
-            Animated.timing(progress, {
-                toValue: clamped,
-                duration: 600,
-                useNativeDriver: false,
-            }).start();
         });
 
         return () => unsub();
-    }, [progress]);
+    }, );
 
     useEffect(() => {
         const auth = getAuth();
@@ -128,11 +124,24 @@ export default function ChildHome({ navigation, route }) {
             where("verified", "==", true)
         );
         const unsub = onSnapshot(q, (snap) => {
-            setVerifiedTaskCount(snap.docs.length);
+            const count = snap.docs.length;
+            setVerifiedTaskCount(count);
+            if (prevLevelRef.current === null) {
+                prevLevelRef.current = Math.floor(count / 10);
+            }
         }, (err) => console.error("Error fetching verified tasks:", err));
         return () => unsub();
     }, []);
 
+    useEffect(() => {
+        if (prevLevelRef.current === null) return;
+        const currentLevel = Math.floor(verifiedTaskCount / 10);
+        if (currentLevel > prevLevelRef.current) {
+            prevLevelRef.current = currentLevel;
+            setNewLevel(currentLevel);
+            setShowLevelUp(true);
+        }
+    }, [verifiedTaskCount]);
 
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -149,6 +158,53 @@ export default function ChildHome({ navigation, route }) {
             </SafeAreaView>
         );
     }
+
+    const confirmUnlock = async () => {
+        if (!pendingUnlock || !childDocId) {
+            setShowCheckPopup(false);
+            return;
+        }
+
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            setShowCheckPopup(false);
+            setPendingUnlock(null);
+            return;
+        }
+
+        // Close modal immediately for better UX
+        setShowCheckPopup(false);
+        setPendingUnlock(null);
+
+        const { category, itemId, itemCost } = pendingUnlock;
+        const childRef = doc(db, "children", childDocId);
+        const pointsRef = doc(db, "childPoints", user.uid);
+        const updates = {};
+
+        if (category !== "accessories") {
+            Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
+                updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
+            });
+        }
+
+        updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
+            unlocked: true,
+            equipped: true,
+        };
+
+        // Fire updates in background - don't wait for them
+        updateDoc(childRef, updates).catch(err => console.error("Error updating wardrobe:", err));
+        updateDoc(pointsRef, {
+            points: childPoints - itemCost,
+        }).catch(err => console.error("Error updating points:", err));
+    };
+
+    const cancelUnlock = () => {
+        setShowCheckPopup(false);
+        setPendingUnlock(null);
+    };
+
     const handleWardrobePress = async (category, itemId, itemCost) => {
         if (!childDocId) return;
         const auth = getAuth();
@@ -165,33 +221,15 @@ export default function ChildHome({ navigation, route }) {
         // Not unlocked → try to buy
         if (!unlocked) {
             if (childPoints < itemCost) {
-            setPopupMsg(`You need ${itemCost - childPoints} more ⭐ to unlock this item!`);
-            setShowPopup(true);
-            return;
+                setPopupMsg(`You need ${itemCost - childPoints} more stars to unlock this item!`);
+                setShowPopup(true);
             }
-
-            const updates = {};
-
-            // Unequip everything else in category (except for accessories - can have multiple)
-            if (category !== "accessories") {
-                Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
-                    updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
-                });
+            else {
+                setCheckPopupMsg(`Are you sure you want to unlock this item?`);
+                setPendingUnlock({ category, itemId, itemCost });
+                setShowCheckPopup(true);
+                return;
             }
-
-            // Unlock and auto-equip
-            updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
-            unlocked: true,
-            equipped: true,
-            };
-
-            await updateDoc(childRef, updates);
-
-            // Deduct stars
-            await updateDoc(pointsRef, {
-            points: childPoints - itemCost,
-            });
-
             return;
         }
 
@@ -216,6 +254,9 @@ export default function ChildHome({ navigation, route }) {
         await updateDoc(childRef, updates);
         };
 
+    const level = Math.floor(verifiedTaskCount / 10);
+    const tasksIntoLevel = verifiedTaskCount % 10;
+
     const milestones = [
         { id: "first_task", icon: "star", label: "First Task Complete", achieved: verifiedTaskCount >= 1 },
         { id: "five_tasks", icon: "ribbon", label: "5 Tasks Completed", achieved: verifiedTaskCount >= 5 },
@@ -229,31 +270,17 @@ export default function ChildHome({ navigation, route }) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Top Section: Greeting and Progress Bar */}
             <View style={styles.topSection}>
-                    {childPreferredName && childPreferredName.trim() ? (
-                        <Text style={[styles.title, { color: colors.text }]}>Hello {childPreferredName}!</Text>
-                    ) : childName ? (
-                        <Text style={[styles.title, { color: colors.text }]}>Hello {childName}!</Text>
-                    ) : (
-                        <Text style={[styles.title, { color: colors.text }]}>Hello Child!</Text>
-                    )}
+                    <LinearGradient
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.greetingBubble}
+                    >
+                        <Text style={styles.greetingText}>
+                            Hello {(childPreferredName && childPreferredName.trim()) ? childPreferredName : (childName || "there")}!
+                        </Text>
+                    </LinearGradient>
                     <Text style={[styles.date, { color: colors.muted }]}>{formattedDate}</Text>
-                    <View style={styles.progressBarRow}>
-                        <Icon name="star" style={{ color: "#ffea00", fontSize: 18 }} />
-                        <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
-                            <Animated.View
-                                style={[
-                                    styles.progressBar, {
-                                        width: progress.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: ['0%', '100%']
-                                        }),
-                                    },
-                                ]}
-                            />
-                        </View>
-                        <Text style={[styles.progressText, { color: colors.text }]}>
-                            {childPoints} pts</Text>
-                    </View>
                 </View>
                 {/* Middle Section: Avatar — tap to change character */}
                 <View style={styles.avatarContainer}>
@@ -296,6 +323,24 @@ export default function ChildHome({ navigation, route }) {
                 {/* Bottom Section: Milestone Celebrations */}
                 <View style={styles.bottomSection}>
                     <Text style={[styles.subtitle, { color: colors.text }]}>Milestone Celebrations</Text>
+
+                    {/* Level Card */}
+                    <LinearGradient
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.levelCard}
+                    >
+                        <Ionicons name="flash" size={34} color="#ffd700" />
+                        <View style={{ marginLeft: 8, flex: 1 }}>
+                            <Text style={styles.levelCardTitle}>Level {level}</Text>
+                            <Text style={styles.levelCardSubtext}>{tasksIntoLevel} / 10 tasks to Level {level + 1}</Text>
+                            <View style={styles.levelProgressBarContainer}>
+                                <View style={[styles.levelProgressBar, { width: `${(tasksIntoLevel / 10) * 100}%` }]} />
+                            </View>
+                        </View>
+                    </LinearGradient>
+
                     {milestones.map((m) => (
                         <View key={m.id} style={[styles.milestone, { borderColor: colors.border, backgroundColor: colors.card }]}>
                             <Ionicons name={m.icon} style={{ color: m.achieved ? "#ffd700" : "#ccc", fontSize: 30 }} />
@@ -312,6 +357,10 @@ export default function ChildHome({ navigation, route }) {
                     ))}
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
+                        <Text style={[styles.progressText, { color: colors.text }]}>
+                            Points: {childPoints} <Icon name="star" style={{ color: "#ffea00", fontSize: 10 }} />
+                        </Text>
+                    
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -319,43 +368,36 @@ export default function ChildHome({ navigation, route }) {
                     >
                     {Object.entries(AVATARS[avatar] || {}).map(([category, items]) => {
                         if (category === "base") return null;
-
                         return Object.entries(items).map(([itemId, item]) => {
-                        const itemData = wardrobe?.[avatar]?.[category]?.[itemId];
-                        const unlocked = itemData?.unlocked ?? false;
+                        const unlocked = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
 
                         return (
                             <TouchableOpacity
                             key={`${category}-${itemId}`}
-                            style={[
-                                styles.wardrobeItem,
-                                {
-                                    backgroundColor: unlocked ? "#ffffff" : "#adadade8",
-                                    borderWidth: unlocked ? 0 : 1,
-                                    borderColor: "#707070",
-                                }
-                            ]}
+                            style={styles.wardrobeItem}
                             onPress={() => handleWardrobePress(category, itemId, item.cost)}
                             >
-                            <View style={{ alignItems: "center", justifyContent: "center" }}>
+                            <View style={styles.wardrobeImageWrap}>
                             <Image
                                 source={item.image}
-                                style={{ width: 70, height: 70, opacity: unlocked ? 1 : 0.8 }}
+                                style={[styles.wardrobeImage, !unlocked && { opacity: 0.85 }]}
                                 resizeMode="contain"
                             />
 
                             {!unlocked && (
                                 <View style={styles.lockOverlay}>
-                                    <Ionicons name="lock-closed" size={24} color={colors.muted} />
+                                    <Ionicons name="lock-closed" size={22} color="#fff" />
                                 </View>
                             )}
-                            {!unlocked && (
-                                <Text style={styles.costText}>{item.cost} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 15 }} />
-                                </Text>
-                            )}
                             </View>
+                            {!unlocked && (
+                                <View style={styles.costRow}>
+                                    <Text style={styles.costText}>{item.cost}</Text>
+                                    <Ionicons name="star" style={{ color: "#ffd700", fontSize: 18 }} />
+                                </View>
+                            )}
                             </TouchableOpacity>
-                        );
+                            );
                         });
                     })}
                     </ScrollView>
@@ -374,7 +416,57 @@ export default function ChildHome({ navigation, route }) {
                     </TouchableOpacity>
                     </View>
                 </View>
-                </Modal>
+            </Modal>
+            <Modal transparent visible={showCheckPopup} animationType="fade">
+                <View style={styles.popupOverlay}>
+                    <View style={styles.popup}>
+                    <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
+                    <Text style={styles.popupText}>{checkPopupMsg}</Text>
+                    <View style={styles.popupButtonRow}>
+                    <TouchableOpacity
+                        style={styles.popupButton}
+                        onPress={confirmUnlock}
+                    >
+                        <Text style={styles.popupButtonText}>Unlock</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.popupButton2}
+                        onPress={cancelUnlock}
+                    >
+                        <Text style={styles.popupButton2Text}>Close</Text>
+                    </TouchableOpacity>
+                    </View>
+                    
+                    
+                    </View>
+                </View>
+            </Modal>
+            <Modal transparent visible={showLevelUp} animationType="fade">
+                <View style={styles.popupOverlay}>
+                    <LinearGradient
+                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.levelUpCard}
+                    >
+                        <Ionicons name="trophy" size={50} color="#ffd700" />
+                        <View style={styles.levelUpStars}>
+                            <Ionicons name="star" size={20} color="#ffd700" />
+                            <Ionicons name="star" size={20} color="#ffd700" />
+                            <Ionicons name="star" size={20} color="#ffd700" />
+                        </View>
+                        <Text style={styles.levelUpTitle}>You reached Level {newLevel}!</Text>
+                        <Text style={styles.levelUpSubtext}>Keep completing tasks to level up!</Text>
+                        <TouchableOpacity
+                            style={styles.levelUpButton}
+                            onPress={() => setShowLevelUp(false)}
+                        >
+                            <Text style={styles.levelUpButtonText}>Let's Go!</Text>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -382,12 +474,33 @@ export default function ChildHome({ navigation, route }) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
     topSection: { marginTop: 20, alignItems: "center" },
-    title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5,textAlign: "center" },
+    title: { fontSize: 24, fontWeight: "bold", color: "#2d2d2d", marginTop: 5, textAlign: "center" },
+    greetingBubble: {
+        borderRadius: 30,
+        paddingVertical: 12,
+        paddingHorizontal: 28,
+        alignItems: "center",
+        marginBottom: 4,
+        shadowColor: "#6A1F9B",
+        shadowOpacity: 0.45,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    greetingText: {
+        fontSize: 30,
+        fontWeight: "900",
+        color: "#fff",
+        letterSpacing: 0.5,
+        textShadowColor: "rgba(0,0,0,0.15)",
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 3,
+    },
     date: { fontSize: 14, color: "#666", textAlign: "center", width: "100%" },
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10, paddingHorizontal: 10 },
     progressBarContainer: { flex: 1, height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", marginHorizontal: 8 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
-    progressText: { fontSize: 11, color: "#333", marginLeft: 4, flexShrink: 0 },
+    progressText: { fontSize: 11, color: "#333", flexShrink: 0, width: "100%" },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative", overflow: "visible" },
     scrollContent: { paddingBottom: 30 },
@@ -397,30 +510,97 @@ const styles = StyleSheet.create({
     changeCharacterBadge: { position: "absolute", bottom: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
     changeCharacterText: { color: "#fff", fontSize: 12, fontWeight: "700" },
     bottomSection: { flex: 1, justifyContent: "flex-start" },
-    subtitle: { fontSize: 16, color: "#2d2d2d", marginTop: 20, marginBottom: 10, textAlign: "left" },
-    milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 10, alignItems: "center" },
+    subtitle: { fontSize: 18, color: "#2d2d2d", marginTop: 20, textAlign: "left" },
+    milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 14, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
     milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
-    wardrobeScroll: { paddingVertical: 10, alignItems: "center", },
     popupOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
     popup: { width: 260, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
     popupText: { marginTop: 10, fontSize: 14, textAlign: "center" },
-    popupButton: { marginTop: 15, backgroundColor: "#ffea00", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
-    popupButtonText: { fontWeight: "bold", },
-    wardrobeRow: { flexDirection: "row", paddingVertical: 10, paddingHorizontal: 5, gap: 12 },
-    wardrobeItem: { width: 80, height: 80, borderRadius: 20, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 15 },
+    popupButton: { backgroundColor: "#4CAF50", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
+    popupButton2: { backgroundColor: "#ccc", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
+    popupButtonText: { color: "#ffffffff", fontWeight: "600", },
+    popupButton2Text: { color: "#000", fontWeight: "600" },
+    wardrobeRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 5, gap: 25 },
+    wardrobeItem: { alignItems: "center", width: 80 },
+    wardrobeImageWrap: { width: 92, height: 92, borderRadius: 20, backgroundColor: "#f0f0f0", justifyContent: "center", alignItems: "center", overflow: "hidden"},
+    wardrobeImage: { width: 74, height: 74, },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
-    lockOverlay: { position: "absolute", backgroundColor: "transparent", alignItems: "center", justifyContent: "center", width: "100%", height: "70%" },
-    costText: {
-      position: "absolute",
-      bottom: -5,
-      fontSize: 15,
-      color: "#fff",
-      fontWeight: "bold",
-      textAlign: "center",
-      alignContent: "center",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "100%",
+    lockOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", },
+    costRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 4, },
+    costText: { fontSize: 16, fontWeight: "600", color: "#555"},
+    levelCard: {
+        flexDirection: "row",
+        marginVertical: 5,
+        borderRadius: 8,
+        padding: 14,
+        alignItems: "center",
+    },
+    levelProgressBarContainer: {
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: "rgba(255,255,255,0.3)",
+        overflow: "hidden",
+        marginTop: 6,
+    },
+    levelProgressBar: {
+        height: "100%",
+        borderRadius: 4,
+        backgroundColor: "#ffd700",
+    },
+    levelCardRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    levelCardTitle: {
+        marginLeft: 10,
+        fontSize: 14,
+        fontWeight: "bold",
+        color: "#fff",
+    },
+    levelCardSubtext: {
+        marginLeft: 10,
+        fontSize: 10,
+        color: "rgba(255,255,255,0.85)",
+        paddingVertical: 1,
+        paddingHorizontal: 10,
+        borderRadius: 10,
+        alignSelf: "flex-start",
+    },
+    levelUpCard: {
+        width: 280,
+        borderRadius: 20,
+        padding: 28,
+        alignItems: "center",
+    },
+    levelUpStars: {
+        flexDirection: "row",
+        gap: 6,
+        marginVertical: 10,
+    },
+    levelUpTitle: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: "#fff",
+        textAlign: "center",
+        marginBottom: 6,
+    },
+    levelUpSubtext: {
+        fontSize: 14,
+        color: "rgba(255,255,255,0.85)",
+        textAlign: "center",
+        marginBottom: 18,
+    },
+    levelUpButton: {
+        backgroundColor: "#fff",
+        paddingHorizontal: 28,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    levelUpButtonText: {
+        fontWeight: "bold",
+        color: "#6A1F9B",
+        fontSize: 15,
     },
 });

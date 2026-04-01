@@ -12,6 +12,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AVATARS } from "../data/avatars";
 
+const REWARD_ICON_MAP = {
+  gift:      require('../assets/Gifts.png'),
+  gamenight: require('../assets/Gamenight.png'),
+  movie:     require('../assets/Movienight.png'),
+  treat:     require('../assets/SweetTreats.png'),
+  outside:   require('../assets/outside.png'),
+};
+
 // Character roster - starters are free, others unlock at milestone thresholds
 const CHARACTER_ROSTER = [
     { id: "panda", name: "Panda", emoji: "🐼", milestone: 0, image: require("../assets/panda.png") },
@@ -23,23 +31,41 @@ const CHARACTER_ROSTER = [
 
 const STARTER_IDS = CHARACTER_ROSTER.filter(c => c.milestone === 0).map(c => c.id);
 
-function AnimatedHeart({ delay }) {
+const STAR_SIZES = [20, 28, 22, 32, 22, 28, 20];
+
+function AnimatedStar({ delay, size = 24 }) {
     const scale = useRef(new Animated.Value(1)).current;
+    const rotation = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         const pulse = Animated.loop(
             Animated.sequence([
-                Animated.timing(scale, { toValue: 1.35, duration: 500, delay, useNativeDriver: true }),
-                Animated.timing(scale, { toValue: 1, duration: 500, useNativeDriver: true }),
+                Animated.parallel([
+                    Animated.timing(scale, { toValue: 1.5, duration: 400, delay, useNativeDriver: true }),
+                    Animated.timing(rotation, { toValue: 20, duration: 400, delay, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(scale, { toValue: 1, duration: 400, useNativeDriver: true }),
+                    Animated.timing(rotation, { toValue: -20, duration: 400, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(scale, { toValue: 1, duration: 200, useNativeDriver: true }),
+                    Animated.timing(rotation, { toValue: 0, duration: 200, useNativeDriver: true }),
+                ]),
             ])
         );
         pulse.start();
         return () => pulse.stop();
     }, []);
 
+    const spin = rotation.interpolate({
+        inputRange: [-20, 0, 20],
+        outputRange: ['-20deg', '0deg', '20deg'],
+    });
+
     return (
-        <Animated.View style={{ transform: [{ scale }] }}>
-            <Ionicons name="heart" size={22} color="#e53935" />
+        <Animated.View style={{ transform: [{ scale }, { rotate: spin }] }}>
+            <Ionicons name="star" size={size} color="#FFD700" />
         </Animated.View>
     );
 }
@@ -56,7 +82,7 @@ export default function ChildReward() {
     const [avatar, setAvatar] = useState(null);
     const [avatarLoading, setAvatarLoading] = useState(true);
     const confettiRef = useRef(null);
-
+    const [showConfetti, setShowConfetti] = useState(false);
     // Character unlock state
     const [characterModalVisible, setCharacterModalVisible] = useState(false);
     const [lifetimeStars, setLifetimeStars] = useState(0);
@@ -92,6 +118,7 @@ export default function ChildReward() {
                 description: doc.data().description || "",
                 gradient: gradientPresets[index % gradientPresets.length],
                 parentId: doc.data().parentId || null,
+                image: doc.data().image || null,
             }));
             setRewards(rewardList);
         }, (error) => {
@@ -225,12 +252,12 @@ export default function ChildReward() {
 
         // Check if child has enough stars
         if (totalStars < selectedReward.cost) {
-            Alert.alert("Not Enough Stars", `You need ${selectedReward.cost} stars but only have ${totalStars} stars.`);
+            Alert.alert("Not Enough Stars", `You need ${selectedReward.cost - totalStars} more stars to claim this reward.`);
             return;
         }
-
-        // 🎉 Trigger confetti immediately for instant gratification!
-        confettiRef.current?.start();
+        setShowConfetti(true);
+        requestAnimationFrame(() => confettiRef.current?.start());
+        setTimeout(() => setShowConfetti(false), 1800);
 
         try {
             // Update childPoints collection
@@ -281,18 +308,20 @@ export default function ChildReward() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
-
-                        <ConfettiCannon
-                            ref={confettiRef}
-                            count={200}
-                            origin={{ x: 0, y: 0 }}
-                            explosionSpeed={450}
-                            fallSpeed={2500}
-                            autoStart={false}
-                            fadeOut={true}
-                            colors={['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']}
-                        />
-
+                         {showConfetti && (
+                            <View pointerEvents="none" style={styles.confettiLayer}>        
+                                <ConfettiCannon
+                                    ref={confettiRef}
+                                    count={200}
+                                    origin={{ x: 50, y: 10 }}
+                                    explosionSpeed={450}
+                                    fallSpeed={2500}
+                                    autoStart={false}
+                                    fadeOut={true}
+                                    colors={['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']}
+                                />
+                            </View>
+                         )}
                         <Text style={styles.modalTitle}>{selectedReward?.title}</Text>
 
                         <View style={styles.modalImagePlaceholder}>
@@ -303,27 +332,29 @@ export default function ChildReward() {
                             {selectedReward?.description || "No description provided."}
                         </Text>
                         <Text style={styles.modalPoints}>
-                            ⭐ {selectedReward?.cost} Points
+                            {selectedReward?.cost} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 18 }} /> 
                         </Text>
 
+                        <View style={styles.popupButtonRow}>
+                            {/*claim button */}
+                            <TouchableOpacity
+                                style={styles.modalClaimButton}
 
-                        <TouchableOpacity
-                            style={styles.modalCloseButton}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <Text style={styles.modalCloseText}>Close</Text>
-                        </TouchableOpacity>
+                                onPress={handleClaimReward}
+                            //setModalVisible(false)}
+                            //make it update the firebase
+                            >
+                                <Text style={styles.modalClaimText}>Claim</Text>
+                            </TouchableOpacity>
+                        
+                            <TouchableOpacity
+                                style={styles.modalCloseButton}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles.modalCloseText}>Close</Text>
+                            </TouchableOpacity>
 
-                        {/*claim button */}
-                        <TouchableOpacity
-                            style={styles.modalClaimButton}
-
-                            onPress={handleClaimReward}
-                        //setModalVisible(false)}
-                        //make it update the firebase
-                        >
-                            <Text style={styles.modalClaimText}>Claim</Text>
-                        </TouchableOpacity>
+                         </View>   
                     </View>
                 </View>
             </Modal>
@@ -340,9 +371,6 @@ export default function ChildReward() {
                         <Text style={styles.modalTitle}>Choose Your Character</Text>
                         <Text style={styles.charModalSubtitle}>
                             Earn more stars to unlock new characters!
-                        </Text>
-                        <Text style={styles.charModalStars}>
-                            Lifetime Stars Earned: ⭐ {lifetimeStars}
                         </Text>
 
                         <View style={styles.characterGrid}>
@@ -379,7 +407,7 @@ export default function ChildReward() {
                                         {!isUnlocked && (
                                             <View style={styles.lockBadge}>
                                                 <Ionicons name="lock-closed" size={12} color="#fff" />
-                                                <Text style={styles.lockBadgeText}>{character.milestone} ⭐</Text>
+                                                <Text style={styles.lockBadgeText}>{character.milestone} <Ionicons name="star" style={{ color: "#ffd700", fontSize: 10 }} /></Text>
                                             </View>
                                         )}
 
@@ -403,9 +431,17 @@ export default function ChildReward() {
                 </View>
             </Modal>
 
-            <Text style={styles.title}>Reward</Text>
-            <View style={styles.RewardCard}>
-
+            <Text style={styles.title}>Rewards</Text>
+            
+                <LinearGradient
+                colors={["#4CAF50", "#4CAF50"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.greetingBanner}
+            >
+                <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits!</Text>
+            </LinearGradient>
+            
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image - show selected avatar only when loaded */}
                     {!avatarLoading && avatar ? (
@@ -417,21 +453,14 @@ export default function ChildReward() {
                     ) : (
                         <View style={[styles.avatar, { backgroundColor: "#f0f0f0" }]} />
                     )}
-                </View>
-
+                
                 <View style={styles.pointsRow}>
-                    <Icon name="star" style={{ color: "#ffd700", fontSize: 24, marginRight: 6 }} />
-                    <Text style={styles.pointsNumber}>{totalStars}</Text>
-                    <Text style={styles.pointsLabel}>Star Points</Text>
+                    <Text style={styles.pointsNumber}>{totalStars}</Text>    
+                    <Ionicons name="star" size={25} color="#ffd700" />
                 </View>
 
 
-                <View style={styles.greetingRow}>
-                    <Text style={styles.greetingTitle}>Amazing job, {childName}! Keep building those Habits</Text>
-                </View>
             </View>
-
-
 
 
             <Text style={styles.unlockTitle}>Unlock More Items</Text>
@@ -451,8 +480,10 @@ export default function ChildReward() {
                                         </View>
                                     )}
                                 </View>
-                                <Text style={styles.unlockItemCost}>⭐ {item.cost}</Text>
-                                <Text style={styles.unlockItemLabel}>{itemId}</Text>
+                                <View style={styles.costRow}>
+                                    <Text style={styles.unlockItemCost}> {item.cost}</Text>
+                                    <Icon name="star" style={{ color: "#ffd700", fontSize: 18 }} />
+                                </View>
                             </View>
                         );
                     });
@@ -460,8 +491,8 @@ export default function ChildReward() {
             </ScrollView>
 
             <View style={styles.heartsRow}>
-                {[...Array(7)].map((_, i) => (
-                    <AnimatedHeart key={i} delay={i * 150} />
+                {STAR_SIZES.map((size, i) => (
+                    <AnimatedStar key={i} delay={i * 150} size={size} />
                 ))}
             </View>
 
@@ -489,7 +520,10 @@ export default function ChildReward() {
                         <View>
 
                             <View style={styles.rewardIconPlaceholder}>
-                                <Text style={styles.placeholderText}>Icon</Text>
+                                {REWARD_ICON_MAP[reward.image]
+                                  ? <Image source={REWARD_ICON_MAP[reward.image]} style={styles.rewardIconImage} resizeMode="contain" />
+                                  : <Text style={styles.placeholderText}>🎁</Text>
+                                }
                             </View>
 
                             <Text style={styles.rewardTitle} numberOfLines={2}>{reward.title}</Text>
@@ -520,15 +554,13 @@ export default function ChildReward() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F7F7F7", paddingHorizontal: 20, paddingTop: 48 },
     title: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: "600",
-        alignItems: "center",
-        marginBottom: 10,
-        marginLeft: 140
+        alignSelf: "center",
     },
 
     RewardCard: {
-        backgroundColor: "#fff",
+        backgroundColor: "transparent",
         borderRadius: 20,
         paddingVertical: 6,
         paddingHorizontal: 20,
@@ -545,16 +577,26 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: "#999",
     },
+    rewardIconImage: {
+        width: 64,
+        height: 64,
+    },
 
-    pointsRow: { alignItems: "center", marginTop: 12, marginBottom: 6, flexDirection: "row", justifyContent: "center" },
+    pointsRow: { alignSelf: "center", marginTop: 10, marginBottom: 6, flexDirection: "row", gap: 4, alignItems: "center" },
     starIcon: {
         fontSize: 24,
         marginRight: 6,
     },
-    pointsNumber: { fontSize: 28, fontWeight: "700" },
+    pointsNumber: { fontSize: 28, fontWeight: "600", marginTop: -4, },
     pointsLabel: { fontSize: 12, color: "#777" },
-    greetingRow: { alignItems: "center", marginTop: 8 },
-    greetingTitle: { fontSize: 16, fontWeight: "600", textAlign: "center" },
+    greetingBanner: {
+        borderRadius: 30,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        alignItems: "center",
+        marginBottom: 16,
+    },
+    greetingTitle: { fontSize: 16, fontWeight: "700", textAlign: "center", color: "#fff" },
 
     switchButton: {
         backgroundColor: "#4CAF50",
@@ -651,9 +693,11 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     avatar: {
-        width: 140,
-        height: 140,
-        borderRadius: 70,
+        width: 215,
+        height: 210,
+        borderRadius: 90,
+        alignSelf: "center",
+        
     },
     
     //missing modal styles that control the reward popup layout
@@ -720,14 +764,20 @@ const styles = StyleSheet.create({
         fontWeight: "500",
         marginBottom: 12,
     },
-
+    popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 5 },
     modalCloseButton: {
         backgroundColor: "#ccc",
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 10,
-        marginTop: 8,
+        marginTop: 10,
         color: "#4CAF50",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.25,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 5,
     },
 
     modalCloseText: {
@@ -739,10 +789,11 @@ const styles = StyleSheet.create({
         color: "#ffffffff",
         fontWeight: "600",
     },
-
+    confettiLayer: { ...StyleSheet.absoluteFillObject, overflow: "hidden"},
     unlockTitle: {
         fontSize: 20,
         fontWeight: "700",
+        marginTop: 15,
         marginBottom: 12,
     },
 
@@ -788,10 +839,14 @@ const styles = StyleSheet.create({
     },
 
     unlockItemCost: {
-        fontSize: 11,
-        fontWeight: "700",
+        fontSize: 15,
+        fontWeight: "600",
         color: "#555",
-        marginTop: 5,
+    },
+    costRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 6,
     },
 
     unlockItemLabel: {
@@ -879,8 +934,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#eee",
     },
     characterImage: {
-        width: 50,
-        height: 50,
+        width: 70,
+        height: 70,
         borderRadius: 25,
     },
     characterEmoji: {
@@ -921,9 +976,16 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     avatarContainer: {
-        alignItems: "center",
-        marginVertical: 8,
-    },
+        alignSelf: "center",
+        justifyContent: "flex-start",
+        overflow: "hidden",
+        width: "100%",
+        height: 260,
+        backgroundColor: "#f0f0f0",
+        borderRadius: 30,
+        elevation: 2,
+        marginTop: 6,
+        },
 
     emojiAvatarContainer: {
         backgroundColor: "#FFF3E0",

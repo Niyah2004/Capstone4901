@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -10,7 +10,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { registerRootComponent } from "expo";
 import { Ionicons } from "@expo/vector-icons";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useFocusEffect } from "@react-navigation/native";
 
 
 // --- Screen Imports ---
@@ -54,8 +54,20 @@ Notifications.setNotificationHandler({
 
 
 function ParentStackScreen() {
+  const { isParentUnlocked } = useParentLock();
+  const [navKey, setNavKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        setNavKey(k => k + 1);
+      }
+    }, [isParentUnlocked])
+  );
+
   return (
     <ParentStack.Navigator
+      key={navKey}
       screenOptions={{ headerShown: false }}
       initialRouteName="parentPinScreen"
     >
