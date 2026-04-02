@@ -557,8 +557,7 @@ useEffect(() => {
                                 </View>
 
                                 <Text style={styles.unlockItemLabel}>{itemId}</Text>
-
-                            </View>
+                            </TouchableOpacity>
                         );
                     });
                 })}

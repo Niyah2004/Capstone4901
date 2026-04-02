@@ -23,14 +23,12 @@ import {
   getDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import { useSelectedChild } from "../SelectedChildContext";
 
 export default function ParentReviewRewards({ navigation, route }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
-  const [loadingRewards, setLoadingRewards] = useState(true);
   const [loadingClaims, setLoadingClaims] = useState(true);
   const [activeTab, setActiveTab] = useState("created");
   const { theme } = useTheme();
@@ -72,28 +70,6 @@ useEffect(() => {
   return () => unsub();
 }, [activeChildId]);
 
-  // Listener: all claims (no status filter — split in render)
-  useEffect(() => {
-    const uid = getAuth().currentUser?.uid;
-    if (!uid) { setClaims([]); setLoadingClaims(false); return; }
-
-    const q = query(collection(db, "claims"), where("childId", "==", activeChildId));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        list.sort((a, b) => {
-          const aTime = a.claimedAt?.toDate ? a.claimedAt.toDate().getTime() : 0;
-          const bTime = b.claimedAt?.toDate ? b.claimedAt.toDate().getTime() : 0;
-          return bTime - aTime;
-        });
-        setClaims(list);
-        setLoadingClaims(false);
-      },
-      (err) => { console.error("claims onSnapshot error:", err); setLoadingClaims(false); }
-    );
-    return () => unsub();
-  }, []);
 
   const handleDelete = async (rewardId) => {
     try {
@@ -195,7 +171,7 @@ useEffect(() => {
 
   const pendingClaims = claims.filter((c) => c.status === "claimed");
   const fulfilledGroups = buildFulfilledGroups();
-  const loading = loadingRewards || loadingClaims;
+  const loading = loadingClaims;
 
   if (loading) {
     return (

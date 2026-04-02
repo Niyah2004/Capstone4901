@@ -15,7 +15,6 @@ import { db } from "../firebaseConfig";
 import {
   collection,
   onSnapshot,
-  orderBy,
   query,
   deleteDoc,
   doc,
@@ -55,14 +54,18 @@ useEffect(() => {
   const q = query(
     collection(db, "tasks"),
     where("ownerId", "==", uid),
-    where("childId", "==", activeChildId || null),
-    orderBy("createdAt", "desc")
+    where("childId", "==", activeChildId || null)
   );
 
   const unsub = onSnapshot(
     q,
     (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => {
+        const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return bTime - aTime;
+      });
       setTasks(list);
       setLoading(false); 
     },
@@ -274,13 +277,9 @@ useEffect(() => {
           try {
             const childSnap = await getDoc(doc(db, "children", childUid));
           if (childSnap.exists()) {
-           const data = childSnap.data() || {};
-           childNameForLocal = data.preferredName || data.fullName || "";
+            const data = childSnap.data() || {};
+            childNameForLocal = data.preferredName || data.fullName || "";
           }
-            if (childDoc) {
-              const data = childDoc.data() || {};
-              childNameForLocal = data.preferredName || data.fullName || "";
-            }
           } catch (e) {
             console.warn("Error looking up child for local notification:", e);
           }
