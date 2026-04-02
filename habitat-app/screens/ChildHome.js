@@ -10,6 +10,7 @@ import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import { AVATARS } from "../data/avatars";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSelectedChild } from "../SelectedChildContext";
 
 export default function ChildHome({ navigation, route }) {
     const [childName, setChildName] = useState("");
@@ -35,8 +36,10 @@ export default function ChildHome({ navigation, route }) {
     const progress = useRef(new Animated.Value(0)).current;
     const { theme } = useTheme();
     const colors = theme.colors;
-    const childIdFromRoute = route?.params?.childId;
+    const { selectedChildId } = useSelectedChild();
+   const childIdFromRoute = route?.params?.childId || selectedChildId;
     const progressGoal = totalAssignedPoints > 0 ? totalAssignedPoints : 100;
+
     useEffect(() => {
         const auth = getAuth();
         const user = auth.currentUser;
@@ -99,7 +102,7 @@ export default function ChildHome({ navigation, route }) {
         const user = auth.currentUser;
         if (!user) return;
 
-        const childPointsRef = doc(db, "childPoints", user.uid);
+        const childPointsRef = doc(db, "childPoints", childIdFromRoute);
         const unsub = onSnapshot(childPointsRef, (snap) => {
             if (!snap.exists()) {
                 setChildPoints(0);
@@ -112,26 +115,28 @@ export default function ChildHome({ navigation, route }) {
         });
 
         return () => unsub();
-    }, );
+    }, [childIdFromRoute]);
 
-    useEffect(() => {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (!user) return;
-        const q = query(
-            collection(db, "tasks"),
-            where("userId", "==", user.uid),
-            where("verified", "==", true)
-        );
-        const unsub = onSnapshot(q, (snap) => {
-            const count = snap.docs.length;
-            setVerifiedTaskCount(count);
-            if (prevLevelRef.current === null) {
-                prevLevelRef.current = Math.floor(count / 10);
-            }
-        }, (err) => console.error("Error fetching verified tasks:", err));
-        return () => unsub();
-    }, []);
+useEffect(() => {
+    if (!childIdFromRoute) return;
+
+    const q = query(
+        collection(db, "tasks"),
+        where("childId", "==", childIdFromRoute),
+        where("verified", "==", true)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+        const count = snap.docs.length;
+        setVerifiedTaskCount(count);
+
+        if (prevLevelRef.current === null) {
+            prevLevelRef.current = Math.floor(count / 10);
+        }
+    }, (err) => console.error("Error fetching verified tasks:", err));
+
+    return () => unsub();
+}, [childIdFromRoute]);
 
     useEffect(() => {
         if (prevLevelRef.current === null) return;
@@ -179,7 +184,7 @@ export default function ChildHome({ navigation, route }) {
 
         const { category, itemId, itemCost } = pendingUnlock;
         const childRef = doc(db, "children", childDocId);
-        const pointsRef = doc(db, "childPoints", user.uid);
+        const pointsRef = doc(db, "childPoints", childIdFromRoute);
         const updates = {};
 
         if (category !== "accessories") {

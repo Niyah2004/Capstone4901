@@ -8,11 +8,15 @@ import { db } from "../firebaseConfig";
 import { doc, onSnapshot, query, collection, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
+import { useSelectedChild } from "../SelectedChildContext";
 
 export default function ParentDashBoard({ navigation, route }) {
   const { isParentUnlocked } = useParentLock();
   const { theme } = useTheme();
   const colors = theme.colors;
+
+  const { selectedChildId } = useSelectedChild();
+  const activeChildId = route?.params?.childId || selectedChildId;
 
   const [childPoints, setChildPoints] = useState({
     points: 0,
@@ -45,7 +49,7 @@ export default function ParentDashBoard({ navigation, route }) {
     useCallback(() => {
       const auth = getAuth();
       const user = auth.currentUser;
-      if (!user && !route?.params?.childId) {
+      if (!user && !activeChildId) {
         // optionally redirect to login or show message
         setChildPoints({ points: 0, loading: false });
         return;
@@ -53,8 +57,9 @@ export default function ParentDashBoard({ navigation, route }) {
 
       // Decide which childId to use
       // If you're passing childId in navigation params, use that:
-      const childIdFromRoute = route?.params?.childId;
-      const childId = childIdFromRoute || user?.uid; // adjust this depending on your schema
+      const childIdFromRoute = activeChildId;
+      const childId = childIdFromRoute;
+      // adjust this depending on your schema
 
       if (!childId) {
         setChildPoints({ points: 0, loading: false });
@@ -148,13 +153,13 @@ export default function ParentDashBoard({ navigation, route }) {
     }
 
     let pendingUnsub = () => {};
-    if (user?.uid) {
+    if (activeChildId) {
       // Pending tasks = completed by child, not yet verified
       const pendingQuery = query(
-        collection(db, "tasks"),
-        where("ownerId", "==", user.uid),
-        where("pendingApproval", "==", true)
-      );
+      collection(db, "tasks"),
+      where("childId", "==", activeChildId),
+      where("pendingApproval", "==", true)
+);
       pendingUnsub = onSnapshot(
         pendingQuery,
         (snap) => {
@@ -170,37 +175,37 @@ export default function ParentDashBoard({ navigation, route }) {
       setPendingCount(0);
     }
 
-    let claimsUnsub = () => {};
-    if (user?.uid) {
-      const claimsQuery = query(
-        collection(db, "claims"),
-        where("parentId", "==", user.uid),
-        where("status", "==", "claimed")
-      );
-      claimsUnsub = onSnapshot(
-        claimsQuery,
-        (snap) => setPendingClaimsCount(snap.docs.length),
-        (err) => {
-          console.error("Error listening to claims:", err);
-          setPendingClaimsCount(0);
-        }
-      );
-    } else {
+let claimsUnsub = () => {};
+if (activeChildId) {
+  const claimsQuery = query(
+    collection(db, "claims"),
+    where("childId", "==", activeChildId),
+    where("status", "==", "claimed")
+  );
+  claimsUnsub = onSnapshot(
+    claimsQuery,
+    (snap) => setPendingClaimsCount(snap.docs.length),
+    (err) => {
+      console.error("Error listening to claims:", err);
       setPendingClaimsCount(0);
     }
+  );
+} else {
+  setPendingClaimsCount(0);
+}
 
     return () => {
       try { pointsUnsub(); } catch {}
       try { pendingUnsub(); } catch {}
       try { claimsUnsub(); } catch {}
     };
-  }, [route]));
+  }, [route, activeChildId]));
 
   useFocusEffect(
     useCallback(() => {
       const auth = getAuth();
       const user = auth.currentUser;
-      const childIdFromRoute = route?.params?.childId;
+      const childIdFromRoute = activeChildId;
       let childProfileUnsub = () => {};
 
       if (childIdFromRoute) {
@@ -247,43 +252,41 @@ export default function ParentDashBoard({ navigation, route }) {
       return () => {
         try { childProfileUnsub(); } catch {}
       };
-    }, [route?.params?.childId])
+    }, [activeChildId])
   );
 
   useFocusEffect(
-    useCallback(() => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) {
-        setRecentMilestone(null);
-        setVerifiedCount(0);
-        return;
-      }
+  useCallback(() => {
+    if (!activeChildId) {
+      setRecentMilestone(null);
+      setVerifiedCount(0);
+      return;
+    }
 
-      const q = query(
-        collection(db, "tasks"),
-        where("ownerId", "==", user.uid),
-        where("verified", "==", true)
-      );
+    const q = query(
+      collection(db, "tasks"),
+      where("childId", "==", activeChildId),
+      where("verified", "==", true)
+    );
 
-      const unsub = onSnapshot(q, (snap) => {
-        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        docs.sort((a, b) => {
-          const aTime = a.verifiedAt?.toDate ? a.verifiedAt.toDate().getTime() : 0;
-          const bTime = b.verifiedAt?.toDate ? b.verifiedAt.toDate().getTime() : 0;
-          return bTime - aTime;
-        });
-        setRecentMilestone(docs[0] || null);
-        setVerifiedCount(docs.length);
-      }, (err) => {
-        console.error("Error fetching milestones:", err);
-        setRecentMilestone(null);
-        setVerifiedCount(0);
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      docs.sort((a, b) => {
+        const aTime = a.verifiedAt?.toDate ? a.verifiedAt.toDate().getTime() : 0;
+        const bTime = b.verifiedAt?.toDate ? b.verifiedAt.toDate().getTime() : 0;
+        return bTime - aTime;
       });
+      setRecentMilestone(docs[0] || null);
+      setVerifiedCount(docs.length);
+    }, (err) => {
+      console.error("Error fetching milestones:", err);
+      setRecentMilestone(null);
+      setVerifiedCount(0);
+    });
 
-      return () => { try { unsub(); } catch {} };
-    }, [])
-  );
+    return () => { try { unsub(); } catch {} };
+  }, [activeChildId])
+);
 
 
   return (
@@ -399,12 +402,19 @@ export default function ParentDashBoard({ navigation, route }) {
                 <Ionicons name="trophy-outline" size={24} color={colors.text} />
                 <Text style={[styles.manageText, { color: colors.text }]}>Review Rewards</Text>
               </TouchableOpacity>
+                <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
+                onPress={() => navigation.navigate("ChildSelection")}
+              >
+                <Ionicons name="people-circle-outline" size={24} color={colors.text} />
+                <Text style={[styles.manageText, { color: colors.text }]}>Child Selection</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("AccountSetting")}
               >
                 <Ionicons name="settings-outline" size={24} color={colors.text} />
                 <Text style={[styles.manageText, { color: colors.text }]}>Settings</Text>
               </TouchableOpacity>
+            
             </View>
           </View>
         </ScrollView>

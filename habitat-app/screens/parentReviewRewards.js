@@ -25,8 +25,9 @@ import {
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
+import { useSelectedChild } from "../SelectedChildContext";
 
-export default function ParentReviewRewards({ navigation }) {
+export default function ParentReviewRewards({ navigation, route }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
   const [loadingRewards, setLoadingRewards] = useState(true);
@@ -34,36 +35,49 @@ export default function ParentReviewRewards({ navigation }) {
   const [activeTab, setActiveTab] = useState("created");
   const { theme } = useTheme();
   const colors = theme.colors;
+  const { selectedChildId } = useSelectedChild();
+  const activeChildId = route?.params?.childId || selectedChildId;
 
   // Listener: rewards catalog
-  useEffect(() => {
-    const uid = getAuth().currentUser?.uid;
-    if (!uid) { setRewards([]); setLoadingRewards(false); return; }
+useEffect(() => {
+  if (!activeChildId) {
+    setClaims([]);
+    setLoadingClaims(false);
+    return;
+  }
 
-    const q = query(collection(db, "rewards"), where("parentId", "==", uid));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        list.sort((a, b) => {
-          const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
-          const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
-          return bTime - aTime;
-        });
-        setRewards(list);
-        setLoadingRewards(false);
-      },
-      (err) => { console.error("rewards onSnapshot error:", err); setLoadingRewards(false); }
-    );
-    return unsub;
-  }, []);
+  const q = query(
+    collection(db, "claims"),
+    where("childId", "==", activeChildId)
+  );
+
+  const unsub = onSnapshot(
+    q,
+    (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => {
+        const aTime = a.claimedAt?.toDate ? a.claimedAt.toDate().getTime() : 0;
+        const bTime = b.claimedAt?.toDate ? b.claimedAt.toDate().getTime() : 0;
+        return bTime - aTime;
+      });
+      setClaims(list);
+      setLoadingClaims(false);
+    },
+    (err) => {
+      console.error("claims onSnapshot error:", err);
+      setLoadingClaims(false);
+    }
+  );
+
+  return () => unsub();
+}, [activeChildId]);
 
   // Listener: all claims (no status filter — split in render)
   useEffect(() => {
     const uid = getAuth().currentUser?.uid;
     if (!uid) { setClaims([]); setLoadingClaims(false); return; }
 
-    const q = query(collection(db, "claims"), where("parentId", "==", uid));
+    const q = query(collection(db, "claims"), where("childId", "==", activeChildId));
     const unsub = onSnapshot(
       q,
       (snap) => {

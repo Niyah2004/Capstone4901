@@ -25,49 +25,54 @@ import {
   serverTimestamp,
   addDoc,
   getDocs,
+  getDoc,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import * as Notifications from "expo-notifications";
+import { useSelectedChild } from "../SelectedChildContext";
 
-export default function ParentReviewTask({ navigation }) {
+export default function ParentReviewTask({ navigation, route }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [parentChecks, setParentChecks] = useState({});
   const [activeTab, setActiveTab] = useState("pending");
   const { theme } = useTheme();
   const colors = theme.colors;
+  const { selectedChildId } = useSelectedChild();
+  const activeChildId = route?.params?.childId || selectedChildId;
 
-  useEffect(() => {
-    const uid = getAuth().currentUser?.uid;
-    if (!uid) {
-      setTasks([]);
+useEffect(() => {
+  const uid = getAuth().currentUser?.uid;
+
+  if (!uid) {
+    setTasks([]);
+    setLoading(false);
+    return;
+  }
+  
+  
+  const q = query(
+    collection(db, "tasks"),
+    where("ownerId", "==", uid),
+    where("childId", "==", activeChildId || null),
+    orderBy("createdAt", "desc")
+  );
+
+  const unsub = onSnapshot(
+    q,
+    (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setTasks(list);
+      setLoading(false); 
+    },
+    (err) => {
+      console.error("Error fetching tasks:", err);
       setLoading(false);
-      return;
     }
-
-    // Filter to only tasks created by this parent
-    const q = query(
-      collection(db, "tasks"),
-      where("ownerId", "==", uid),
-      orderBy("createdAt", "desc")
-    );
-
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setTasks(list);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("onSnapshot error:", err);
-        setLoading(false);
-      }
-    );
-
-    return unsub;
-  }, []);
+  );
+  return () => unsub();
+}, [activeChildId]);
 
   /*const handleVerify = async (id) => {
     try {
@@ -267,12 +272,11 @@ export default function ParentReviewTask({ navigation }) {
 
         if (childUid) {
           try {
-            const childrenQuery = query(
-              collection(db, "children"),
-              where("userId", "==", childUid)
-            );
-            const childrenSnap = await getDocs(childrenQuery);
-            const childDoc = childrenSnap.docs[0];
+            const childSnap = await getDoc(doc(db, "children", childUid));
+          if (childSnap.exists()) {
+           const data = childSnap.data() || {};
+           childNameForLocal = data.preferredName || data.fullName || "";
+          }
             if (childDoc) {
               const data = childDoc.data() || {};
               childNameForLocal = data.preferredName || data.fullName || "";
