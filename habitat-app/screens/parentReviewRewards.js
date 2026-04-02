@@ -37,12 +37,38 @@ export default function ParentReviewRewards({ navigation, route }) {
   const activeChildId = route?.params?.childId || selectedChildId;
 
   // Listener: rewards catalog
-useEffect(() => {
-  if (!activeChildId) {
-    setClaims([]);
-    setLoadingClaims(false);
-    return;
-  }
+  useEffect(() => {
+    if (!activeChildId) {
+      setRewards([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "rewards"),
+      where("childId", "==", activeChildId)
+    );
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setRewards(list);
+      },
+      (err) => {
+        console.error("rewards onSnapshot error:", err);
+      }
+    );
+
+    return () => unsub();
+  }, [activeChildId]);
+
+  // Listener: claims
+  useEffect(() => {
+    if (!activeChildId) {
+      setClaims([]);
+      setLoadingClaims(false);
+      return;
+    }
 
   const q = query(
     collection(db, "claims"),
