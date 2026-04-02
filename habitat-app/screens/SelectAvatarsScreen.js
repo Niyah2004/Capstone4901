@@ -1,3 +1,4 @@
+//OUTDATED FILE - NOT IN USE
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView , Image} from "react-native";
 
