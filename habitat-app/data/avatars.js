@@ -148,4 +148,36 @@ export const AVATARS = {
             },
         },
     },
+        penguin: {
+        base: require("../assets/penguin.png"),
+        accessories: {
+            surfboard: {
+                image: require("../assets/penguin/accessories/surfboard.png"),
+                cost: 150,
+                position: { top: 4, left: 125, size: 325 },
+            },
+        },
+        hats: {
+            hat: {
+                image: require("../assets/penguin/accessories/hat.png"),
+                cost: 0,
+                position: { top: -75, left: 25, size: 250 },
+            },
+        },
+        
+        tops : {
+            top: {
+                image: require("../assets/penguin/tops/wetsuit.png"),
+                cost: 50,
+                position: { top: 23, left: -5, size: 300 },
+            }
+        },
+        shoes : {
+            snorkelfins: {
+                image: require("../assets/penguin/shoes/wetshoes.png"),
+                cost: 100,
+                position: { top: 40, left: 15, size: 275 },
+            },
+        },
+    },
 };
