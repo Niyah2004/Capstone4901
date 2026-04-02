@@ -497,6 +497,7 @@ useEffect(() => {
                                 </View>
                                 <View style={styles.costRow}>
                                     <Text style={styles.unlockItemCost}> {item.cost}</Text>
+                                     <Text style={styles.unlockItemLabel}>{itemId}</Text>
                                     <Icon name="star" style={{ color: "#ffd700", fontSize: 18 }} />
                                 </View>
                             </View>
@@ -857,7 +858,7 @@ const createStyles = (colors) => StyleSheet.create({
         alignItems: "center",
     },
 
-    unlockItemCost: {
+ unlockItemCost: {
         fontSize: 15,
         fontWeight: "600",
         color: "#555",
