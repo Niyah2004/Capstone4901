@@ -7,11 +7,15 @@ import { getAuth } from "firebase/auth";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { updateDoc } from "firebase/firestore";
 import { useParentLock } from "../ParentLockContext";
+import { useTheme } from "../theme/ThemeContext";
 
 
 const ParentPinScreen = ({ navigation,route  }) => {
   const [pin, setPin] = useState("");
   const { unlockParent } = useParentLock();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const styles = createStyles(colors);
 
   const correctPin = async () => {
     if (pin.length !== 4) {
@@ -53,7 +57,7 @@ const ParentPinScreen = ({ navigation,route  }) => {
       <SafeAreaView style={styles.container}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" style={styles.backButton} />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
           
           <Text style={styles.header}>Parent Access</Text>
@@ -83,10 +87,11 @@ const ParentPinScreen = ({ navigation,route  }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
+
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
     padding: 20,
   },
   header: {
@@ -95,6 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 10,
+    color: colors.text,
   },
   headerRow: {
     flexDirection: "row",
@@ -102,7 +108,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   backButton: {
-    fontSize: 20,
     marginTop: 5,
   },
   label: {
@@ -113,22 +118,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     alignSelf: "center",
     flexWrap: "wrap",
+    color: colors.text,
   },
   input: {
     width: "60%",
     height: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.border,
     borderRadius: 10,
     textAlign: "center",
     fontSize: 20,
     alignSelf: "center",
     marginBottom: 20,
+    backgroundColor: colors.card,
+    color: colors.text,
   },
   button: {
     alignSelf: "center",
     width: "50%",
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -142,7 +150,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   forgotText: {
-    color: "#4CAF50",
+    color: colors.primary,
     fontWeight: "500",
     alignSelf: "center",
   },
