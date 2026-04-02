@@ -98,6 +98,7 @@ export default function ChildReward( {route}) {
     //theme
     const { theme } = useTheme();
     const colors = theme.colors;    
+    const styles = createStyles(colors);
 
     // Fetch rewards in real-time (instant updates!)
     useEffect(() => {
@@ -550,9 +551,14 @@ useEffect(() => {
                                         </View>
                                     )}
                                 </View>
-                                <Text style={styles.unlockItemCost}>⭐ {item.cost}</Text>
+                                <View style={styles.costRow}>
+                                    <Text style={styles.unlockItemCost}>{item.cost}</Text>
+                                    <Ionicons name="star" size={16} color="#ffd700" />
+                                </View>
+
                                 <Text style={styles.unlockItemLabel}>{itemId}</Text>
-                            </TouchableOpacity>
+
+                            </View>
                         );
                     });
                 })}
@@ -619,14 +625,15 @@ useEffect(() => {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#F7F7F7", paddingHorizontal: 20, paddingTop: 48 },
+const createStyles = (colors) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 20, paddingTop: 48 },
     title: {
         fontSize: 24,
         fontWeight: "600",
         alignSelf: "center",
         marginTop: 20,
         marginBottom: 12,
+        color: colors.text,
     },
 
     RewardCard: {
@@ -666,7 +673,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 16,
     },
-    greetingTitle: { fontSize: 16, fontWeight: "700", textAlign: "center", color: "#fff" },
+    greetingTitle: { fontSize: 16, fontWeight: "700", textAlign: "center", color: "#ffff" },
 
     switchButton: {
         backgroundColor: "#4CAF50",
@@ -675,12 +682,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 18,
     },
-    switchButtonText: { color: "#fff", fontWeight: "600" },
+    switchButtonText: { color: colors.text, fontWeight: "600" },
 
-    sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
+    sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 10, color: colors.text },
 
 
-    sectionTitle2: { fontSize: 18, fontWeight: "600", marginBottom: 0 },
+    sectionTitle2: { fontSize: 18, fontWeight: "600", marginBottom: 0, color: colors.text },
 
     rewardsScrollContainer: {
         flexDirection: "row",
@@ -722,13 +729,13 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: "center",
         marginBottom: 6,
-        color: "#000",
+        color: colors.text,
         maxHeight: 36,
         overflow: "hidden",
     },
     rewardCost: {
         fontSize: 14,
-        color: "#000",
+        color: colors.text,
         marginBottom: 12,
         fontWeight: "600",
         textAlign: "center",
@@ -826,7 +833,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: "center",
         marginVertical: 8,
-        color: "#555",
+        color: colors.muted,
     },
 
     modalPoints: {
@@ -865,6 +872,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         marginTop: 15,
         marginBottom: 12,
+        color: colors.text,
     },
 
     unlockItemsRow: {
@@ -908,7 +916,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
 
-    unlockItemCost: {
+ unlockItemCost: {
         fontSize: 15,
         fontWeight: "600",
         color: "#555",
