@@ -153,14 +153,14 @@ export const AVATARS = {
             top: {
                 image: require("../assets/penguin/tops/wetsuit.png"),
                 cost: 50,
-                position: { top: 23, left: -5, size: 300 },
+                position: { top: 32, left: 2, size: 285 },
             }
         },
         shoes : {
             snorkelfins: {
                 image: require("../assets/penguin/shoes/wetshoes.png"),
                 cost: 100,
-                position: { top: 40, left: 15, size: 275 },
+                position: { top: 10, left: -1, size: 300 },
             },
         },
     },
