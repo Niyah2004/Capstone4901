@@ -173,7 +173,7 @@ export default function ChildHome({ navigation, route }) {
             const updates = {};
 
             // Unequip everything else in category (except for accessories - can have multiple)
-            if (category !== "accessories") {
+            if (category !== "accessories" && category !== "backgrounds") {
                 Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
                     updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
                 });
@@ -203,7 +203,7 @@ export default function ChildHome({ navigation, route }) {
             updates[`wardrobe.${avatar}.${category}.${itemId}.equipped`] = false;
         } else {
             // Unequip everything else in category (except for accessories - can have multiple)
-            if (category !== "accessories") {
+            if (category !== "accessories" && category !== "backgrounds") {
                 Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
                     updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
                 });
@@ -259,6 +259,26 @@ export default function ChildHome({ navigation, route }) {
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image */}
                     <View style={styles.avatarWrapper}>
+                        {/* Background layer - renders behind the avatar */}
+                        {Object.entries(AVATARS[avatar]?.backgrounds || {}).map(([itemId, item]) => {
+                            const equipped = wardrobe?.[avatar]?.backgrounds?.[itemId]?.equipped;
+                            if (!equipped) return null;
+                            return (
+                                <Image
+                                    key={`bg-${itemId}`}
+                                    source={item.image}
+                                    resizeMode="contain"
+                                    style={{
+                                        position: "absolute",
+                                        top: item.position.top,
+                                        left: item.position.left,
+                                        width: item.position.size,
+                                        height: item.position.size,
+                                        zIndex: -1,
+                                    }}
+                                />
+                            );
+                        })}
                         {/* Base Avatar */}
                     <Image
                         source={AVATARS[avatar]?.base}

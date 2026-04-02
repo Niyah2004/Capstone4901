@@ -15,10 +15,10 @@ import { AVATARS } from "../data/avatars";
 // Character roster - starters are free, others unlock at milestone thresholds
 const CHARACTER_ROSTER = [
     { id: "panda", name: "Panda", emoji: "🐼", milestone: 0, image: require("../assets/panda.png") },
-    { id: "turtle", name: "Turtle", emoji: "🐢", milestone: 0, image: require("../assets/turtle.png") },
-    { id: "dino", name: "Dino", emoji: "🦒", milestone: 0, image: require("../assets/dino.png") },
-    { id: "lion", name: "Lion", emoji: "🦁", milestone: 50, image: require("../assets/lion.png") },
-    { id: "penguin", name: "Penguin", emoji: "🐧", milestone: 100, image: require("../assets/penguin.png") },
+    { id: "turtle", name: "Turtle", emoji: "🐢", milestone: 200, image: require("../assets/turtle.png") },
+    { id: "dino", name: "Dino", emoji: "🦒", milestone: 350, image: require("../assets/dino.png") },
+    { id: "lion", name: "Lion", emoji: "🦁", milestone: 500, image: require("../assets/lion.png") },
+    { id: "penguin", name: "Penguin", emoji: "🐧", milestone: 750, image: require("../assets/penguin.png") },
 ];
 
 const STARTER_IDS = CHARACTER_ROSTER.filter(c => c.milestone === 0).map(c => c.id);
@@ -267,6 +267,58 @@ export default function ChildReward() {
             setTimeout(() => setModalVisible(false), 2500);
         }
     };
+    // Handle wardrobe item purchase from reward screen
+    const handleWardrobePurchase = async (category, itemId, itemCost) => {
+        if (!childDocId || !auth.currentUser) return;
+
+        const childRef = doc(db, "children", childDocId);
+        const pointsRef = doc(db, "childPoints", auth.currentUser.uid);
+
+        const owned = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
+        if (owned) {
+            Alert.alert("Already Owned", "You already own this item!");
+            return;
+        }
+
+        if (totalStars < itemCost) {
+            Alert.alert("Not Enough Stars", `You need ${itemCost - totalStars} more ⭐ to unlock this item!`);
+            return;
+        }
+
+        Alert.alert(
+            "Purchase Item?",
+            `Spend ${itemCost} ⭐ to unlock this item?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Buy",
+                    onPress: async () => {
+                        const updates = {};
+                        updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
+                            unlocked: true,
+                            equipped: false,
+                        };
+                        await updateDoc(childRef, updates);
+                        await updateDoc(pointsRef, { points: totalStars - itemCost });
+
+                        setWardrobe(prev => ({
+                            ...prev,
+                            [avatar]: {
+                                ...prev?.[avatar],
+                                [category]: {
+                                    ...prev?.[avatar]?.[category],
+                                    [itemId]: { unlocked: true, equipped: false },
+                                },
+                            },
+                        }));
+
+                        confettiRef.current?.start();
+                        Alert.alert("Unlocked! 🎉", `You unlocked: ${itemId}!`);
+                    },
+                },
+            ]
+        );
+    };
     // End of handleClaimReward
 
     return (
@@ -442,7 +494,11 @@ export default function ChildReward() {
                     return Object.entries(items).map(([itemId, item]) => {
                         const owned = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
                         return (
-                            <View key={`${category}-${itemId}`} style={styles.unlockItemCard}>
+                            <TouchableOpacity
+                                key={`${category}-${itemId}`}
+                                style={styles.unlockItemCard}
+                                onPress={() => handleWardrobePurchase(category, itemId, item.cost)}
+                            >
                                 <View style={styles.unlockItemImageWrap}>
                                     <Image source={item.image} style={styles.unlockItemImage} resizeMode="contain" />
                                     {!owned && (
@@ -453,7 +509,7 @@ export default function ChildReward() {
                                 </View>
                                 <Text style={styles.unlockItemCost}>⭐ {item.cost}</Text>
                                 <Text style={styles.unlockItemLabel}>{itemId}</Text>
-                            </View>
+                            </TouchableOpacity>
                         );
                     });
                 })}
