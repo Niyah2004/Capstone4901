@@ -496,10 +496,12 @@ useEffect(() => {
                                     )}
                                 </View>
                                 <View style={styles.costRow}>
-                                    <Text style={styles.unlockItemCost}> {item.cost}</Text>
-                                     <Text style={styles.unlockItemLabel}>{itemId}</Text>
-                                    <Icon name="star" style={{ color: "#ffd700", fontSize: 18 }} />
+                                    <Text style={styles.unlockItemCost}>{item.cost}</Text>
+                                    <Ionicons name="star" size={16} color="#ffd700" />
                                 </View>
+
+                                <Text style={styles.unlockItemLabel}>{itemId}</Text>
+
                             </View>
                         );
                     });
