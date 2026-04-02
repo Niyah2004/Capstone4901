@@ -5,11 +5,12 @@ import { getAuth } from "firebase/auth";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { AVATARS } from "../data/avatars";
+import { useSelectedChild } from "../SelectedChildContext";
 
 export default function ChildSelectScreen({ navigation }) {
   const auth = getAuth();
   const userId = auth.currentUser?.uid;
-
+  const { setSelectedChildId } = useSelectedChild();
   const [children, setChildren] = useState([]);
 
 useEffect(() => {
@@ -76,7 +77,10 @@ useEffect(() => {
         <View style={styles.row}>
           <TouchableOpacity
             style={styles.openBtn}
-            onPress={() => navigation.replace("ChildTabs", { childId: item.id })}
+            onPress={() => {
+              setSelectedChildId(item.id);
+              navigation.replace("ChildTabs", { childId: item.id });
+            }}
           >
             <Text style={styles.btnText}>Open</Text>
           </TouchableOpacity>

@@ -28,9 +28,12 @@ import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { getAuth } from "firebase/auth";
 
 import { Picker } from "@react-native-picker/picker";
+import { useSelectedChild } from "../SelectedChildContext";
 
 export default function ParentTaskPage({ navigation, route }) {
 
+  const { selectedChildId } = useSelectedChild();
+  const activeChildId = route?.params?.childId || selectedChildId;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date());
@@ -44,7 +47,6 @@ export default function ParentTaskPage({ navigation, route }) {
   const [frequency, setFrequency] = useState("One-Time");
   const [endDate, setEndDate] = useState(null);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  // No childId requirement. Tasks are for the logged-in user.
 
 
   // Dropdown state for generic tasks
@@ -112,10 +114,10 @@ export default function ParentTaskPage({ navigation, route }) {
       const auth = getAuth();
       const user = auth.currentUser;
 
-      if (!user) {
-        Alert.alert("Error", "No authenticated parent found.");
-        return;
-      }
+      if (!activeChildId) {
+      Alert.alert("No Child Selected", "Please select a child before creating a task.");
+      return;
+}
 
       const parentId = user.uid;
       const dateStart = new Date(
@@ -180,6 +182,7 @@ export default function ParentTaskPage({ navigation, route }) {
         steps,
         ownerId: parentId,
         userId: user.uid, // Always set userId to the currently logged-in user's UID
+        childId: activeChildId,
         frequency,
         isRecurring: frequency !== "One-Time",
         endDate: endDateStartForSave ? Timestamp.fromDate(endDateStartForSave) : null,

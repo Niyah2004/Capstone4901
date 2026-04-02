@@ -6,11 +6,13 @@ import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy , getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AVATARS } from "../data/avatars";
+import { useSelectedChild } from "../SelectedChildContext";
+import { useTheme } from "../theme/ThemeContext";
 
 const REWARD_ICON_MAP = {
   gift:      require('../assets/Gifts.png'),
@@ -70,7 +72,7 @@ function AnimatedStar({ delay, size = 24 }) {
     );
 }
 
-export default function ChildReward() {
+export default function ChildReward( {route}) {
     const auth = getAuth();
     const parentId = auth.currentUser?.uid;
     const [totalStars, setTotalStars] = useState(0);
@@ -90,6 +92,13 @@ export default function ChildReward() {
     const [childDocId, setChildDocId] = useState(null);
     const [wardrobe, setWardrobe] = useState({});
     
+    const { selectedChildId } = useSelectedChild();
+    const activeChildId = route?.params?.childId || selectedChildId;
+
+    //theme
+    const { theme } = useTheme();
+    const colors = theme.colors;    
+
     // Fetch rewards in real-time (instant updates!)
     useEffect(() => {
         if (!parentId) return;
@@ -130,24 +139,24 @@ export default function ChildReward() {
 
     // Track which rewards the child has already claimed (pending or fulfilled)
     useEffect(() => {
-        if (!auth.currentUser) return;
+        if (!activeChildId) return;
         const claimsQ = query(
-            collection(db, "claims"),
-            where("user_id", "==", auth.currentUser.uid),
-            where("status", "==", "claimed")
-        );
+         collection(db, "claims"),
+         where("childId", "==", activeChildId),
+         where("status", "==", "claimed")
+);
         const unsubClaims = onSnapshot(claimsQ, (snap) => {
             const ids = new Set(snap.docs.map(d => d.data().item_id));
             setClaimedRewardIds(ids);
         });
         return () => unsubClaims();
-    }, []);
+    }, [activeChildId]);
 
     // Fetch child's stars from childPoints collection (current balance + lifetime total)
     useEffect(() => {
-        if (!auth.currentUser) return;
+        if (!activeChildId) return;
 
-        const childPointsRef = doc(db, "childPoints", auth.currentUser.uid);
+        const childPointsRef = doc(db, "childPoints", activeChildId);
         const unsubscribe = onSnapshot(childPointsRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data();
@@ -166,43 +175,47 @@ export default function ChildReward() {
     }, []);
 
     // Fetch child's profile (name, avatar, and unlocked characters)
-    useEffect(() => {
-        const fetchChildProfile = async () => {
-            if (!auth.currentUser) return;
+useEffect(() => {
+  const fetchChildProfile = async () => {
+    if (!activeChildId) {
+      setAvatarLoading(false);
+      return;
+    }
 
-            try {
-                const q = query(
-                    collection(db, "children"),
-                    where("userId", "==", auth.currentUser.uid)
-                );
-                const querySnapshot = await getDocs(q);
+    try {
+      const childRef = doc(db, "children", activeChildId);
+      const childSnap = await getDoc(childRef);
 
-                if (!querySnapshot.empty) {
-                    const docSnap = querySnapshot.docs[0];
-                    const data = docSnap.data();
-                    setChildDocId(docSnap.id);
-                    setChildName(data.preferredName || data.fullName || "Lea");
-                    // Normalize avatar: handle both string and object formats
-                    const avatarData = data.avatar;
-                    const avatarBase = typeof avatarData === "string" ? avatarData : (avatarData?.base ?? "panda");
-                    const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
-                    setAvatar(validAvatar);
-                    setAvatarLoading(false);
-                    setWardrobe(data.wardrobe || {});
-                    // Load previously unlocked avatars (starters are always included)
-                    const saved = data.unlockedAvatars || [];
-                    const merged = [...new Set([...STARTER_IDS, ...saved])];
-                    setUnlockedAvatars(merged);
-                } else {
-                    setAvatarLoading(false);
-                }
-            } catch (error) {
-                console.error("Error fetching child profile:", error);
-            }
-        };
+      if (childSnap.exists()) {
+        const data = childSnap.data();
 
-        fetchChildProfile();
-    }, []);
+        setChildDocId(childSnap.id);
+        setChildName(data.preferredName || data.fullName || "Lea");
+
+        const avatarData = data.avatar;
+        const avatarBase =
+          typeof avatarData === "string"
+            ? avatarData
+            : avatarData?.base ?? "panda";
+
+        const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
+        setAvatar(validAvatar);
+        setWardrobe(data.wardrobe || {});
+
+        const saved = data.unlockedAvatars || [];
+        const merged = [...new Set([...STARTER_IDS, ...saved])];
+        setUnlockedAvatars(merged);
+      }
+
+      setAvatarLoading(false);
+    } catch (error) {
+      console.error("Error fetching child profile:", error);
+      setAvatarLoading(false);
+    }
+  };
+
+  fetchChildProfile();
+}, [activeChildId]);
 
     // Check milestones and unlock new characters when modal opens
     const checkAndUnlockCharacters = async () => {
@@ -275,6 +288,7 @@ export default function ChildReward() {
                     status: "claimed",
                     user_id: auth.currentUser.uid,
                     parentId: selectedReward.parentId || auth.currentUser.uid,
+                    childId: activeChildId,
                     claimedAt: new Date(),
                 });
             } catch (claimError) {

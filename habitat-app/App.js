@@ -38,6 +38,7 @@ import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
+import { SelectedChildProvider } from "./SelectedChildContext";
 
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
@@ -78,27 +79,27 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="ParentDashBoard"
         component={ParentDashBoard}
-        initialParams={{childId}}
+        
       />
       <ParentStack.Screen
         name="ParentTaskPage"
         component={ParentTaskPage}
-        initialParams={{childId}}
+        
       />
       <ParentStack.Screen
         name="parentReviewTask"
         component={ParentReviewTask}
-        initialParams={{childId}}
+        
       />
       <ParentStack.Screen
         name="parentReward"
         component={ParentReward}
-        initialParams={{childId}}
+       
       />
       <ParentStack.Screen
         name="parentReviewRewards"
         component={ParentReviewRewards}
-        initialParams={{childId}}
+        
       />
       <ParentStack.Screen
         name="AccountSetting"
@@ -282,7 +283,9 @@ export default function AppWithProviders() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <AppNavigator />
+        <SelectedChildProvider>
+          <AppNavigator />
+        </SelectedChildProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

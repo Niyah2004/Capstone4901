@@ -22,12 +22,14 @@ import { getAuth } from "firebase/auth";
 
 import { useTheme } from "../theme/ThemeContext";
 import { endOfDay } from "date-fns";
+import { useSelectedChild } from "../SelectedChildContext";
 
 
 export default function ChildTask({ route, navigation }) {
-  const childId = route?.params?.childId;
-  const currentChildUid = getAuth().currentUser?.uid;
-  const pointsChildId = childId || currentChildUid;
+const { selectedChildId } = useSelectedChild();
+const childId = route?.params?.childId || selectedChildId;
+const currentChildUid = getAuth().currentUser?.uid;
+const pointsChildId = childId;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasksForDate, setTasksForDate] = useState([]);
@@ -121,31 +123,37 @@ export default function ChildTask({ route, navigation }) {
   }, [pointsChildId]);
 
   // Resolve child document id when running as the child user
+  //changed to the active child id
   useEffect(() => {
-    if (!currentChildUid || childId) return;
+  if (!childId) {
+    setChildDocId(null);
+    setChildName("");
+    return;
+  }
 
-    let cancelled = false;
-    const q = query(collection(db, "children"), where("userId", "==", currentChildUid));
-    getDocs(q)
-      .then((snap) => {
-        if (cancelled) return;
-        const docMatch = snap.docs[0];
-        if (docMatch) {
-          const data = docMatch.data();
-          setChildDocId(docMatch.id);
-          setChildName(data.preferredName || data.fullName || "");
-        } else {
-          setChildDocId(null);
-          setChildName("");
-        }
-      })
-      .catch((err) => console.error("child doc lookup error", err));
+  let cancelled = false;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [currentChildUid, childId]);
+  getDoc(doc(db, "children", childId))
+    .then((snap) => {
+      if (cancelled) return;
 
+      if (snap.exists()) {
+        const data = snap.data();
+        setChildDocId(childId);
+        setChildName(data.preferredName || data.fullName || "");
+      } else {
+        setChildDocId(null);
+        setChildName("");
+      }
+    })
+    .catch((err) => console.error("child doc direct lookup error", err));
+
+  return () => {
+    cancelled = true;
+  };
+}, [childId]);
+
+/* duplicate of the child look up
   useEffect(() => {
     if (!childId) return;
 
@@ -159,6 +167,8 @@ export default function ChildTask({ route, navigation }) {
       })
       .catch((err) => console.error("child doc direct lookup error", err));
   }, [childId]);
+
+  */
 
   // Load tasks (date-specific + recurring)
   useEffect(() => {
@@ -335,7 +345,7 @@ export default function ChildTask({ route, navigation }) {
     };
   */
   const markTaskComplete = async (task) => {
-    if (!task?.id || !currentChildUid) return;
+    if (!task?.id || !childId) return;
 
     try {
       await runTransaction(db, async (tx) => {
@@ -351,7 +361,7 @@ export default function ChildTask({ route, navigation }) {
         tx.update(taskRef, {
           completed: true, // child checked it off
           completedAt: serverTimestamp(),
-          completedByChildId: currentChildUid,
+          completedByChildId: childId,
           pendingApproval: true, // parent needs to verify
           completionRequestedAt: serverTimestamp(),
           progressPercent: 100,
@@ -363,7 +373,7 @@ export default function ChildTask({ route, navigation }) {
           const notifRef = doc(collection(db, "notifications"));
           tx.set(notifRef, {
             toUserId: current.ownerId,
-            fromChildId: currentChildUid,
+            fromChildId: childId,
             taskId: task.id,
             type: "completion_request",
             title: childName
