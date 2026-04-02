@@ -15,12 +15,25 @@ export const AVATARS = {
                 position: { top: -63.4, left: 63.9, size: 200 },
             },
         },
+        
+        tops : {
+            hoodie: {  
+                image: require("../assets/panda/tops/hoodie.png"),
+                cost: 200,
+                position: { top: 137, left: 74.6, size: 148.9 },
+            },
+            top: {
+                image: require("../assets/panda/tops/top.png"),
+                cost: 100,
+                position: { top: 130, left: 75, size: 147 },
+            }
+        },
         pants: {
             pant: {
                 image: require("../assets/panda/pants/pant.png"),
                 cost: 100,
                 position: { top: 185, left: 83.1, size: 134.9 },
-        },
+            },
         },
         shoes : {
             slippers: {
@@ -29,30 +42,37 @@ export const AVATARS = {
                 position: { top: 213, left: 82, size: 135 },
             },
         },
-        tops : {
-            hoodie: {
-                image: require("../assets/panda/tops/hoodie.png"),
-                cost: 85,
-                position: { top: 137, left: 74.6, size: 148.9 },
-        },
-            top: {
-                image: require("../assets/panda/tops/top.png"),
-                cost: 85,
-                position: { top: 130, left: 75, size: 147 },
-        }
-        },
     },
 
     turtle: {
         base: require("../assets/turtle.png"),
-        hats: {
-            cap: {
-                image: require("../assets/panda/hats/hat.png"),
-                cost: 80,
-                position: { top: -25, left: 60, size: 140 },
+        accessories: {
+            turtle_mask: {
+                image: require("../assets/turtle/accessories/turtle_mask.png"),
+                cost: 0,
+                position: { top: 4, left: 12, size: 240 },
+            },
+            turtle_bowtie: {
+                image: require("../assets/turtle/accessories/turtle_bowtie.png"),
+                cost: 50,
+                position: { top: 142, left: 105, size: 100 },
             },
         },
-   },
+        tops: {
+            turtle_hoodie: {
+                cost: 100,
+                image: require("../assets/turtle/tops/turtle_hoodie.png"),
+                position: { top: 102, left: 57, size: 200 },
+            }
+        },
+        pants: {
+            turtle_pants: {
+                cost: 0,
+                image: require("../assets/turtle/pants/turtle_sweatpants.png"),
+                position: { top: 198, left: 86, size: 136 },
+            }
+        },
+    },
     dino: {
         base: require("../assets/dino.png"),
         accessories: {
@@ -66,6 +86,7 @@ export const AVATARS = {
                 cost: 70,
                 position: { top: 160, left: 97, size: 110 },
             },
+            
         },
         hats: {
             hat: {
@@ -81,7 +102,7 @@ export const AVATARS = {
                 position: { top: 213, left: 85, size: 135 },
             },
         },
-   },
+    },
     lion: {
         base: require("../assets/lion.png"),
         backgrounds: {

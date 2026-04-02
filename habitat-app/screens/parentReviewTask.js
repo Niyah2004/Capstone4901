@@ -24,6 +24,7 @@ import {
   increment,
   serverTimestamp,
   addDoc,
+  getDocs,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
@@ -77,7 +78,7 @@ export default function ParentReviewTask({ navigation }) {
   };*/
 
   const pendingTasks = tasks.filter(
-    (t) => t?.pendingApproval === true && t?.verified !== true
+    (t) => t?.verified !== true
   );
 
   const completedTasks = tasks.filter(
@@ -262,12 +263,35 @@ export default function ParentReviewTask({ navigation }) {
 
       // Local banner on the current device to confirm to the parent
       try {
+        let childNameForLocal = "";
+
+        if (childUid) {
+          try {
+            const childrenQuery = query(
+              collection(db, "children"),
+              where("userId", "==", childUid)
+            );
+            const childrenSnap = await getDocs(childrenQuery);
+            const childDoc = childrenSnap.docs[0];
+            if (childDoc) {
+              const data = childDoc.data() || {};
+              childNameForLocal = data.preferredName || data.fullName || "";
+            }
+          } catch (e) {
+            console.warn("Error looking up child for local notification:", e);
+          }
+        }
+
         await Notifications.scheduleNotificationAsync({
           content: {
             title: "Task verified",
             body: taskTitle
-              ? `You verified "${taskTitle}" and awarded points.`
-              : "You verified a task and awarded points.",
+              ? childNameForLocal
+                ? `You verified ${childNameForLocal}'s "${taskTitle}" and awarded points.`
+                : `You verified "${taskTitle}" and awarded points.`
+              : childNameForLocal
+                ? `You verified one of ${childNameForLocal}'s tasks and awarded points.`
+                : "You verified a task and awarded points.",
           },
           trigger: null,
         });
@@ -278,6 +302,29 @@ export default function ParentReviewTask({ navigation }) {
       console.error("Error verifying task:", err);
     }
   };
+
+  const [filter, setFilter] = useState("all");
+  const [showFilter, setShowFilter] = useState(false);
+
+  const getFilteredPendingTasks = () => {
+    let list = [...pendingTasks];
+
+    if (filter === "markedComplete") {
+      list = list.filter((t) => isChildCompleted(t));
+    }
+
+    if (filter === "newest" || filter === "oldest") {
+      list.sort((a, b) => {
+        const da = toDateFromTask(a) || new Date(0);
+        const db = toDateFromTask(b) || new Date(0);
+        return filter === "newest" ? db - da : da - db;
+      });
+    }
+
+    return list;
+  };
+
+  const visiblePendingTasks = getFilteredPendingTasks();
 
   if (loading) {
     return (
@@ -301,7 +348,51 @@ export default function ParentReviewTask({ navigation }) {
               <Text style={styles.backText}>← Back</Text>
             </TouchableOpacity>
             <Text style={[styles.header, { color: colors.text }]}>Review Tasks</Text>
-            <View style={styles.headerSpacer} />
+            <View style={styles.headerRight}>
+              <TouchableOpacity onPress={() => setShowFilter((prev) => !prev)}>
+                <Ionicons name="filter-outline" size={20} color={colors.text} />
+              </TouchableOpacity>
+              {showFilter && (
+                <View style={[styles.filterMenu, { backgroundColor: colors.card }]}>
+                  <TouchableOpacity
+                    style={styles.filterOption}
+                    onPress={() => {
+                      setFilter("all");
+                      setShowFilter(false);
+                    }}
+                  >
+                    <Text style={[styles.filterText, { color: colors.text }]}>View All</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.filterOption}
+                    onPress={() => {
+                      setFilter("markedComplete");
+                      setShowFilter(false);
+                    }}
+                  >
+                    <Text style={[styles.filterText, { color: colors.text }]}>Marked Complete</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.filterOption}
+                    onPress={() => {
+                      setFilter("newest");
+                      setShowFilter(false);
+                    }}
+                  >
+                    <Text style={[styles.filterText, { color: colors.text }]}>Newest</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.filterOption}
+                    onPress={() => {
+                      setFilter("oldest");
+                      setShowFilter(false);
+                    }}
+                  >
+                    <Text style={[styles.filterText, { color: colors.text }]}>Oldest</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
 
           <View style={styles.tabs}>
@@ -351,7 +442,7 @@ export default function ParentReviewTask({ navigation }) {
             ) : (
               <FlatList
                 style={{ flex: 1 }}
-                data={pendingTasks}
+                data={visiblePendingTasks}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => {
                   const childCompleted = isChildCompleted(item);
@@ -462,6 +553,12 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
     fontWeight: "bold",
   },
+  headerRight: {
+    width: 54,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    position: "relative",
+  },
   tabs: {
     flexDirection: "row",
     justifyContent: "center",
@@ -545,4 +642,28 @@ const styles = StyleSheet.create({
   deleteBtn: { position: "absolute", top: 10, right: 10 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   empty: { textAlign: "center", color: "#777", marginTop: 40 },
+  filterMenu: {
+    position: "absolute",
+    top: 32,
+    right: 0,
+    marginTop: 6,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    minWidth: 170,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+    zIndex: 20,
+  },
+  filterOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  filterText: {
+    fontSize: 14,
+    flexShrink: 0,
+  },
 });

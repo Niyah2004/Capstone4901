@@ -309,10 +309,6 @@ export default function ParentDashBoard({ navigation, route }) {
                 {childPoints.loading ? "--" : childPoints.points}
               </Text>
               <Text style={[styles.starLabel, { color: colors.text }]}>Star Points</Text>
-              <Text style={[styles.points, { color: colors.muted }]}>
-                {childPoints.loading ? "Loading..." : "Current Balance"}
-              </Text>
-
             </TouchableOpacity>
           </View>
 
@@ -360,10 +356,10 @@ export default function ParentDashBoard({ navigation, route }) {
 
       {/* Rewards Claimed by Child */}
       <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>🎁 Rewards to Give Out</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Rewards Awaiting Completion</Text>
         <Text style={styles.pendingCount}>{pendingClaimsCount}</Text>
         <Text style={[styles.pendingText, { color: colors.muted }]}>
-          {pendingClaimsCount === 1 ? "reward waiting" : "rewards waiting"}
+          {pendingClaimsCount === 1 ? "pending reward" : "pending rewards"}
         </Text>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#C19A00" }]}
@@ -383,11 +379,12 @@ export default function ParentDashBoard({ navigation, route }) {
                 <Ionicons name="list-outline" size={24} color={colors.text} />
                 <Text style={[styles.manageText, { color: colors.text }]}>Create Task</Text>
               </TouchableOpacity>
+              
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-                onPress={() => navigation.navigate("GenericTaskLibrary")}
+                onPress={() => navigation.navigate("parentReviewTask")}
               >
-                <Ionicons name="library-outline" size={24} color={colors.text} />
-                <Text style={[styles.manageText, { color: colors.text }]}>Task Library</Text>
+                <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
+                <Text style={[styles.manageText, { color: colors.text }]}>Review Task</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("parentReward")}
@@ -395,11 +392,12 @@ export default function ParentDashBoard({ navigation, route }) {
                 <Ionicons name="gift-outline" size={24} color={colors.text} />
                 <Text style={[styles.manageText, { color: colors.text }]}>Create Reward</Text>
               </TouchableOpacity>
+              
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
-                onPress={() => navigation.navigate("parentReviewTask")}
+                onPress={() => navigation.navigate("parentReviewRewards")}
               >
-                <Ionicons name="checkmark-circle-outline" size={24} color={colors.text} />
-                <Text style={[styles.manageText, { color: colors.text }]}>Review Task</Text>
+                <Ionicons name="trophy-outline" size={24} color={colors.text} />
+                <Text style={[styles.manageText, { color: colors.text }]}>Review Rewards</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.manageBox, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate("AccountSetting")}
