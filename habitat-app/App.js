@@ -242,7 +242,7 @@ function AppNavigator() {
 
   return (
     <ParentLockProvider>
-      <NavigationContainer>
+      <NavigationContainer theme = {theme}>
         <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
