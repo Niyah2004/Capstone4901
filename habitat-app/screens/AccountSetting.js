@@ -9,8 +9,19 @@ import { getAuth, signOut } from "firebase/auth";
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useTheme } from "../theme/ThemeContext";
+import { useParentLock } from "../ParentLockContext";
 
 export default function AccountSetting({navigation}) {
+  const { isParentUnlocked } = useParentLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
+
   const[parentName, setParentName] = useState("");
   const [childsName, setChildName] = useState("");
   const [childsPreferredName, setChildPreferredName] = useState("");

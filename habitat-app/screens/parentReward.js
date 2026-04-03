@@ -7,6 +7,9 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
 import { arrayRemove } from "firebase/firestore";
 import { useSelectedChild } from "../SelectedChildContext";
+import { useFocusEffect } from "@react-navigation/native";
+import { useParentLock } from "../ParentLockContext";
+import { useCallback } from "react";
 
 
 const REWARD_PRESETS = [
@@ -21,6 +24,15 @@ export default function ParentReward({navigation, route}) {
   const auth = getAuth();
   const { selectedChildId } = useSelectedChild();
   const activeChildId = route?.params?.childId || selectedChildId;
+  const { isParentUnlocked } = useParentLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
   const [points, setPoints] = useState("");
