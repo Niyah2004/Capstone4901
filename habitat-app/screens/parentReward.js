@@ -6,6 +6,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
 import { arrayRemove } from "firebase/firestore";
+import { useSelectedChild } from "../SelectedChildContext";
 
 
 const REWARD_PRESETS = [
@@ -16,8 +17,10 @@ const REWARD_PRESETS = [
   { id: 'outside',   label: 'Outside',      image: require('../assets/outside.png') },
 ];
 
-export default function ParentReward({navigation}) {
+export default function ParentReward({navigation, route}) {
   const auth = getAuth();
+  const { selectedChildId } = useSelectedChild();
+  const activeChildId = route?.params?.childId || selectedChildId;
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
   const [points, setPoints] = useState("");
@@ -79,6 +82,9 @@ export default function ParentReward({navigation}) {
   const saveRewardToFirestore = async (imageURL, parsedPoints) => {
     await addDoc(collection(db, "rewards"), {
       parentId: auth.currentUser?.uid,
+      ownerId: auth.currentUser?.uid,
+      childId: activeChildId || null,
+      rewardName: rewardName,
       name: rewardName,
       description: description,
       points: parsedPoints,

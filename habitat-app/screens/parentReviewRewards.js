@@ -25,7 +25,7 @@ import {
 } from "firebase/firestore";
 import { useTheme } from "../theme/ThemeContext";
 import { useSelectedChild } from "../SelectedChildContext";
-
+import { getAuth } from "firebase/auth";
 export default function ParentReviewRewards({ navigation, route }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
@@ -38,14 +38,17 @@ export default function ParentReviewRewards({ navigation, route }) {
 
   // Listener: rewards catalog
   useEffect(() => {
-    if (!activeChildId) {
+    const uid = getAuth().currentUser?.uid;
+    if (!uid) { setRewards([]); return; }
+   if (!activeChildId) {
       setRewards([]);
       return;
     }
 
     const q = query(
       collection(db, "rewards"),
-      where("childId", "==", activeChildId)
+      where("ownerId", "==", uid),
+      where("childId", "==", activeChildId || null)
     );
 
     const unsub = onSnapshot(
