@@ -112,16 +112,6 @@ export default function ParentReward({navigation, route}) {
     setSelectedPreset(null);
     navigation.goBack();
   };
-  
-  const removeReward = async (rewardId) => {
-  try {
-    await deleteDoc(doc(db, "rewards", rewardId));
-    Alert.alert("Deleted", "Reward removed successfully.");
-  } catch (error) {
-    console.log("Error removing reward:", error);
-    Alert.alert("Error", "Could not remove reward.");
-  }
-};
 
 //confirm before deleting reward?
 {/*}
@@ -217,49 +207,6 @@ const confirmRemoveReward = (rewardId) => {
     <TouchableOpacity style={styles.saveButton} onPress={saveReward}>
       <Text style={styles.saveButtonText}>Save Reward</Text>
     </TouchableOpacity>
-
-    {rewards.length > 0 && (
-      <View style={styles.existingRewardsSection}>
-        <Text style={styles.existingRewardsTitle}>Available Rewards 🎁 (visible to your child)</Text>
-        {rewards.map((reward) => (
-          <View key={reward.id} style={styles.rewardCard}>
-            <View style={styles.rewardCardLeft}>
-              {REWARD_PRESETS.find(p => p.id === reward.image)
-                ? <Image source={REWARD_PRESETS.find(p => p.id === reward.image).image} style={styles.rewardCardIcon} resizeMode="contain" />
-                : <Text style={styles.rewardCardEmoji}>🎁</Text>
-              }
-              <View style={styles.rewardCardInfo}>
-                <Text style={styles.rewardCardName}>{reward.name || "Untitled Reward"}</Text>
-                <View style={styles.rewardCardBadges}>
-                  <View style={styles.pointsBadge}>
-                    <Text style={styles.pointsBadgeText}>⭐ {reward.points ?? 0} pts</Text>
-                  </View>
-                  <View style={[styles.freqBadge,
-                    reward.frequency === "One-Time" && { backgroundColor: "#FFE0E0" },
-                    reward.frequency === "Daily" && { backgroundColor: "#E0F0FF" },
-                    reward.frequency === "Weekly" && { backgroundColor: "#E8F5E9" },
-                    reward.frequency === "Monthly" && { backgroundColor: "#FFF3E0" },
-                    reward.frequency === "Milestone" && { backgroundColor: "#F3E5F5" },
-                  ]}>
-                    <Text style={styles.freqBadgeText}>{reward.frequency || "One-Time"}</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-            <TouchableOpacity
-              onPress={() => removeReward(reward.id)}
-              style={styles.deleteButton}
-            >
-              <Text style={styles.deleteText}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
-    )}
-
-
-
-
   </View>
     </ScrollView>
   );
