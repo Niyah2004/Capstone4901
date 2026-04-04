@@ -37,7 +37,7 @@ export default function ChildHome({ navigation, route }) {
     const { theme } = useTheme();
     const colors = theme.colors;
     const { selectedChildId } = useSelectedChild();
-   const childIdFromRoute = route?.params?.childId || selectedChildId;
+    const childIdFromRoute = route?.params?.childId || selectedChildId;
     const progressGoal = totalAssignedPoints > 0 ? totalAssignedPoints : 100;
 
     useEffect(() => {
