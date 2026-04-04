@@ -394,7 +394,7 @@ useEffect(() => {
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
                         <Text style={[styles.progressText, { color: colors.text }]}>
-                            Points: {childPoints} <Icon name="star" style={{ color: "#ffea00", fontSize: 10 }} />
+                            Points: {childPoints} <Icon name="star" style={{ color: "#ffea00", fontSize: 13 }} />
                         </Text>
                     
                     <ScrollView
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     progressBarRow: { flexDirection: "row", alignItems: "center", marginVertical: 10, paddingHorizontal: 10 },
     progressBarContainer: { flex: 1, height: 12, borderRadius: 5, backgroundColor: "#ffffffff", overflow: "hidden", marginHorizontal: 8 },
     progressBar: { height: '100%', borderRadius: 5, backgroundColor: "#ffea00ff" },
-    progressText: { fontSize: 11, color: "#333", flexShrink: 0, width: "100%" },
+    progressText: { fontSize: 13, color: "#333", flexShrink: 0, width: "100%" },
     avatarContainer: { alignItems: "center", marginVertical: 20, justifyContent: "center", backgroundColor: "transparent" },
     avatarWrapper: { position: "relative", overflow: "visible" },
     scrollContent: { paddingBottom: 30 },
