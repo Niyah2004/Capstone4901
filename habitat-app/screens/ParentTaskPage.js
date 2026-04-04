@@ -189,7 +189,6 @@ export default function ParentTaskPage({ navigation, route }) {
         description,
         scheduleDate: scheduleDateKey, // YYYY-MM-DD (local)
         dateTimestamp: Timestamp.fromDate(dateStart),
-        time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         steps,
         ownerId: parentId,
         userId: user.uid, // Always set userId to the currently logged-in user's UID
@@ -414,28 +413,7 @@ export default function ParentTaskPage({ navigation, route }) {
               />
             )}
 
-            {/* Time */}
-            <Text style={styles.label}>Time</Text>
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => setShowTimePicker(true)}
-            >
-              <Text>
-                {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </Text>
-            </TouchableOpacity>
-            {showTimePicker && (
-              <DateTimePicker
-                value={time}
-                mode="time"
-                display="default"
-                onChange={(e, selectedTime) => {
-                  setShowTimePicker(false);
-                  if (selectedTime) setTime(selectedTime);
-                }}
-              />
-            )}
-
+            
             {/* End Date for repeating tasks */}
             {frequency !== "One-Time" && (
               <>
@@ -572,9 +550,14 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 5,
     marginBottom: 5,
     backgroundColor: "#fafafa",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -582,10 +565,12 @@ const styles = StyleSheet.create({
   dropdownPlaceholderText: {
     color: "#888",
     fontSize: 16,
+    alignItems: "center",
   },
   dropdownValueText: {
     color: "#333",
     fontSize: 16,
+    alignSelf: "center",
   },
   dropdownList: {
     borderWidth: 1,
