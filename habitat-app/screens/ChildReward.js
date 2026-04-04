@@ -182,45 +182,41 @@ export default function ChildReward( {route}) {
 
     // Fetch child's profile (name, avatar, and unlocked characters)
 useEffect(() => {
-  const fetchChildProfile = async () => {
     if (!activeChildId) {
-      setAvatarLoading(false);
-      return;
+        setAvatarLoading(false);
+        return;
     }
 
-    try {
-      const childRef = doc(db, "children", activeChildId);
-      const childSnap = await getDoc(childRef);
+    const childRef = doc(db, "children", activeChildId);
+    const unsubscribe = onSnapshot(childRef, (childSnap) => {
+        if (childSnap.exists()) {
+            const data = childSnap.data();
 
-      if (childSnap.exists()) {
-        const data = childSnap.data();
+            setChildDocId(childSnap.id);
+            setChildName(data.preferredName || data.fullName || "Lea");
 
-        setChildDocId(childSnap.id);
-        setChildName(data.preferredName || data.fullName || "Lea");
+            const avatarData = data.avatar;
+            const avatarBase =
+                typeof avatarData === "string"
+                    ? avatarData
+                    : avatarData?.base ?? "panda";
 
-        const avatarData = data.avatar;
-        const avatarBase =
-          typeof avatarData === "string"
-            ? avatarData
-            : avatarData?.base ?? "panda";
+            const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
+            setAvatar(validAvatar);
+            setWardrobe(data.wardrobe || {});
 
-        const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
-        setAvatar(validAvatar);
-        setWardrobe(data.wardrobe || {});
+            const saved = data.unlockedAvatars || [];
+            const merged = [...new Set([...STARTER_IDS, ...saved])];
+            setUnlockedAvatars(merged);
+        }
 
-        const saved = data.unlockedAvatars || [];
-        const merged = [...new Set([...STARTER_IDS, ...saved])];
-        setUnlockedAvatars(merged);
-      }
+        setAvatarLoading(false);
+    }, (error) => {
+        console.error("Error fetching child profile:", error);
+        setAvatarLoading(false);
+    });
 
-      setAvatarLoading(false);
-    } catch (error) {
-      console.error("Error fetching child profile:", error);
-      setAvatarLoading(false);
-    }
-  };
-
-  fetchChildProfile();
+    return () => unsubscribe();
 }, [activeChildId]);
 
     // Check milestones and unlock new characters when modal opens
