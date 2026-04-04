@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -38,6 +38,7 @@ import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
+import { SelectedChildProvider } from "./SelectedChildContext";
 
 const Stack = createNativeStackNavigator();
 const ParentStack = createNativeStackNavigator();
@@ -54,8 +55,22 @@ Notifications.setNotificationHandler({
 
 
 function ParentStackScreen() {
+  const { isParentUnlocked } = useParentLock();
+  const [navKey, setNavKey] = useState(0);
+  const prevUnlocked = useRef(isParentUnlocked);
+
+  useEffect(() => {
+    // Reset the stack immediately when the parent becomes locked,
+    // regardless of whether this tab is currently focused.
+    if (prevUnlocked.current && !isParentUnlocked) {
+      setNavKey(k => k + 1);
+    }
+    prevUnlocked.current = isParentUnlocked;
+  }, [isParentUnlocked]);
+
   return (
     <ParentStack.Navigator
+      key={navKey}
       screenOptions={{ headerShown: false }}
       initialRouteName="parentPinScreen"
     >
@@ -66,22 +81,27 @@ function ParentStackScreen() {
       <ParentStack.Screen
         name="ParentDashBoard"
         component={ParentDashBoard}
+        
       />
       <ParentStack.Screen
         name="ParentTaskPage"
         component={ParentTaskPage}
+        
       />
       <ParentStack.Screen
         name="parentReviewTask"
         component={ParentReviewTask}
+        
       />
       <ParentStack.Screen
         name="parentReward"
         component={ParentReward}
+       
       />
       <ParentStack.Screen
         name="parentReviewRewards"
         component={ParentReviewRewards}
+        
       />
       <ParentStack.Screen
         name="AccountSetting"
@@ -154,9 +174,18 @@ function ChildTabs() {
         component={ChildHome}
         initialParams={{ childId }}
       />
-      <Tab.Screen name="Tasks" component={childTask} />
-      <Tab.Screen name="Rewards" component={ChildReward} />
-      <Tab.Screen name="Parent" component={ParentStackScreen}
+      <Tab.Screen 
+      name="Tasks" 
+      component={childTask}
+      initialParams={{childId}} />
+
+      <Tab.Screen name="Rewards"
+      component={ChildReward}
+      initialParams={{childId}} />
+
+      <Tab.Screen name="Parent" 
+      component={ParentStackScreen}
+      initialParams={{childId}}
         listeners={{
           blur: () => {
             // whenever you leave the Parent tab, lock it
@@ -215,7 +244,7 @@ function AppNavigator() {
 
   return (
     <ParentLockProvider>
-      <NavigationContainer>
+      <NavigationContainer theme = {theme}>
         <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
@@ -256,7 +285,9 @@ export default function AppWithProviders() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <AppNavigator />
+        <SelectedChildProvider>
+          <AppNavigator />
+        </SelectedChildProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

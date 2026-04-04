@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -28,9 +28,23 @@ import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { getAuth } from "firebase/auth";
 
 import { Picker } from "@react-native-picker/picker";
+import { useSelectedChild } from "../SelectedChildContext";
+import { useFocusEffect } from "@react-navigation/native";
+import { useParentLock } from "../ParentLockContext";
 
 export default function ParentTaskPage({ navigation, route }) {
+  const { selectedChildId } = useSelectedChild();
+  const { isParentUnlocked } = useParentLock();
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
+
+  const activeChildId = route?.params?.childId || selectedChildId;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date());
@@ -39,7 +53,11 @@ export default function ParentTaskPage({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [points, setPoints] = useState("");
-  // No childId requirement. Tasks are for the logged-in user.
+  const [isPointsDropdownOpen, setIsPointsDropdownOpen] = useState(false);
+  const [isCustomPointsMode, setIsCustomPointsMode] = useState(false);
+  const [frequency, setFrequency] = useState("One-Time");
+  const [endDate, setEndDate] = useState(null);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
 
   // Dropdown state for generic tasks
@@ -98,8 +116,8 @@ export default function ParentTaskPage({ navigation, route }) {
 
 
     const parsedPoints = parseInt(points, 10);
-    if (isNaN(parsedPoints) || parsedPoints < 0) {
-      Alert.alert("Invalid Points", "Points must be a non-negative number.");
+    if (isNaN(parsedPoints) || parsedPoints < 0 || parsedPoints > 1000) {
+      Alert.alert("Invalid Points", "Points must be between 0 and 1000.");
       return;
     }
 
@@ -107,10 +125,10 @@ export default function ParentTaskPage({ navigation, route }) {
       const auth = getAuth();
       const user = auth.currentUser;
 
-      if (!user) {
-        Alert.alert("Error", "No authenticated parent found.");
-        return;
-      }
+      if (!activeChildId) {
+      Alert.alert("No Child Selected", "Please select a child before creating a task.");
+      return;
+}
 
       const parentId = user.uid;
       const dateStart = new Date(
@@ -123,7 +141,47 @@ export default function ParentTaskPage({ navigation, route }) {
         0
       );
 
+      // Validate end date for repeating tasks
+      if (frequency !== "One-Time") {
+        if (!endDate) {
+          Alert.alert("Missing End Date", "Please select an end date for repeating tasks.");
+          return;
+        }
+
+        const endDateStart = new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          0,
+          0,
+          0,
+          0
+        );
+
+        if (endDateStart < dateStart) {
+          Alert.alert("Invalid End Date", "End date cannot be before the start date.");
+          return;
+        }
+      }
+
       const scheduleDateKey = `${dateStart.getFullYear()}-${String(dateStart.getMonth() + 1).padStart(2, "0")}-${String(dateStart.getDate()).padStart(2, "0")}`;
+
+      const endDateStartForSave =
+        endDate && frequency !== "One-Time"
+          ? new Date(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate(),
+            0,
+            0,
+            0,
+            0
+          )
+          : null;
+
+      const endDateKey = endDateStartForSave
+        ? `${endDateStartForSave.getFullYear()}-${String(endDateStartForSave.getMonth() + 1).padStart(2, "0")}-${String(endDateStartForSave.getDate()).padStart(2, "0")}`
+        : null;
 
       // 1) Save task with points + status
       const taskRef = await addDoc(collection(db, "tasks"), {
@@ -135,7 +193,11 @@ export default function ParentTaskPage({ navigation, route }) {
         steps,
         ownerId: parentId,
         userId: user.uid, // Always set userId to the currently logged-in user's UID
-        isRecurring: false,
+        childId: activeChildId,
+        frequency,
+        isRecurring: frequency !== "One-Time",
+        endDate: endDateStartForSave ? Timestamp.fromDate(endDateStartForSave) : null,
+        endDateKey,
         points: parsedPoints,
         status: "pending",
         createdAt: serverTimestamp(),
@@ -159,6 +221,8 @@ export default function ParentTaskPage({ navigation, route }) {
       setDescription("");
       setSteps([""]);
       setPoints("");
+      setFrequency("One-Time");
+      setEndDate(null);
       navigation.goBack();
     } catch (error) {
       console.error("Error saving task:", error);
@@ -194,124 +258,239 @@ export default function ParentTaskPage({ navigation, route }) {
           <Text style={styles.header}>Create Task</Text>
 
           <View style={styles.formWrapper}>
-          {/* Dropdown for stockpile of tasks */}
-          <Text style={styles.label}>Select Existing Task</Text>
-          <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 5 }}>
-            <Picker
-              selectedValue={selectedTaskId}
-              onValueChange={setSelectedTaskId}
-              style={{ color: '#222' }} // Ensure text is visible
-            >
-              <Picker.Item label="-- Select a task --" value="" color="#888" />
-              {taskList.map(task => (
-                <Picker.Item
-                  key={task.id}
-                  label={task.title ? String(task.title) : `Untitled Task (${task.id.slice(-4)})`}
-                  value={task.id}
-                  color="#222"
-                />
-              ))}
-            </Picker>
-          </View>
-
-          {/* Task Title */}
-          <Text style={styles.label}>Task Title</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Clean my room"
-            value={title}
-            onChangeText={setTitle}
-          />
-
-          {/* Description */}
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, { height: 100 }]}
-            multiline
-            placeholder="e.g., Put away clothes, make the bed, vacuum..."
-            value={description}
-            onChangeText={setDescription}
-          />
-
-          {/* Points */}
-          <Text style={styles.label}>Points</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., 10"
-            keyboardType="numeric"
-            value={points}
-            onChangeText={setPoints}
-          />
-
-          {/* Schedule */}
-          <Text style={styles.label}>Schedule</Text>
-          <TouchableOpacity
-            style={styles.input}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text>{date.toISOString().split("T")[0]}</Text>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="default"
-              onChange={(e, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) setDate(selectedDate);
-              }}
-            />
-          )}
-
-          {/* Time */}
-          <Text style={styles.label}>Time</Text>
-          <TouchableOpacity
-            style={styles.input}
-            onPress={() => setShowTimePicker(true)}
-          >
-            <Text>
-              {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </Text>
-          </TouchableOpacity>
-          {showTimePicker && (
-            <DateTimePicker
-              value={time}
-              mode="time"
-              display="default"
-              onChange={(e, selectedTime) => {
-                setShowTimePicker(false);
-                if (selectedTime) setTime(selectedTime);
-              }}
-            />
-          )}
-
-          {/* Steps */}
-          <Text style={styles.label}>Steps</Text>
-          {steps.map((step, index) => (
-            <View key={index} style={styles.stepRow}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder={`Step ${index + 1} description`}
-                value={step}
-                onChangeText={(text) => handleStepChange(text, index)}
-              />
-              {steps.length > 1 && (
-                <TouchableOpacity onPress={() => handleRemoveStep(index)}>
-                  <Ionicons name="close" size={20} color="gray" />
-                </TouchableOpacity>
-              )}
+            {/* Dropdown for stockpile of tasks */}
+            <Text style={styles.label}>Select Existing Task</Text>
+            <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginTop: 5 }}>
+              <Picker
+                selectedValue={selectedTaskId}
+                onValueChange={setSelectedTaskId}
+                style={{ color: '#222' }} // Ensure text is visible
+              >
+                <Picker.Item label="-- Select a task --" value="" color="#888" />
+                {taskList.map(task => (
+                  <Picker.Item
+                    key={task.id}
+                    label={task.title ? String(task.title) : `Untitled Task (${task.id.slice(-4)})`}
+                    value={task.id}
+                    color="#222"
+                  />
+                ))}
+              </Picker>
             </View>
-          ))}
 
-          <TouchableOpacity style={styles.addStep} onPress={handleAddStep}>
-            <Ionicons name="add" size={20} color="black" />
-            <Text style={styles.addStepText}>Add Step</Text>
-          </TouchableOpacity>
+            {/* Task Title */}
+            <Text style={styles.label}>Task Title</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Clean my room"
+              value={title}
+              onChangeText={setTitle}
+            />
 
-          {/* Save Task */}
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
-            <Text style={styles.saveButtonText}>Save Task</Text>
-          </TouchableOpacity>
+            {/* Description */}
+            <Text style={styles.label}>Description</Text>
+            <TextInput
+              style={[styles.input, { height: 100 }]}
+              multiline
+              placeholder="e.g., Put away clothes, make the bed, vacuum..."
+              value={description}
+              onChangeText={setDescription}
+            />
+
+            {/* Task Frequency */}
+            <Text style={styles.label}>Task Frequency</Text>
+            <View style={styles.frequencyContainer}>
+              {[/*"One-Time"*/, "Daily", "Weekly", "Monthly"].map((freq) => (
+                <TouchableOpacity
+                  key={freq}
+                  style={[
+                    styles.freqButton,
+                    frequency === freq && styles.freqButtonActive,
+                  ]}
+                  onPress={() => setFrequency(freq)}
+                >
+                  <Text
+                    style={[
+                      styles.freqText,
+                      frequency === freq && styles.freqTextActive,
+                    ]}
+                  >
+                    {freq}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Points */}
+            <Text style={styles.label}>Points</Text>
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => setIsPointsDropdownOpen((prev) => !prev)}
+            >
+              <Text
+                style={
+                  points ? styles.dropdownValueText : styles.dropdownPlaceholderText
+                }
+              >
+                {points ? `${points} points` : "Select points"}
+              </Text>
+              <Ionicons
+                name={isPointsDropdownOpen ? "chevron-up" : "chevron-down"}
+                size={18}
+                color="#555"
+              />
+            </TouchableOpacity>
+            {isPointsDropdownOpen && (
+              <View style={styles.dropdownList}>
+                {[5, 10, 15, 20, 25, 30].map((value) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setPoints(String(value));
+                      setIsCustomPointsMode(false);
+                      setIsPointsDropdownOpen(false);
+                    }}
+                  >
+                    <Text style={styles.dropdownItemText}>{value} points</Text>
+                  </TouchableOpacity>
+                ))}
+                <View style={styles.dropdownDivider} />
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setIsCustomPointsMode(true);
+                  }}
+                >
+                  <Text style={styles.dropdownItemText}>Custom value (max 1000)</Text>
+                </TouchableOpacity>
+                {isCustomPointsMode && (
+                  <View style={styles.customPointsContainer}>
+                    <TextInput
+                      style={styles.customPointsInput}
+                      placeholder="e.g., 75"
+                      keyboardType="numeric"
+                      value={points}
+                      onChangeText={(text) => {
+                        const sanitized = text.replace(/[^0-9]/g, "");
+                        if (!sanitized) {
+                          setPoints("");
+                          return;
+                        }
+                        const numeric = Math.min(parseInt(sanitized, 10) || 0, 1000);
+                        setPoints(String(numeric));
+                      }}
+                    />
+                    <TouchableOpacity
+                      style={styles.customPointsDoneButton}
+                      onPress={() => {
+                        setIsPointsDropdownOpen(false);
+                      }}
+                    >
+                      <Text style={styles.customPointsDoneText}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Schedule */}
+            <Text style={styles.label}>Schedule</Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text>{date.toISOString().split("T")[0]}</Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="default"
+                onChange={(e, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) setDate(selectedDate);
+                }}
+              />
+            )}
+
+            {/* Time */}
+            <Text style={styles.label}>Time</Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text>
+                {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </Text>
+            </TouchableOpacity>
+            {showTimePicker && (
+              <DateTimePicker
+                value={time}
+                mode="time"
+                display="default"
+                onChange={(e, selectedTime) => {
+                  setShowTimePicker(false);
+                  if (selectedTime) setTime(selectedTime);
+                }}
+              />
+            )}
+
+            {/* End Date for repeating tasks */}
+            {frequency !== "One-Time" && (
+              <>
+                <Text style={styles.label}>End Date</Text>
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => setShowEndDatePicker(true)}
+                >
+                  <Text>
+                    {endDate
+                      ? endDate.toISOString().split("T")[0]
+                      : "Select end date"}
+                  </Text>
+                </TouchableOpacity>
+                {showEndDatePicker && (
+                  <DateTimePicker
+                    value={endDate || date}
+                    mode="date"
+                    display="default"
+                    onChange={(e, selectedEndDate) => {
+                      setShowEndDatePicker(false);
+                      if (selectedEndDate) setEndDate(selectedEndDate);
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Steps */}
+            <Text style={styles.label}>Steps</Text>
+            {steps.map((step, index) => (
+              <View key={index} style={styles.stepRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder={`Step ${index + 1} description`}
+                  value={step}
+                  onChangeText={(text) => handleStepChange(text, index)}
+                />
+                {steps.length > 1 && (
+                  <TouchableOpacity onPress={() => handleRemoveStep(index)}>
+                    <Ionicons name="close" size={20} color="gray" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+
+            <TouchableOpacity style={styles.addStep} onPress={handleAddStep}>
+              <Ionicons name="add" size={20} color="black" />
+              <Text style={styles.addStepText}>Add Step</Text>
+            </TouchableOpacity>
+
+            {/* Save Task */}
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
+              <Text style={styles.saveButtonText}>Save Task</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -362,6 +541,96 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  frequencyContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  freqButton: {
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginBottom: 6,
+  },
+  freqButtonActive: {
+    backgroundColor: "#4CAF50",
+  },
+  freqText: {
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  freqTextActive: {
+    color: "#fff",
+  },
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 5,
+    backgroundColor: "#fafafa",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dropdownPlaceholderText: {
+    color: "#888",
+    fontSize: 16,
+  },
+  dropdownValueText: {
+    color: "#333",
+    fontSize: 16,
+  },
+  dropdownList: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    marginBottom: 5,
+    overflow: "hidden",
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginHorizontal: 8,
+  },
+  customPointsContainer: {
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+  },
+  customPointsInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  customPointsDoneButton: {
+    alignSelf: "flex-end",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: "#4CAF50",
+  },
+  customPointsDoneText: {
+    color: "#fff",
+    fontWeight: "600",
   },
   stepRow: {
     flexDirection: "row",

@@ -147,6 +147,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginLeft: "20%",
     marginBottom: 5,
+    width : "100%",
   },
   input: {
     width: "60%",

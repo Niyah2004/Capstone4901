@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Image } from "react-native";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { AVATARS } from "../data/avatars";
+import { useSelectedChild } from "../SelectedChildContext";
 
 export default function ChildSelectScreen({ navigation }) {
   const auth = getAuth();
   const userId = auth.currentUser?.uid;
-
+  const { setSelectedChildId } = useSelectedChild();
   const [children, setChildren] = useState([]);
 
 useEffect(() => {
@@ -39,10 +41,11 @@ useEffect(() => {
   <SafeAreaView style={styles.safe} edges={["top"]}>
     <View style={styles.container}>
       <Text style={styles.title}>Who's Playing?</Text>
+{/*
 <Text style={{ marginBottom: 10, opacity: 0.6 }}>
   Logged in as: {userId || "NO USER"}
 </Text>
-
+*/}
 <FlatList
   data={children}
   keyExtractor={(item) => item.id}
@@ -52,27 +55,47 @@ useEffect(() => {
       matching this account, or Firestore rules are blocking reads.
     </Text>
   }
-  renderItem={({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.name}>{item.preferredName || item.fullName}</Text>
+  renderItem={({ item }) => {
+    const avatarKey =
+              typeof item.avatar === "string"
+                ? item.avatar
+                : item.avatar?.base || "panda";
 
-      <View style={styles.row}>
-        <TouchableOpacity
-        style={styles.primaryBtn}
-         onPress={() => navigation.replace("ChildTabs", { childId: item.id })}>
-       <Text style={styles.btnText}>Open</Text>
-        </TouchableOpacity>
+    return (
+      <View style={styles.card}>
+        <View style={styles.topRow}>
+          <Image
+            source={AVATARS[avatarKey]?.base}
+            style={styles.avatar}
+            resizeMode="contain"
+          />
+          <Text style={styles.name}>
+            {item.preferredName || item.fullName}
+          </Text>
+        </View>
 
-        <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
-        >
-          <Text style={styles.btnText}>Edit Avatar</Text>
-        </TouchableOpacity>
+        <View style={styles.row}>
+          <TouchableOpacity
+            style={styles.openBtn}
+            onPress={() => {
+              setSelectedChildId(item.id);
+              navigation.replace("ChildTabs", { childId: item.id });
+            }}
+          >
+            <Text style={styles.btnText}>Open</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.EditAvatarBtn}
+            onPress={() => navigation.navigate("AvatarSelection", { childId: item.id })}
+          >
+            <Text style={styles.SecondbtnText}>Edit Avatar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  )}
-/>
+    );
+  }}
+    />
     </View>
     </SafeAreaView>
   );
@@ -87,7 +110,8 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 24, 
     fontWeight: "bold", 
-    marginBottom: 14 
+    marginBottom: 20,
+    alignSelf: "center",
   },
   card: { 
     borderWidth: 1, 
@@ -97,23 +121,24 @@ const styles = StyleSheet.create({
     marginBottom: 12 
   },
   name: { 
-    fontSize: 18, 
+    fontSize: 20, 
     fontWeight: "700", 
-    marginBottom: 10 
+    marginBottom: 10,
+    marginTop: 5,
   },
   row: { 
     flexDirection: "row", 
     gap: 10 
   },
-  primaryBtn: { 
+  openBtn: { 
     backgroundColor: "#4CAF50", 
     padding: 12, 
     borderRadius: 10, 
     flex: 1, 
     alignItems: "center" 
   },
-  secondaryBtn: { 
-    backgroundColor: "#2D8CFF", 
+  EditAvatarBtn: { 
+    backgroundColor: "#ffff", 
     padding: 12, 
     borderRadius: 10, 
     flex: 1, 
@@ -123,8 +148,17 @@ const styles = StyleSheet.create({
     color: "#fff", 
     fontWeight: "700" 
   },
+  SecondbtnText: { 
+    color: "#4CAF50", 
+    fontWeight: "700" 
+  },
   safe: {
     flex: 1,
     backgroundColor: "#fff" 
+  },
+  avatar: {
+    width: 75,
+    height: 75,
+    marginRight: 12,
   },
 });

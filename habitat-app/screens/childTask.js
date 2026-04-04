@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import WeekCalendar from "./WeekCalendar";
 import { addDays, startOfDay } from "date-fns";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import {
@@ -20,25 +20,50 @@ import { db } from "../firebaseConfig";
 import { getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-import Slider from "@react-native-community/slider";
 import { useTheme } from "../theme/ThemeContext";
 import { endOfDay } from "date-fns";
+import { useSelectedChild } from "../SelectedChildContext";
 
 
 export default function ChildTask({ route, navigation }) {
-  const childId = route?.params?.childId;
-  const currentChildUid = getAuth().currentUser?.uid;
-  const pointsChildId = childId || currentChildUid;
+const { selectedChildId } = useSelectedChild();
+const childId = route?.params?.childId || selectedChildId;
+const currentChildUid = getAuth().currentUser?.uid;
+const pointsChildId = childId;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasksForDate, setTasksForDate] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [childDocId, setChildDocId] = useState(null);
+  const [childName, setChildName] = useState("");
   const { theme } = useTheme();
   const colors = theme.colors;
 
   // store child points locally (and keep it in sync with Firestore)
   const [childPoints, setChildPoints] = useState(0);
+
+  // Steps modal state
+  const [stepModalTask, setStepModalTask] = useState(null);
+  const [checkedSteps, setCheckedSteps] = useState(new Set());
+
+  const toggleStep = (index) => {
+    setCheckedSteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const closeStepModal = () => {
+    setStepModalTask(null);
+    setCheckedSteps(new Set());
+  };
+
+  const CARD_COLORS = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#A8E6CF", "#C3B1E1"];
   const taskBucketsRef = useRef({
     dateUser: [],
     dateChild: [],
@@ -98,23 +123,52 @@ export default function ChildTask({ route, navigation }) {
   }, [pointsChildId]);
 
   // Resolve child document id when running as the child user
+  //changed to the active child id
   useEffect(() => {
-    if (!currentChildUid || childId) return;
+  if (!childId) {
+    setChildDocId(null);
+    setChildName("");
+    return;
+  }
 
-    let cancelled = false;
-    const q = query(collection(db, "children"), where("userId", "==", currentChildUid));
-    getDocs(q)
+  let cancelled = false;
+
+  getDoc(doc(db, "children", childId))
+    .then((snap) => {
+      if (cancelled) return;
+
+      if (snap.exists()) {
+        const data = snap.data();
+        setChildDocId(childId);
+        setChildName(data.preferredName || data.fullName || "");
+      } else {
+        setChildDocId(null);
+        setChildName("");
+      }
+    })
+    .catch((err) => console.error("child doc direct lookup error", err));
+
+  return () => {
+    cancelled = true;
+  };
+}, [childId]);
+
+/* duplicate of the child look up
+  useEffect(() => {
+    if (!childId) return;
+
+    const ref = doc(db, "children", childId);
+    getDoc(ref)
       .then((snap) => {
-        if (cancelled) return;
-        const docMatch = snap.docs[0];
-        setChildDocId(docMatch ? docMatch.id : null);
+        if (!snap.exists()) return;
+        const data = snap.data();
+        setChildDocId(childId);
+        setChildName(data.preferredName || data.fullName || "");
       })
-      .catch((err) => console.error("child doc lookup error", err));
+      .catch((err) => console.error("child doc direct lookup error", err));
+  }, [childId]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [currentChildUid, childId]);
+  */
 
   // Load tasks (date-specific + recurring)
   useEffect(() => {
@@ -145,7 +199,6 @@ export default function ChildTask({ route, navigation }) {
           (snap) => {
             const list = snap.docs
               .map((d) => ({ id: d.id, ...d.data() }))
-              .filter((t) => t?.isRecurring !== true)
               .filter((t) => t?.completed !== true && t?.verified !== true)
               .map((t) => ({
                 ...t,
@@ -177,7 +230,6 @@ export default function ChildTask({ route, navigation }) {
             const legacy = snap.docs
               .map((d) => ({ id: d.id, ...d.data() }))
               .filter((t) => !t?.scheduleDate)
-              .filter((t) => t?.isRecurring !== true)
               .filter((t) => t?.completed !== true && t?.verified !== true)
               .map((t) => ({
                 ...t,
@@ -214,7 +266,6 @@ export default function ChildTask({ route, navigation }) {
           (snap) => {
             const list = snap.docs
               .map((d) => ({ id: d.id, ...d.data() }))
-              .filter((t) => t?.isRecurring !== true)
               .filter((t) => t?.completed !== true && t?.verified !== true)
               .map((t) => ({
                 ...t,
@@ -241,24 +292,6 @@ export default function ChildTask({ route, navigation }) {
     };
   }, [selectedDate, childId, currentChildUid, childDocId, recomputeTasksForDate, toLocalDateKey]);
 
-  // UI-only live update while sliding (no Firestore spam)
-  const updateProgressLocal = (taskId, value) => {
-    setTasksForDate((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, progressPercent: value } : t))
-    );
-  };
-
-  //  Persist progress to Firestore when sliding stops
-  const persistProgress = async (taskId, value) => {
-    try {
-      await runTransaction(db, async (tx) => {
-        const taskRef = doc(db, "tasks", taskId);
-        tx.update(taskRef, { progressPercent: value });
-      });
-    } catch (e) {
-      console.error("Error saving progress:", e);
-    }
-  };
   /*
     //  Complete task + award points to childPoints (transaction prevents double-award)
     const markTaskComplete = async (task) => {
@@ -312,7 +345,7 @@ export default function ChildTask({ route, navigation }) {
     };
   */
   const markTaskComplete = async (task) => {
-    if (!task?.id || !currentChildUid) return;
+    if (!task?.id || !childId) return;
 
     try {
       await runTransaction(db, async (tx) => {
@@ -328,7 +361,7 @@ export default function ChildTask({ route, navigation }) {
         tx.update(taskRef, {
           completed: true, // child checked it off
           completedAt: serverTimestamp(),
-          completedByChildId: currentChildUid,
+          completedByChildId: childId,
           pendingApproval: true, // parent needs to verify
           completionRequestedAt: serverTimestamp(),
           progressPercent: 100,
@@ -340,13 +373,19 @@ export default function ChildTask({ route, navigation }) {
           const notifRef = doc(collection(db, "notifications"));
           tx.set(notifRef, {
             toUserId: current.ownerId,
-            fromChildId: currentChildUid,
+            fromChildId: childId,
             taskId: task.id,
             type: "completion_request",
-            title: "Task completed",
+            title: childName
+              ? `${childName} completed a task`
+              : "Task completed",
             body: task.title
-              ? `${task.title} has been marked complete and is waiting for your review.`
-              : "A task has been marked complete and is waiting for your review.",
+              ? childName
+                ? `${childName} marked "${task.title}" as complete and it is waiting for your review.`
+                : `${task.title} has been marked complete and is waiting for your review.`
+              : childName
+                ? `${childName} marked a task as complete and it is waiting for your review.`
+                : "A task has been marked complete and is waiting for your review.",
             createdAt: serverTimestamp(),
             read: false,
           });
@@ -408,54 +447,136 @@ export default function ChildTask({ route, navigation }) {
             <Text style={{ textAlign: "center", color: colors.muted }}>No tasks for this date.</Text>
           </View>
         ) : (
-          tasksForDate.map((task) => {
-            const progress = Math.max(0, Math.min(100, Number(task.progressPercent || 0)));
+          tasksForDate.map((task, index) => {
+            const bannerColor = CARD_COLORS[index % CARD_COLORS.length];
+            const hasSteps = Array.isArray(task.steps) && task.steps.filter((s) => s.trim()).length > 0;
 
             return (
-              <View key={task.id} style={[styles.taskBox, { backgroundColor: colors.card }]}>
-                <View style={styles.taskHeader}>
-                  <Text style={[styles.taskTitle, { color: colors.text }]}>{task.title}</Text>
-                  <Text style={[styles.points, { color: colors.primary }]}>{task.points} pts</Text>
+              <View key={task.id} style={styles.questCardShadow}>
+                <View style={styles.questCard}>
+                {/* Color banner with badge */}
+                <View style={[styles.questBanner, { backgroundColor: bannerColor }]}>
+                  <Ionicons name="shield" size={36} color="#fff" />
+                  <View style={styles.pointsBadge}>
+                    <Ionicons name="star" size={14} color="#FFE66D" />
+                    <Text style={styles.pointsBadgeText}>{task.points} pts</Text>
+                  </View>
                 </View>
 
-                <Slider
-                  value={progress}
-                  minimumValue={0}
-                  maximumValue={100}
-                  step={1}
-                  disabled={task.completed}
-                  onValueChange={(val) => updateProgressLocal(task.id, val)}
-                  onSlidingComplete={(val) => persistProgress(task.id, val)}
-                  minimumTrackTintColor={colors.primary}   // filled part
-                  maximumTrackTintColor={colors.border}    // remaining part
-                  thumbTintColor={colors.primary}
+                {/* Card body */}
+                <View style={styles.questBody}>
+                  <Text style={styles.questTitle}>{task.title}</Text>
 
-                />
-                <Text style={[styles.progressLabel, { color: colors.text }]}>{Math.round(progress)}%</Text>
-                <View style={styles.progressContainer}>
-                  <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
+                  {hasSteps ? (
+                    <View style={styles.questActions}>
+                      <TouchableOpacity
+                        style={[styles.viewStepsBtn, { backgroundColor: bannerColor }]}
+                        onPress={() => setStepModalTask(task)}
+                      >
+                        <Ionicons name="eye-outline" size={18} color="#fff" />
+                        <Text style={styles.viewStepsBtnText}>View Steps</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.largeCheckbox}
+                        disabled={task.completed}
+                        onPress={() => markTaskComplete(task)}
+                      >
+                        <Ionicons
+                          name={task.completed ? "checkmark-circle" : "ellipse-outline"}
+                          size={48}
+                          color={task.completed ? bannerColor : "#ccc"}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={styles.questActions}>
+                      <View style={styles.bigPointsContainer}>
+                        <Ionicons name="star" size={32} color="#FFE66D" />
+                        <Text style={[styles.bigPointsText, { color: bannerColor }]}>{task.points} pts</Text>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.largeCheckbox}
+                        disabled={task.completed}
+                        onPress={() => markTaskComplete(task)}
+                      >
+                        <Ionicons
+                          name={task.completed ? "checkmark-circle" : "ellipse-outline"}
+                          size={48}
+                          color={task.completed ? bannerColor : "#ccc"}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
-
-                {/* ✅ Complete button actually works + awards points */}
-                <TouchableOpacity
-                  style={[styles.completeButton, task.completed && styles.completeButtonDisabled]}
-                  disabled={task.completed}
-                  onPress={() => markTaskComplete(task)}
-                >
-                  <Ionicons
-                    name={task.completed ? "checkmark-circle" : "ellipse-outline"}
-                    size={26}
-                    color={task.completed ? colors.primary : colors.muted}
-                  />
-                  <Text style={[styles.completeText, { color: colors.text }]}>
-                    {task.completed ? "Completed" : "Mark Complete"}
-                  </Text>
-                </TouchableOpacity>
+              </View>
               </View>
             );
           })
         )}
       </ScrollView>
+
+      {/* Steps Modal */}
+      <Modal
+        visible={!!stepModalTask}
+        animationType="slide"
+        transparent
+        onRequestClose={closeStepModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle} numberOfLines={2}>
+                {stepModalTask?.title}
+              </Text>
+              <TouchableOpacity onPress={closeStepModal} style={styles.modalClose}>
+                <Ionicons name="close" size={26} color="#555" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.stepsScroll} contentContainerStyle={{ paddingBottom: 20 }}>
+              {(stepModalTask?.steps || [])
+                .filter((s) => s.trim())
+                .map((step, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.stepRow}
+                    onPress={() => toggleStep(i)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={checkedSteps.has(i) ? "checkmark-circle" : "ellipse-outline"}
+                      size={28}
+                      color={checkedSteps.has(i) ? "#4ECDC4" : "#ccc"}
+                    />
+                    <Text style={[styles.stepText, checkedSteps.has(i) && styles.stepTextDone]}>
+                      {step}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.modalCompleteBtn, stepModalTask?.completed && styles.modalCompleteBtnDone]}
+              disabled={stepModalTask?.completed}
+              onPress={() => {
+                markTaskComplete(stepModalTask);
+                closeStepModal();
+              }}
+            >
+              <Ionicons
+                name={stepModalTask?.completed ? "checkmark-circle" : "checkmark-done-circle-outline"}
+                size={24}
+                color="#fff"
+              />
+              <Text style={styles.modalCompleteBtnText}>
+                {stepModalTask?.completed ? "Already Complete!" : "Mark Task Complete"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -463,7 +584,6 @@ export default function ChildTask({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F7F7",
     paddingHorizontal: 20,
     paddingTop: 50,
   },
@@ -474,7 +594,6 @@ const styles = StyleSheet.create({
   },
   pointsTotal: {
     fontSize: 14,
-    color: "#4CAF50",
     marginBottom: 10,
     fontWeight: "600",
   },
@@ -489,46 +608,155 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   taskBox: {
-    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  taskHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  taskTitle: {
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  points: {
-    fontSize: 16,
-    color: "#4CAF50",
-  },
-  sliderRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
-  slider: { flex: 1, height: 40, marginRight: 10 },
-  percentText: { width: 52, textAlign: "right", fontWeight: "600", color: "#4CAF50" },
 
-  completeButton: {
+  // Quest card
+  questCardShadow: {
+    borderRadius: 20,
+    marginBottom: 18,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1.5,
+    borderColor: "rgba(0,0,0,0.10)",
+  },
+  questCard: {
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+  },
+  questBanner: {
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pointsBadge: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  pointsBadgeText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 13,
+    marginLeft: 3,
+  },
+  questBody: {
+    padding: 16,
+  },
+  questTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2d2d2d",
+    marginBottom: 14,
+    textAlign: "center",
+  },
+  questActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  viewStepsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 30,
+    gap: 6,
+  },
+  viewStepsBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  bigPointsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  bigPointsText: {
+    fontSize: 26,
+    fontWeight: "800",
+  },
+  largeCheckbox: {
+    padding: 4,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2d2d2d",
+  },
+  modalClose: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  stepsScroll: {
+    marginBottom: 16,
+  },
+  stepRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
-    marginTop: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    gap: 12,
   },
-  completeButtonDisabled: {
-    opacity: 0.6,
-  },
-  completeText: {
-    marginLeft: 8,
-    fontWeight: "700",
+  stepText: {
+    flex: 1,
+    fontSize: 16,
     color: "#333",
+  },
+  stepTextDone: {
+    textDecorationLine: "line-through",
+    color: "#aaa",
+  },
+  modalCompleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#4ECDC4",
+    borderRadius: 30,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  modalCompleteBtnDone: {
+    backgroundColor: "#aaa",
+  },
+  modalCompleteBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 17,
   },
 });

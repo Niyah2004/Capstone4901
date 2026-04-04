@@ -138,6 +138,7 @@ for (const child of childrenToSave) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      
       <View style={styles.form}>
         <Text style={styles.title}>Child Profile Setup</Text>
 
@@ -147,8 +148,7 @@ for (const child of childrenToSave) {
         <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
         <TextInput style={styles.input} placeholder="Preferred Name" value={preferredName} onChangeText={setPreferredName} />
         <TextInput style={styles.input} placeholder="Age (years)" keyboardType="numeric" value={age} onChangeText={setAge} />
-        <TextInput style={styles.input} placeholder="Grade Level" value={grade} onChangeText={setGrade} />
-        <TextInput style={[styles.input, { height: 80 }]} placeholder="Special Needs or Preferences (Optional)" multiline value={notes} onChangeText={setNotes} />
+        
 
         <TouchableOpacity style={styles.button} onPress={addChild}>
           <Text style={styles.buttonText}>Add Child</Text>

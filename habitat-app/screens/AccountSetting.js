@@ -9,12 +9,22 @@ import { getAuth, signOut } from "firebase/auth";
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useTheme } from "../theme/ThemeContext";
+import { useParentLock } from "../ParentLockContext";
 
 export default function AccountSetting({navigation}) {
+  const { isParentUnlocked } = useParentLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
+
   const[parentName, setParentName] = useState("");
   const [childsName, setChildName] = useState("");
   const [childsPreferredName, setChildPreferredName] = useState("");
-  const [phoneNum, setPhone] = useState("");
   const [userEmail, setEmail] = useState("");
   const [password, setPassword] = useState("************");
   const [pin, setPin]= useState("****");
@@ -47,7 +57,6 @@ export default function AccountSetting({navigation}) {
         const user = auth.currentUser;
         if (!user) {
             setParentName("");
-            setPhone("");
             return;
         }
         const docRef = doc(db, "parents", user.uid);
@@ -56,7 +65,6 @@ export default function AccountSetting({navigation}) {
         if (snap.exists()) {
             const data = snap.data();
             setParentName(data.name || "");
-            setPhone(data.phone || "");
         } else {
             setParentName("");
             setPhone("");
@@ -64,7 +72,6 @@ export default function AccountSetting({navigation}) {
       } catch (error) {
           console.error("Error fetching parent profile:", error);
           setParentName("");
-          setPhone("");
       } finally {
         setLoading(false);
       }
@@ -130,7 +137,7 @@ export default function AccountSetting({navigation}) {
   
   const handleSaveChanges = async () => {
     if (!parentName.trim() || !phoneNum.trim()) {
-        Alert.alert("Missing Info", "Please enter your name or phone number.");
+        Alert.alert("Missing Info", "Please enter your name.");
         return;
       }
     
@@ -227,21 +234,6 @@ export default function AccountSetting({navigation}) {
           </View>
 
           <View>  
-            <Text style={[styles.label, { color: colors.text }]}>Phone</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                value={phoneNum}
-                placeholder="123-456-7890"
-                placeholderTextColor={colors.muted}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-              />
-            <View style={styles.iconWrapper}>
-                <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.muted} />
-              </View>
-            </View>
-
             <View style={styles.changeRow}>
               <Text style={[styles.label, { color: colors.text }]}>Email</Text>
               <TouchableOpacity onPress={() => navigation.navigate("ChangeEmail")}>

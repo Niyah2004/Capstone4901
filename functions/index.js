@@ -37,6 +37,26 @@ exports.onNotificationCreated = onDocumentCreated('notifications/{notificationId
     if (!toUserId) return;
 
     try {
+        let childName = '';
+
+        if (notif.type === 'completion_request' && notif.fromChildId) {
+            try {
+                const childrenSnap = await admin
+                    .firestore()
+                    .collection('children')
+                    .where('userId', '==', notif.fromChildId)
+                    .limit(1)
+                    .get();
+
+                if (!childrenSnap.empty) {
+                    const childData = childrenSnap.docs[0].data() || {};
+                    childName = childData.preferredName || childData.fullName || '';
+                }
+            } catch (e) {
+                console.error('Error looking up child for notification:', e);
+            }
+        }
+
         const tokenSnap = await admin.firestore().doc(`userPushTokens/${toUserId}`).get();
         const expoPushToken = tokenSnap.exists ? tokenSnap.data()?.expoPushToken : null;
 
@@ -51,10 +71,39 @@ exports.onNotificationCreated = onDocumentCreated('notifications/{notificationId
             return;
         }
 
+        let title = notif.title;
+        let body = notif.body;
+
+        if (!title || !body) {
+            if (notif.type === 'completion_request') {
+                const baseTaskTitle = notif.taskTitle || '';
+
+                if (!title) {
+                    title = childName
+                        ? `${childName} completed a task`
+                        : 'Task Completed';
+                }
+
+                if (!body) {
+                    if (childName && baseTaskTitle) {
+                        body = `${childName} marked "${baseTaskTitle}" as complete and it is waiting for your review.`;
+                    } else if (childName) {
+                        body = `${childName} marked a task as complete and it is waiting for your review.`;
+                    } else if (baseTaskTitle) {
+                        body = `${baseTaskTitle} has been marked complete and is waiting for your review.`;
+                    } else {
+                        body = 'A task was completed.';
+                    }
+                }
+            } else if (!title) {
+                title = 'Notification';
+            }
+        }
+
         const result = await sendExpoPush({
             to: expoPushToken,
-            title: notif.title || (notif.type === 'completion_request' ? 'Task Completed' : 'Notification'),
-            body: notif.body || (notif.type === 'completion_request' ? 'A task was completed.' : ''),
+            title,
+            body,
             data: {
                 notificationId: event.params.notificationId,
                 type: notif.type,
