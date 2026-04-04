@@ -6,7 +6,7 @@ import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy, getDoc, increment } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy, getDoc, increment, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -75,6 +75,11 @@ function AnimatedStar({ delay, size = 24 }) {
 export default function ChildReward( {route}) {
     const auth = getAuth();
     const parentId = auth.currentUser?.uid;
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupMsg, setPopupMsg] = useState("");
+    const [showCheckPopup, setShowCheckPopup] = useState(false);
+    const [checkPopupMsg, setCheckPopupMsg] = useState("");
+    const [pendingUnlock, setPendingUnlock] = useState(null);
     const [totalStars, setTotalStars] = useState(0);
     const [rewards, setRewards] = useState([]);
     const [claimedRewardIds, setClaimedRewardIds] = useState(new Set());
@@ -310,58 +315,176 @@ useEffect(() => {
         }
     };
     // Handle wardrobe item purchase from reward screen
+    const confirmUnlock = async () => {
+        if (!pendingUnlock || !childDocId) {
+            setShowCheckPopup(false);
+            return;
+        }
+
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            setShowCheckPopup(false);
+            setPendingUnlock(null);
+            return;
+        }
+
+        // Close modal immediately for better UX
+        setShowCheckPopup(false);
+        setPendingUnlock(null);
+
+        const { category, itemId, itemCost } = pendingUnlock;
+        const cost = Number(itemCost || 0);
+        const childRef = doc(db, "children", childDocId);
+        const pointsRef = doc(db, "childPoints", activeChildId);
+        const updates = {};
+
+        if (category !== "accessories") {
+            Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
+                updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
+            });
+        }
+
+        updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
+            unlocked: true,
+            equipped: true,
+        };
+
+        // Fire updates in background - don't wait for them
+        updateDoc(childRef, updates).catch((err) => console.error("Error updating wardrobe:", err));
+
+        // Update local wardrobe immediately so lock overlay disappears without waiting.
+        setWardrobe((prev) => {
+            const prevAvatar = prev?.[avatar] || {};
+            const prevCategory = prevAvatar?.[category] || {};
+            const nextCategory = { ...prevCategory };
+
+            if (category !== "accessories") {
+                Object.keys(nextCategory).forEach((id) => {
+                    nextCategory[id] = {
+                        ...(nextCategory[id] || {}),
+                        equipped: false,
+                    };
+                });
+            }
+
+            nextCategory[itemId] = {
+                ...(nextCategory[itemId] || {}),
+                unlocked: true,
+                equipped: true,
+            };
+
+            return {
+                ...prev,
+                [avatar]: {
+                    ...prevAvatar,
+                    [category]: nextCategory,
+                },
+            };
+        });
+
+        // Free items should not touch points; avoids missing-doc errors for 0-cost unlocks.
+        if (cost > 0) {
+            getDoc(pointsRef)
+                .then((snap) => {
+                    const nextPoints = Math.max(0, Number(totalStars || 0) - cost);
+                    if (snap.exists()) {
+                        return updateDoc(pointsRef, { points: nextPoints });
+                    }
+                    return setDoc(pointsRef, { points: nextPoints }, { merge: true });
+                })
+                .catch((err) => console.error("Error updating points:", err));
+        }
+    };
+    
+        const cancelUnlock = () => {
+            setShowCheckPopup(false);
+            setPendingUnlock(null);
+        };
+    
     const handleWardrobePurchase = async (category, itemId, itemCost) => {
-        if (!childDocId || !auth.currentUser) return;
+        if (!childDocId) return;
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return;
 
         const childRef = doc(db, "children", childDocId);
-        const pointsRef = doc(db, "childPoints", auth.currentUser.uid);
 
-        const owned = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
-        if (owned) {
-            Alert.alert("Already Owned", "You already own this item!");
+        const itemData = wardrobe?.[avatar]?.[category]?.[itemId];
+        const unlocked = itemData?.unlocked ?? false;
+        const equipped = itemData?.equipped ?? false;
+
+        // Not unlocked → try to buy
+        if (!unlocked) {
+            if (totalStars < itemCost) {
+                setPopupMsg(`You need ${itemCost - totalStars} more stars to unlock this item!`);
+                setShowPopup(true);
+            } else {
+                setCheckPopupMsg(`Are you sure you want to unlock this item?`);
+                setPendingUnlock({ category, itemId, itemCost });
+                setShowCheckPopup(true);
+                return;
+            }
             return;
         }
 
-        if (totalStars < itemCost) {
-            Alert.alert("Not Enough Stars", `You need ${itemCost - totalStars} more ⭐ to unlock this item!`);
-            return;
+        // 🔓 Already unlocked → toggle equip
+        const updates = {};
+
+        if (equipped) {
+            // Unequip the item
+            updates[`wardrobe.${avatar}.${category}.${itemId}.equipped`] = false;
+        } else {
+            // Unequip everything else in category (except for accessories - can have multiple)
+            if (category !== "accessories" && category !== "backgrounds") {
+                Object.keys(wardrobe?.[avatar]?.[category] || {}).forEach((id) => {
+                    updates[`wardrobe.${avatar}.${category}.${id}.equipped`] = false;
+                });
+            }
+
+            // Equip selected item
+            updates[`wardrobe.${avatar}.${category}.${itemId}.equipped`] = true;
         }
 
-        Alert.alert(
-            "Purchase Item?",
-            `Spend ${itemCost} ⭐ to unlock this item?`,
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Buy",
-                    onPress: async () => {
-                        const updates = {};
-                        updates[`wardrobe.${avatar}.${category}.${itemId}`] = {
-                            unlocked: true,
+        await updateDoc(childRef, updates);
+
+        // Keep UI in sync instantly after equip/unequip actions.
+        setWardrobe((prev) => {
+            const prevAvatar = prev?.[avatar] || {};
+            const prevCategory = prevAvatar?.[category] || {};
+            const nextCategory = { ...prevCategory };
+
+            if (equipped) {
+                nextCategory[itemId] = {
+                    ...(nextCategory[itemId] || {}),
+                    equipped: false,
+                };
+            } else {
+                if (category !== "accessories" && category !== "backgrounds") {
+                    Object.keys(nextCategory).forEach((id) => {
+                        nextCategory[id] = {
+                            ...(nextCategory[id] || {}),
                             equipped: false,
                         };
-                        await updateDoc(childRef, updates);
-                        await updateDoc(pointsRef, { points: totalStars - itemCost });
+                    });
+                }
 
-                        setWardrobe(prev => ({
-                            ...prev,
-                            [avatar]: {
-                                ...prev?.[avatar],
-                                [category]: {
-                                    ...prev?.[avatar]?.[category],
-                                    [itemId]: { unlocked: true, equipped: false },
-                                },
-                            },
-                        }));
+                nextCategory[itemId] = {
+                    ...(nextCategory[itemId] || {}),
+                    equipped: true,
+                };
+            }
 
-                        confettiRef.current?.start();
-                        Alert.alert("Unlocked! 🎉", `You unlocked: ${itemId}!`);
-                    },
+            return {
+                ...prev,
+                [avatar]: {
+                    ...prevAvatar,
+                    [category]: nextCategory,
                 },
-            ]
-        );
+            };
+        });
     };
-    // End of handleClaimReward
+    
 
     return (
         <ScrollView>
@@ -618,6 +741,45 @@ useEffect(() => {
                     </LinearGradient>
                 ))}
             </ScrollView>
+        <Modal transparent visible={showPopup} animationType="fade">
+                        <View style={styles.popupOverlay}>
+                            <View style={styles.popup}>
+                            <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
+                            <Text style={styles.popupText}>{popupMsg}</Text>
+                            <TouchableOpacity
+                                style={styles.popupButton}
+                                onPress={() => setShowPopup(false)}
+                            >
+                                <Text style={styles.popupButtonText}>OK</Text>
+                            </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+                    <Modal transparent visible={showCheckPopup} animationType="fade">
+                        <View style={styles.popupOverlay}>
+                            <View style={styles.popup}>
+                            <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
+                            <Text style={styles.popupText}>{checkPopupMsg}</Text>
+                            <View style={styles.popupButtonRow}>
+                            <TouchableOpacity
+                                style={styles.popupButton}
+                                onPress={confirmUnlock}
+                            >
+                                <Text style={styles.popupButtonText}>Unlock</Text>
+                            </TouchableOpacity>
+        
+                            <TouchableOpacity
+                                style={styles.popupButton2}
+                                onPress={cancelUnlock}
+                            >
+                                <Text style={styles.popupButton2Text}>Close</Text>
+                            </TouchableOpacity>
+                            </View>
+                            
+                            
+                            </View>
+                        </View>
+                    </Modal>    
    </ScrollView>
         </View>
         </ScrollView>
@@ -650,7 +812,7 @@ const createStyles = (colors) => StyleSheet.create({
         elevation: 1,
     },
     placeholderText: {
-        fontSize: 10,
+        fontSize: 45,
         color: "#999",
     },
     rewardIconImage: {
@@ -895,11 +1057,6 @@ const createStyles = (colors) => StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         overflow: "hidden",
-        shadowColor: "#000",
-        shadowOpacity: 0.10,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 2,
     },
 
     unlockItemImage: {
@@ -932,6 +1089,7 @@ const createStyles = (colors) => StyleSheet.create({
         textAlign: "center",
         textTransform: "capitalize",
         marginTop: 2,
+        width: "100%",
     },
 
     unlockCircle: {
@@ -1072,4 +1230,12 @@ const createStyles = (colors) => StyleSheet.create({
     emojiAvatarText: {
         fontSize: 70,
     },
+    popupOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
+    popup: { width: 260, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
+    popupText: { marginTop: 10, fontSize: 14, textAlign: "center" },
+    popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 15 },
+    popupButton: { backgroundColor: "#4CAF50", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
+    popupButton2: { backgroundColor: "#ccc", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
+    popupButtonText: { color: "#ffffffff", fontWeight: "600", },
+    popupButton2Text: { color: "#000", fontWeight: "600" },
 });
