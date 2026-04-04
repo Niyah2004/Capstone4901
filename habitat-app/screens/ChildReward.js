@@ -6,7 +6,7 @@ import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy , getDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy, getDoc, increment } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -275,9 +275,9 @@ useEffect(() => {
 
         try {
             // Update childPoints collection
-            const childPointsRef = doc(db, "childPoints", auth.currentUser.uid);
+            const childPointsRef = doc(db, "childPoints", activeChildId);
             await updateDoc(childPointsRef, {
-                points: totalStars - selectedReward.cost,
+                points: increment(-selectedReward.cost),
             });
 
             // Record the claim (note: may need Firebase security rules updated)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -30,6 +30,8 @@ import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import * as Notifications from "expo-notifications";
 import { useSelectedChild } from "../SelectedChildContext";
+import { useFocusEffect } from "@react-navigation/native";
+import { useParentLock } from "../ParentLockContext";
 
 export default function ParentReviewTask({ navigation, route }) {
   const [tasks, setTasks] = useState([]);
@@ -40,6 +42,15 @@ export default function ParentReviewTask({ navigation, route }) {
   const colors = theme.colors;
   const { selectedChildId } = useSelectedChild();
   const activeChildId = route?.params?.childId || selectedChildId;
+  const { isParentUnlocked } = useParentLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
 
 useEffect(() => {
   const uid = getAuth().currentUser?.uid;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -25,7 +25,9 @@ import {
 } from "firebase/firestore";
 import { useTheme } from "../theme/ThemeContext";
 import { useSelectedChild } from "../SelectedChildContext";
-
+import { getAuth } from "firebase/auth";
+import { useFocusEffect } from "@react-navigation/native";
+import { useParentLock } from "../ParentLockContext";
 export default function ParentReviewRewards({ navigation, route }) {
   const [rewards, setRewards] = useState([]);
   const [claims, setClaims] = useState([]);
@@ -35,14 +37,52 @@ export default function ParentReviewRewards({ navigation, route }) {
   const colors = theme.colors;
   const { selectedChildId } = useSelectedChild();
   const activeChildId = route?.params?.childId || selectedChildId;
+  const { isParentUnlocked } = useParentLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
 
   // Listener: rewards catalog
-useEffect(() => {
-  if (!activeChildId) {
-    setClaims([]);
-    setLoadingClaims(false);
-    return;
-  }
+  useEffect(() => {
+    const uid = getAuth().currentUser?.uid;
+    if (!uid) { setRewards([]); return; }
+   if (!activeChildId) {
+      setRewards([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "rewards"),
+      where("ownerId", "==", uid),
+      where("childId", "==", activeChildId || null)
+    );
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setRewards(list);
+      },
+      (err) => {
+        console.error("rewards onSnapshot error:", err);
+      }
+    );
+
+    return () => unsub();
+  }, [activeChildId]);
+
+  // Listener: claims
+  useEffect(() => {
+    if (!activeChildId) {
+      setClaims([]);
+      setLoadingClaims(false);
+      return;
+    }
 
   const q = query(
     collection(db, "claims"),

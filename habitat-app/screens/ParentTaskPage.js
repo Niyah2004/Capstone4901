@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -29,10 +29,21 @@ import { getAuth } from "firebase/auth";
 
 import { Picker } from "@react-native-picker/picker";
 import { useSelectedChild } from "../SelectedChildContext";
+import { useFocusEffect } from "@react-navigation/native";
+import { useParentLock } from "../ParentLockContext";
 
 export default function ParentTaskPage({ navigation, route }) {
-
   const { selectedChildId } = useSelectedChild();
+  const { isParentUnlocked } = useParentLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isParentUnlocked) {
+        navigation.replace("parentPinScreen");
+      }
+    }, [isParentUnlocked, navigation])
+  );
+
   const activeChildId = route?.params?.childId || selectedChildId;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
