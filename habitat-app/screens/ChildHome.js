@@ -4,7 +4,7 @@ import { Alert, Modal, View, Text, StyleSheet, Animated, Image, TouchableOpacity
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { collection, query, where, doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
+import { collection, query, where, doc, onSnapshot, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
@@ -183,6 +183,7 @@ useEffect(() => {
         setPendingUnlock(null);
 
         const { category, itemId, itemCost } = pendingUnlock;
+        const cost = Number(itemCost || 0);
         const childRef = doc(db, "children", childDocId);
         const pointsRef = doc(db, "childPoints", childIdFromRoute);
         const updates = {};
@@ -200,9 +201,19 @@ useEffect(() => {
 
         // Fire updates in background - don't wait for them
         updateDoc(childRef, updates).catch(err => console.error("Error updating wardrobe:", err));
-        updateDoc(pointsRef, {
-            points: childPoints - itemCost,
-        }).catch(err => console.error("Error updating points:", err));
+
+        // Free items should not touch points; avoids missing-doc errors for 0-cost unlocks.
+        if (cost > 0) {
+            getDoc(pointsRef)
+                .then((snap) => {
+                    const nextPoints = Math.max(0, Number(childPoints || 0) - cost);
+                    if (snap.exists()) {
+                        return updateDoc(pointsRef, { points: nextPoints });
+                    }
+                    return setDoc(pointsRef, { points: nextPoints }, { merge: true });
+                })
+                .catch(err => console.error("Error updating points:", err));
+        }
     };
 
     const cancelUnlock = () => {
