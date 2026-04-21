@@ -41,7 +41,7 @@ export function ThemeProvider({ children }) {
         if (stored === "light" || stored === "dark" || stored === "system") {
           setModeState(stored);
         }
-      } catch {}
+      } catch { }
       setHydrated(true);
     };
     load();
@@ -51,7 +51,7 @@ export function ThemeProvider({ children }) {
     setModeState(nextMode);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, nextMode);
-    } catch {}
+    } catch { }
   };
 
   const resolvedScheme = mode === "system" ? systemScheme : mode;

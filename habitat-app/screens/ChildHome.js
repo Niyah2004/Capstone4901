@@ -76,26 +76,26 @@ export default function ChildHome({ navigation, route }) {
 
         const unsub = onSnapshot(q, (snapshot) => {
             if (!snapshot.empty) {
-            const docSnap = snapshot.docs[0];
-            const data = docSnap.data();
+                const docSnap = snapshot.docs[0];
+                const data = docSnap.data();
 
-            setChildDocId(docSnap.id);
-            setChildName(data.fullName || "");
-            setChildPreferredName(data.preferredName || "");
-            const avatarData = data.avatar;
-            const avatarBase =
-            typeof avatarData === "string"
-                ? avatarData
-                : avatarData?.base ?? "panda";
-            const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
-            setAvatar(validAvatar);
-            setWardrobe(data.wardrobe || {});
+                setChildDocId(docSnap.id);
+                setChildName(data.fullName || "");
+                setChildPreferredName(data.preferredName || "");
+                const avatarData = data.avatar;
+                const avatarBase =
+                    typeof avatarData === "string"
+                        ? avatarData
+                        : avatarData?.base ?? "panda";
+                const validAvatar = AVATARS[avatarBase] ? avatarBase : "panda";
+                setAvatar(validAvatar);
+                setWardrobe(data.wardrobe || {});
             }
             setLoading(false);
         });
 
         return unsub;
-        }, [childIdFromRoute]);
+    }, [childIdFromRoute]);
 
     useEffect(() => {
         const auth = getAuth();
@@ -117,26 +117,26 @@ export default function ChildHome({ navigation, route }) {
         return () => unsub();
     }, [childIdFromRoute]);
 
-useEffect(() => {
-    if (!childIdFromRoute) return;
+    useEffect(() => {
+        if (!childIdFromRoute) return;
 
-    const q = query(
-        collection(db, "tasks"),
-        where("childId", "==", childIdFromRoute),
-        where("verified", "==", true)
-    );
+        const q = query(
+            collection(db, "tasks"),
+            where("childId", "==", childIdFromRoute),
+            where("verified", "==", true)
+        );
 
-    const unsub = onSnapshot(q, (snap) => {
-        const count = snap.docs.length;
-        setVerifiedTaskCount(count);
+        const unsub = onSnapshot(q, (snap) => {
+            const count = snap.docs.length;
+            setVerifiedTaskCount(count);
 
-        if (prevLevelRef.current === null) {
-            prevLevelRef.current = Math.floor(count / 10);
-        }
-    }, (err) => console.error("Error fetching verified tasks:", err));
+            if (prevLevelRef.current === null) {
+                prevLevelRef.current = Math.floor(count / 10);
+            }
+        }, (err) => console.error("Error fetching verified tasks:", err));
 
-    return () => unsub();
-}, [childIdFromRoute]);
+        return () => unsub();
+    }, [childIdFromRoute]);
 
     useEffect(() => {
         if (prevLevelRef.current === null) return;
@@ -268,7 +268,7 @@ useEffect(() => {
         }
 
         await updateDoc(childRef, updates);
-        };
+    };
 
     const level = Math.floor(verifiedTaskCount / 10);
     const tasksIntoLevel = verifiedTaskCount % 10;
@@ -284,8 +284,8 @@ useEffect(() => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* Top Section: Greeting and Progress Bar */}
-            <View style={styles.topSection}>
+                {/* Top Section: Greeting and Progress Bar */}
+                <View style={styles.topSection}>
                     <LinearGradient
                         colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
                         start={{ x: 0, y: 0 }}
@@ -323,10 +323,10 @@ useEffect(() => {
                             );
                         })}
                         {/* Base Avatar */}
-                    <Image
-                        source={AVATARS[avatar]?.base}
-                        style={styles.avatar}
-                    />
+                        <Image
+                            source={AVATARS[avatar]?.base}
+                            style={styles.avatar}
+                        />
                         {/* Equipped Clothes - Render in specific order for layering */}
                         {["pants", "shoes", "tops", "hats", "accessories"].map((category) => {
                             const items = AVATARS[avatar]?.[category];
@@ -334,23 +334,23 @@ useEffect(() => {
 
                             return Object.entries(items).map(([itemId, item]) => {
                                 const equipped =
-                                wardrobe?.[avatar]?.[category]?.[itemId]?.equipped;
+                                    wardrobe?.[avatar]?.[category]?.[itemId]?.equipped;
 
                                 if (!equipped) return null;
 
                                 return (
-                                <Image
-                                    key={`${category}-${itemId}`}
-                                    source={item.image}
-                                    resizeMode="contain"
-                                    style={{
-                                    position: "absolute",
-                                    top: item.position.top,
-                                    left: item.position.left,
-                                    width: item.position.size,
-                                    height: item.position.size,
-                                    }}
-                                />
+                                    <Image
+                                        key={`${category}-${itemId}`}
+                                        source={item.image}
+                                        resizeMode="contain"
+                                        style={{
+                                            position: "absolute",
+                                            top: item.position.top,
+                                            left: item.position.left,
+                                            width: item.position.size,
+                                            height: item.position.size,
+                                        }}
+                                    />
                                 );
                             });
                         })}
@@ -393,88 +393,88 @@ useEffect(() => {
                     ))}
 
                     <Text style={[styles.subtitle, { color: colors.text }]}>Wardrobe</Text>
-                        <Text style={[styles.progressText, { color: colors.text }]}>
-                            Points: {childPoints} <Icon name="star" style={{ color: "#ffea00", fontSize: 13 }} />
-                        </Text>
-                    
+                    <Text style={[styles.progressText, { color: colors.text }]}>
+                        Points: {childPoints} <Icon name="star" style={{ color: "#ffea00", fontSize: 13 }} />
+                    </Text>
+
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.wardrobeRow}
                     >
-                    {Object.entries(AVATARS[avatar] || {}).map(([category, items]) => {
-                        if (category === "base") return null;
-                        return Object.entries(items).map(([itemId, item]) => {
-                        const unlocked = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
+                        {Object.entries(AVATARS[avatar] || {}).map(([category, items]) => {
+                            if (category === "base") return null;
+                            return Object.entries(items).map(([itemId, item]) => {
+                                const unlocked = wardrobe?.[avatar]?.[category]?.[itemId]?.unlocked ?? false;
 
-                        return (
-                            <TouchableOpacity
-                            key={`${category}-${itemId}`}
-                            style={styles.wardrobeItem}
-                            onPress={() => handleWardrobePress(category, itemId, item.cost)}
-                            >
-                            <View style={styles.wardrobeImageWrap}>
-                            <Image
-                                source={item.image}
-                                style={[styles.wardrobeImage, !unlocked && { opacity: 0.85 }]}
-                                resizeMode="contain"
-                            />
+                                return (
+                                    <TouchableOpacity
+                                        key={`${category}-${itemId}`}
+                                        style={styles.wardrobeItem}
+                                        onPress={() => handleWardrobePress(category, itemId, item.cost)}
+                                    >
+                                        <View style={styles.wardrobeImageWrap}>
+                                            <Image
+                                                source={item.image}
+                                                style={[styles.wardrobeImage, !unlocked && { opacity: 0.85 }]}
+                                                resizeMode="contain"
+                                            />
 
-                            {!unlocked && (
-                                <View style={styles.lockOverlay}>
-                                    <Ionicons name="lock-closed" size={22} color="#fff" />
-                                </View>
-                            )}
-                            </View>
-                            {!unlocked && (
-                                <View style={styles.costRow}>
-                                    <Text style={styles.costText}>{item.cost}</Text>
-                                    <Ionicons name="star" style={{ color: "#ffd700", fontSize: 18 }} />
-                                </View>
-                            )}
-                            </TouchableOpacity>
-                            );
-                        });
-                    })}
+                                            {!unlocked && (
+                                                <View style={styles.lockOverlay}>
+                                                    <Ionicons name="lock-closed" size={22} color="#fff" />
+                                                </View>
+                                            )}
+                                        </View>
+                                        {!unlocked && (
+                                            <View style={styles.costRow}>
+                                                <Text style={styles.costText}>{item.cost}</Text>
+                                                <Ionicons name="star" style={{ color: "#ffd700", fontSize: 18 }} />
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            });
+                        })}
                     </ScrollView>
                 </View>
             </ScrollView>
             <Modal transparent visible={showPopup} animationType="fade">
                 <View style={styles.popupOverlay}>
                     <View style={styles.popup}>
-                    <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
-                    <Text style={styles.popupText}>{popupMsg}</Text>
-                    <TouchableOpacity
-                        style={styles.popupButton}
-                        onPress={() => setShowPopup(false)}
-                    >
-                        <Text style={styles.popupButtonText}>OK</Text>
-                    </TouchableOpacity>
+                        <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
+                        <Text style={styles.popupText}>{popupMsg}</Text>
+                        <TouchableOpacity
+                            style={styles.popupButton}
+                            onPress={() => setShowPopup(false)}
+                        >
+                            <Text style={styles.popupButtonText}>OK</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
             <Modal transparent visible={showCheckPopup} animationType="fade">
                 <View style={styles.popupOverlay}>
                     <View style={styles.popup}>
-                    <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
-                    <Text style={styles.popupText}>{checkPopupMsg}</Text>
-                    <View style={styles.popupButtonRow}>
-                    <TouchableOpacity
-                        style={styles.popupButton}
-                        onPress={confirmUnlock}
-                    >
-                        <Text style={styles.popupButtonText}>Unlock</Text>
-                    </TouchableOpacity>
+                        <Ionicons name="lock-closed" size={40} color="#ff6b6b" />
+                        <Text style={styles.popupText}>{checkPopupMsg}</Text>
+                        <View style={styles.popupButtonRow}>
+                            <TouchableOpacity
+                                style={styles.popupButton}
+                                onPress={confirmUnlock}
+                            >
+                                <Text style={styles.popupButtonText}>Unlock</Text>
+                            </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.popupButton2}
-                        onPress={cancelUnlock}
-                    >
-                        <Text style={styles.popupButton2Text}>Close</Text>
-                    </TouchableOpacity>
-                    </View>
-                    
-                    
+                            <TouchableOpacity
+                                style={styles.popupButton2}
+                                onPress={cancelUnlock}
+                            >
+                                <Text style={styles.popupButton2Text}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+
+
                     </View>
                 </View>
             </Modal>
@@ -549,23 +549,23 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 18, color: "#2d2d2d", marginTop: 20, textAlign: "left" },
     milestone: { flexDirection: "row", marginVertical: 5, borderColor: "#ccc", borderWidth: .5, borderRadius: 8, padding: 14, alignItems: "center" },
     milestoneText: { marginLeft: 10, fontSize: 14, color: "#333" },
-    milestoneStatus: { marginLeft: 10,fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
+    milestoneStatus: { marginLeft: 10, fontSize: 10, color: "#666", backgroundColor: "#e7ffd7ff", paddingVertical: 1, paddingHorizontal: 10, borderRadius: 10, textAlign: "center", alignSelf: "flex-start" },
     popupOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
     popup: { width: 260, backgroundColor: "#fff", borderRadius: 12, padding: 20, alignItems: "center" },
     popupText: { marginTop: 10, fontSize: 14, textAlign: "center" },
     popupButtonRow: { flexDirection: "row", gap: 40, marginTop: 15 },
-    popupButton: { backgroundColor: "#4CAF50", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
-    popupButton2: { backgroundColor: "#ccc", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5,},
+    popupButton: { backgroundColor: "#4CAF50", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5, },
+    popupButton2: { backgroundColor: "#ccc", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 10, shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 5, },
     popupButtonText: { color: "#ffffffff", fontWeight: "600", },
     popupButton2Text: { color: "#000", fontWeight: "600" },
     wardrobeRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 5, gap: 25 },
     wardrobeItem: { alignItems: "center", width: 80 },
-    wardrobeImageWrap: { width: 92, height: 92, borderRadius: 20, backgroundColor: "#f0f0f0", justifyContent: "center", alignItems: "center", overflow: "hidden"},
+    wardrobeImageWrap: { width: 92, height: 92, borderRadius: 20, backgroundColor: "#f0f0f0", justifyContent: "center", alignItems: "center", overflow: "hidden" },
     wardrobeImage: { width: 74, height: 74, },
     wardrobeLabel: { fontSize: 10, marginTop: 6, textAlign: "center" },
     lockOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", },
     costRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 4, },
-    costText: { fontSize: 16, fontWeight: "600", color: "#555"},
+    costText: { fontSize: 16, fontWeight: "600", color: "#555" },
     levelCard: {
         flexDirection: "row",
         marginVertical: 5,
