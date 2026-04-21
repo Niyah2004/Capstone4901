@@ -110,8 +110,10 @@ export default function ChildHome({ navigation, route }) {
                 return;
             }
             const data = snap.data();
-            const points = data.points ?? data.stars ?? data.totalPoints ?? 0;
+            const points = data.points ?? data.stars ?? 0;
             setChildPoints(points);
+            const lifetime = data.totalPoints ?? points;
+            setTotalPointsEarned(lifetime);
         });
 
         return () => unsub();
