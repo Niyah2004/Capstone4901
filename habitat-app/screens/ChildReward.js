@@ -631,22 +631,69 @@ useEffect(() => {
                 <View style={styles.avatarContainer}>
                     {/* Avatar Image - show selected avatar only when loaded */}
                     {!avatarLoading && avatar ? (
-                        <Image
+                        <View style={styles.avatarWrapper}>
+                            {/* Background layer - renders behind the avatar */}
+                            {Object.entries(AVATARS[avatar]?.backgrounds || {}).map(([itemId, item]) => {
+                                const equipped = wardrobe?.[avatar]?.backgrounds?.[itemId]?.equipped;
+                                if (!equipped) return null;
+                                return (
+                                    <Image
+                                        key={`bg-${itemId}`}
+                                        source={item.image}
+                                        resizeMode="contain"
+                                        style={{
+                                            position: "absolute",
+                                            top: item.position.top,
+                                            left: item.position.left,
+                                            width: item.position.size,
+                                            height: item.position.size,
+                                            zIndex: -1,
+                                        }}
+                                    />
+                                );
+                            })}
+                            {/* Base Avatar */}
+                            <Image
                                 source={AVATARS[avatar]?.base || require("../assets/panda.png")}
                                 style={styles.avatar}
-
                             />
+                            {/* Equipped Clothes - Render in specific order for layering */}
+                            {["pants", "shoes", "tops", "hats", "accessories"].map((category) => {
+                                const items = AVATARS[avatar]?.[category];
+                                if (!items) return null;
+
+                                return Object.entries(items).map(([itemId, item]) => {
+                                    const equipped =
+                                        wardrobe?.[avatar]?.[category]?.[itemId]?.equipped;
+
+                                    if (!equipped) return null;
+
+                                    return (
+                                        <Image
+                                            key={`${category}-${itemId}`}
+                                            source={item.image}
+                                            resizeMode="contain"
+                                            style={{
+                                                position: "absolute",
+                                                top: item.position.top,
+                                                left: item.position.left,
+                                                width: item.position.size,
+                                                height: item.position.size,
+                                            }}
+                                        />
+                                    );
+                                });
+                            })}
+                        </View>
                     ) : (
                         <View style={[styles.avatar, { backgroundColor: "#f0f0f0" }]} />
                     )}
                 
-                <View style={styles.pointsRow}>
-                    <Text style={styles.pointsNumber}>{totalStars}</Text>    
-                    <Ionicons name="star" size={25} color="#ffd700" />
+                    <View style={styles.pointsRow}>
+                        <Text style={styles.pointsNumber}>{totalStars}</Text>    
+                        <Ionicons name="star" size={25} color="#ffd700" />
+                    </View>
                 </View>
-
-
-            </View>
 
 
             <Text style={styles.unlockTitle}>Unlock More Items</Text>
@@ -926,14 +973,20 @@ const createStyles = (colors) => StyleSheet.create({
         alignItems: "center",
         marginBottom: 10,
     },
-    avatar: {
-        width: 215,
-        height: 210,
-        borderRadius: 90,
+    avatarWrapper: {
+        position: "relative",
+        overflow: "visible",
+        width: 300,
+        height: 300,
         alignSelf: "center",
-        
+        transform: [{ scale: 0.75 }],
+        marginTop: -10,
     },
-    
+    avatar: {
+        width: 300,
+        height: 300,
+        borderRadius: 10,
+    },
     //missing modal styles that control the reward popup layout
 
     modalClaimButton: {
