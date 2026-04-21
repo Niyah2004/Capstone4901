@@ -35,33 +35,23 @@ export default function ChildHome({ navigation, route }) {
     const [pendingUnlock, setPendingUnlock] = useState(null);
     const progress = useRef(new Animated.Value(0)).current;
 
-    const greetingScale = useRef(new Animated.Value(0.1)).current;
+    const greetingScale = useRef(new Animated.Value(1)).current;
     const greetingRotation = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        Animated.sequence([
-            // Pop-in effect
-            Animated.spring(greetingScale, {
-                toValue: 1,
-                friction: 4,
-                tension: 40,
-                useNativeDriver: true,
-            }),
-            // Continuous floating/gamified wobble loop
-            Animated.loop(
-                Animated.parallel([
-                    Animated.sequence([
-                        Animated.timing(greetingScale, { toValue: 1.03, duration: 1200, useNativeDriver: true }),
-                        Animated.timing(greetingScale, { toValue: 1, duration: 1200, useNativeDriver: true }),
-                    ]),
-                    Animated.sequence([
-                        Animated.timing(greetingRotation, { toValue: 1, duration: 900, useNativeDriver: true }),
-                        Animated.timing(greetingRotation, { toValue: -1, duration: 1800, useNativeDriver: true }),
-                        Animated.timing(greetingRotation, { toValue: 0, duration: 900, useNativeDriver: true }),
-                    ])
+        Animated.loop(
+            Animated.parallel([
+                Animated.sequence([
+                    Animated.timing(greetingScale, { toValue: 1.03, duration: 1200, useNativeDriver: true }),
+                    Animated.timing(greetingScale, { toValue: 1, duration: 1200, useNativeDriver: true }),
+                ]),
+                Animated.sequence([
+                    Animated.timing(greetingRotation, { toValue: 1, duration: 900, useNativeDriver: true }),
+                    Animated.timing(greetingRotation, { toValue: -1, duration: 1800, useNativeDriver: true }),
+                    Animated.timing(greetingRotation, { toValue: 0, duration: 900, useNativeDriver: true }),
                 ])
-            )
-        ]).start();
+            ])
+        ).start();
     }, []);
 
     const { theme } = useTheme();
