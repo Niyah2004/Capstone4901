@@ -620,7 +620,7 @@ useEffect(() => {
             <Text style={styles.title}>Rewards</Text>
             
                 <LinearGradient
-                colors={["#4CAF50", "#4CAF50"]}
+                colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.greetingBanner}
@@ -735,8 +735,15 @@ useEffect(() => {
                 ))}
             </View>
 
-            <TouchableOpacity style={styles.characterButton} onPress={openCharacterModal}>
-                <Text style={styles.characterButtonText}>Get different Character →</Text>
+            <TouchableOpacity onPress={openCharacterModal}>
+                <LinearGradient
+                    colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.characterButton}
+                >
+                    <Text style={styles.characterButtonText}>Get different Character →</Text>
+                </LinearGradient>
             </TouchableOpacity>
 
             <Text style={styles.sectionTitle}>Available Rewards</Text>
