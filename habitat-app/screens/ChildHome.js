@@ -34,6 +34,36 @@ export default function ChildHome({ navigation, route }) {
     const [checkPopupMsg, setCheckPopupMsg] = useState("");
     const [pendingUnlock, setPendingUnlock] = useState(null);
     const progress = useRef(new Animated.Value(0)).current;
+
+    const greetingScale = useRef(new Animated.Value(0.1)).current;
+    const greetingRotation = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.sequence([
+            // Pop-in effect
+            Animated.spring(greetingScale, {
+                toValue: 1,
+                friction: 4,
+                tension: 40,
+                useNativeDriver: true,
+            }),
+            // Continuous floating/gamified wobble loop
+            Animated.loop(
+                Animated.parallel([
+                    Animated.sequence([
+                        Animated.timing(greetingScale, { toValue: 1.03, duration: 1200, useNativeDriver: true }),
+                        Animated.timing(greetingScale, { toValue: 1, duration: 1200, useNativeDriver: true }),
+                    ]),
+                    Animated.sequence([
+                        Animated.timing(greetingRotation, { toValue: 1, duration: 900, useNativeDriver: true }),
+                        Animated.timing(greetingRotation, { toValue: -1, duration: 1800, useNativeDriver: true }),
+                        Animated.timing(greetingRotation, { toValue: 0, duration: 900, useNativeDriver: true }),
+                    ])
+                ])
+            )
+        ]).start();
+    }, []);
+
     const { theme } = useTheme();
     const colors = theme.colors;
     const { selectedChildId } = useSelectedChild();
@@ -288,16 +318,28 @@ export default function ChildHome({ navigation, route }) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Top Section: Greeting and Progress Bar */}
                 <View style={styles.topSection}>
-                    <LinearGradient
-                        colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.greetingBubble}
-                    >
-                        <Text style={styles.greetingText}>
-                            Hello {(childPreferredName && childPreferredName.trim()) ? childPreferredName : (childName || "there")}!
-                        </Text>
-                    </LinearGradient>
+                    <Animated.View style={{
+                        transform: [
+                            { scale: greetingScale },
+                            { rotate: greetingRotation.interpolate({ inputRange: [-1, 1], outputRange: ['-3deg', '3deg'] }) }
+                        ],
+                        shadowColor: "#FFD700",
+                        shadowOpacity: 0.8,
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowRadius: 15,
+                        elevation: 10
+                    }}>
+                        <LinearGradient
+                            colors={["#4CAF50", "#4CAF50", "#0D6B8A"]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={[styles.greetingBubble, { borderWidth: 2, borderColor: "#FFF", marginTop: 10 }]}
+                        >
+                            <Text style={[styles.greetingText, { textShadowColor: "rgba(0,0,0,0.3)", textShadowRadius: 3, textShadowOffset: { width: 1, height: 2 } }]}>
+                                ✨ Hello {(childPreferredName && childPreferredName.trim()) ? childPreferredName : (childName || "there")}! ✨
+                            </Text>
+                        </LinearGradient>
+                    </Animated.View>
                     <Text style={[styles.date, { color: colors.muted }]}>{formattedDate}</Text>
                 </View>
                 {/* Middle Section: Avatar — tap to change character */}
