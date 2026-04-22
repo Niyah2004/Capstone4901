@@ -6,7 +6,7 @@ import { Alert } from "react-native";
 import { Modal, Image } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy, getDoc, increment, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, onSnapshot, orderBy, getDoc, increment, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -293,6 +293,16 @@ useEffect(() => {
                     parentId: selectedReward.parentId || auth.currentUser.uid,
                     childId: activeChildId,
                     claimedAt: new Date(),
+                });
+
+                await addDoc(collection(db, "notifications"), {
+                    toUserId: selectedReward.parentId || auth.currentUser.uid,
+                    fromChildId: activeChildId,
+                    type: "reward_claimed",
+                    title: "Reward Claimed",
+                    body: `${childName} claimed the reward: ${selectedReward.title}`,
+                    createdAt: serverTimestamp(),
+                    read: false,
                 });
             } catch (claimError) {
                 // Claim recording failed but stars were deducted - log but don't block

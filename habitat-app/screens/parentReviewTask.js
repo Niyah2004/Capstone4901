@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Animated,
   ScrollView,
+  TextInput,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
@@ -25,6 +27,7 @@ import {
   addDoc,
   getDocs,
   getDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
@@ -38,6 +41,37 @@ export default function ParentReviewTask({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [parentChecks, setParentChecks] = useState({});
   const [activeTab, setActiveTab] = useState("pending");
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editPoints, setEditPoints] = useState("");
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setEditTitle(task.title || "");
+    setEditDescription(task.description || "");
+    setEditPoints(task.points ? String(task.points) : "10");
+    setEditModalVisible(true);
+  };
+
+  const saveEditedTask = async () => {
+    if (!editingTask) return;
+    try {
+      const taskRef = doc(db, "tasks", editingTask.id);
+      await updateDoc(taskRef, {
+        title: editTitle,
+        description: editDescription,
+        points: Number(editPoints) || 10,
+      });
+      setEditModalVisible(false);
+      setEditingTask(null);
+    } catch (err) {
+      console.error("Error updating task:", err);
+    }
+  };
+
   const { theme } = useTheme();
   const colors = theme.colors;
   const { selectedChildId } = useSelectedChild();
@@ -353,6 +387,43 @@ useEffect(() => {
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
+        <Modal visible={editModalVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Edit Task</Text>
+
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Task Title"
+                value={editTitle}
+                onChangeText={setEditTitle}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Description"
+                value={editDescription}
+                onChangeText={setEditDescription}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Points"
+                value={editPoints}
+                onChangeText={setEditPoints}
+                keyboardType="number-pad"
+              />
+
+              <View style={styles.modalBtnRow}>
+                <TouchableOpacity style={[styles.modalBtn, { backgroundColor: "#ccc" }]} onPress={() => setEditModalVisible(false)}>
+                  <Text style={styles.modalBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalBtn} onPress={saveEditedTask}>
+                  <Text style={styles.modalBtnText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <View style={styles.view}>
           <View style={styles.headerRow}>
             <TouchableOpacity
@@ -488,9 +559,14 @@ useEffect(() => {
                       <TouchableOpacity style={[styles.verifyButton, (!childCompleted || item.verified || !parentChecked) && styles.verifyButtonDisabled]} onPress={() => handleVerify(item.id)} disabled={!childCompleted || item.verified || !parentChecked}>
                         <Text style={styles.verifyText}>{item.verified ? "Verified" : "Verify Completed"}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash-outline" size={20} color="gray" />
-                      </TouchableOpacity>
+                      <View style={{ position: "absolute", top: 10, right: 10, flexDirection: "row", gap: 15 }}>
+                        <TouchableOpacity onPress={() => handleEditTask(item)}>
+                          <Ionicons name="pencil-outline" size={20} color="gray" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                          <Ionicons name="trash-outline" size={20} color="gray" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   );
                 }}
@@ -680,4 +756,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flexShrink: 0,
   },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
+  modalContainer: { width: "80%", backgroundColor: "#fff", padding: 20, borderRadius: 15 },
+  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15, textAlign: "center", color: "#333" },
+  modalInput: { borderWidth: 1, borderColor: "#ddd", padding: 10, borderRadius: 8, marginBottom: 10,  color: "#333" },
+  modalBtnRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 15 },
+  modalBtn: { flex: 1, backgroundColor: "#4CAF50", padding: 12, borderRadius: 8, alignItems: "center", marginHorizontal: 5 },
+  modalBtnText: { color: "#fff", fontWeight: "bold" },
 });

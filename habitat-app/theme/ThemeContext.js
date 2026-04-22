@@ -18,13 +18,17 @@ const LightColors = {
 
 const DarkColors = {
   primary: "#8BCF8F",
-  background: "#000000",
-  card: "#171A1E",
-  text: "#F5F7FA",
-  border: "#2A2F36",
+  background: "#12101a",
+  card: "#1a1725",
+  cardAlt: "#211e2f",
+  text: "#fdf5c9",
+  border: "#2d263f",
   notification: "#ff453a",
-  muted: "#A0A7B4",
-  tabBar: "#121417",
+  muted: "#8b80a6",
+  tabBar: "#1a1725",
+  accent: "#fdf5c9",
+  highlight: "#2d263f",
+  shadow: "#fdf5c9",
 };
 
 const ThemeContext = createContext(null);

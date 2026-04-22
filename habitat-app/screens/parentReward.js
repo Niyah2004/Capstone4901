@@ -92,6 +92,7 @@ export default function ParentReward({navigation, route}) {
   };
 
   const saveRewardToFirestore = async (imageURL, parsedPoints) => {
+    const finalImage = imageURL || "gift";
     await addDoc(collection(db, "rewards"), {
       parentId: auth.currentUser?.uid,
       ownerId: auth.currentUser?.uid,
@@ -101,7 +102,7 @@ export default function ParentReward({navigation, route}) {
       description: description,
       points: parsedPoints,
       frequency: frequency,
-      image: imageURL,
+      image: finalImage,
       createdAt: serverTimestamp(),
     });
 
