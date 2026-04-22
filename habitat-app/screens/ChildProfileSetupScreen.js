@@ -6,10 +6,13 @@ import {doc, setDoc} from "firebase/firestore";
 import { auth } from "../auth";
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { getAuth } from "firebase/auth";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function ChildProfileSetupScreen({ navigation, route }) {
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
+  const [showConfirmPin, setShowConfirmPin] = useState(false);
   const [fullName, setFullName] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [age, setAge] = useState("");
@@ -142,8 +145,19 @@ for (const child of childrenToSave) {
       <View style={styles.form}>
         <Text style={styles.title}>Child Profile Setup</Text>
 
-        <TextInput style={styles.input} placeholder="Enter 4-digit PIN" secureTextEntry value={pin} onChangeText={setPin} keyboardType="number-pad" />
-        <TextInput style={styles.input} placeholder="Confirm PIN" secureTextEntry value={confirmPin} onChangeText={setConfirmPin} keyboardType="number-pad" />
+        <View style={styles.passwordContainer}>
+          <TextInput style={styles.passwordInput} placeholder="Enter 4-digit PIN" secureTextEntry={!showPin} value={pin} onChangeText={setPin} keyboardType="number-pad" />
+          <TouchableOpacity onPress={() => setShowPin(!showPin)} style={styles.eyeIcon}>
+            <Ionicons name={showPin ? "eye-off" : "eye"} size={20} color="#888" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.passwordContainer}>
+          <TextInput style={styles.passwordInput} placeholder="Confirm PIN" secureTextEntry={!showConfirmPin} value={confirmPin} onChangeText={setConfirmPin} keyboardType="number-pad" />
+          <TouchableOpacity onPress={() => setShowConfirmPin(!showConfirmPin)} style={styles.eyeIcon}>
+            <Ionicons name={showConfirmPin ? "eye-off" : "eye"} size={20} color="#888" />
+          </TouchableOpacity>
+        </View>
 
         <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
         <TextInput style={styles.input} placeholder="Preferred Name" value={preferredName} onChangeText={setPreferredName} />
@@ -176,6 +190,9 @@ const styles = StyleSheet.create({
   form: { marginVertical: 20 },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#2d2d2d", textAlign: "center" },
   input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, marginBottom: 12 },
+  passwordContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#ccc", borderRadius: 8, marginBottom: 12 },
+  passwordInput: { flex: 1, padding: 12 },
+  eyeIcon: { padding: 12 },
   button: { backgroundColor: "#4CAF50", padding: 15, borderRadius: 8, alignItems: "center", marginVertical: 15 },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

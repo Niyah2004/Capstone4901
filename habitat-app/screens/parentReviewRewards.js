@@ -33,6 +33,8 @@ export default function ParentReviewRewards({ navigation, route }) {
   const [claims, setClaims] = useState([]);
   const [loadingClaims, setLoadingClaims] = useState(true);
   const [activeTab, setActiveTab] = useState("created");
+  const [filter, setFilter] = useState("all");
+  const [showFilter, setShowFilter] = useState(false);
   const { theme } = useTheme();
   const colors = theme.colors;
   const { selectedChildId } = useSelectedChild();
@@ -209,6 +211,21 @@ export default function ParentReviewRewards({ navigation, route }) {
     return arr;
   };
 
+  const getFilteredRewards = () => {
+    let list = [...rewards];
+
+    if (filter === "newest" || filter === "oldest") {
+      list.sort((a, b) => {
+        const da = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+        const db = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+        return filter === "newest" ? db - da : da - db;
+      });
+    }
+
+    return list;
+  };
+  const visibleRewards = getFilteredRewards();
+
   const pendingClaims = claims.filter((c) => c.status === "claimed");
   const fulfilledGroups = buildFulfilledGroups();
   const loading = loadingClaims;
@@ -232,7 +249,24 @@ export default function ParentReviewRewards({ navigation, route }) {
               <Text style={styles.backText}>← Back</Text>
             </TouchableOpacity>
             <Text style={[styles.header, { color: colors.text }]}>Review Rewards</Text>
-            <View style={styles.headerSpacer} />
+            <View style={styles.headerRight}>
+              <TouchableOpacity onPress={() => setShowFilter((prev) => !prev)}>
+                <Ionicons name="filter-outline" size={20} color={colors.text} />
+              </TouchableOpacity>
+              {showFilter && (
+                <View style={[styles.filterMenu, { backgroundColor: colors.card }]}>
+                  <TouchableOpacity style={styles.filterOption} onPress={() => { setFilter("all"); setShowFilter(false); }}>
+                    <Text style={[styles.filterText, { color: colors.text }]}>View All</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterOption} onPress={() => { setFilter("newest"); setShowFilter(false); }}>
+                    <Text style={[styles.filterText, { color: colors.text }]}>Newest</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterOption} onPress={() => { setFilter("oldest"); setShowFilter(false); }}>
+                    <Text style={[styles.filterText, { color: colors.text }]}>Oldest</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Tabs */}
@@ -280,7 +314,7 @@ export default function ParentReviewRewards({ navigation, route }) {
             ) : (
               <FlatList
                 style={{ flex: 1 }}
-                data={rewards}
+                data={visibleRewards}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                   <View style={[styles.taskCard, { backgroundColor: colors.card, shadowColor: "#000" }]}>
@@ -480,4 +514,34 @@ const styles = StyleSheet.create({
   deleteBtn: { position: "absolute", top: 10, right: 10 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   empty: { textAlign: "center", color: "#777", marginTop: 40 },
+  headerRight: {
+    width: 54,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    position: "relative",
+  },
+  filterMenu: {
+    position: "absolute",
+    top: 32,
+    right: 0,
+    marginTop: 6,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    minWidth: 120,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+    zIndex: 20,
+  },
+  filterOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  filterText: {
+    fontSize: 14,
+    flexShrink: 0,
+  },
 });
