@@ -2,8 +2,11 @@ import { addDays, format, getDate, isSameDay, startOfWeek, addWeeks } from 'date
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { useTheme } from '../theme/ThemeContext';
 
 const WeekCalendar = ({ date, onChange }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
     const [week, setWeek] = useState([]);
     const [selectedDate, setSelectedDate] = useState(date || new Date());
     const [weekOffset, setWeekOffset] = useState(0); // 0 = current week
@@ -51,7 +54,7 @@ const WeekCalendar = ({ date, onChange }) => {
     return (
         <PanGestureHandler onHandlerStateChange={onGestureEvent}>
             <View>
-                <Text style={styles.monthLabel}>{monthLabel}</Text>
+                <Text style={[styles.monthLabel, { color: colors.text }]}>{monthLabel}</Text>
                 <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
                     {week.map((weekDay) => {
                         const textStyles = [styles.label];
@@ -59,13 +62,12 @@ const WeekCalendar = ({ date, onChange }) => {
 
                         const sameDay = isSameDay(weekDay.date, selectedDate);
                         if (sameDay) {
-                            textStyles.push(styles.selectedLabel);
-                            touchable.push(styles.selectedTouchable);
+                            touchable.push({ backgroundColor: colors.primary });
                         }
 
                         return (
                             <View style={styles.weekDayItem} key={weekDay.formatted + weekDay.day}>
-                                <Text style={styles.weekDayText}>{weekDay.formatted}</Text>
+                                <Text style={[styles.weekDayText, { color: colors.muted }]}>{weekDay.formatted}</Text>
                                 <TouchableOpacity
                                     onPress={() => {
                                         setSelectedDate(weekDay.date);
@@ -73,7 +75,7 @@ const WeekCalendar = ({ date, onChange }) => {
                                     }}
                                     style={touchable}
                                 >
-                                    <Text style={textStyles}>{weekDay.day}</Text>
+                                    <Text style={[textStyles, { color: sameDay ? "#111" : colors.text }]}>{weekDay.day}</Text>
                                 </TouchableOpacity>
                             </View>
                         );
@@ -91,25 +93,17 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
     },
     weekDayText: {
-        color: 'gray',
         marginBottom: 5,
     },
     label: {
         fontSize: 14,
-        color: 'black',
         textAlign: 'center',
-    },
-    selectedLabel: {
-        color: 'white',
     },
     touchable: {
         borderRadius: 20,
         padding: 7.5,
         height: 35,
         width: 35,
-    },
-    selectedTouchable: {
-        backgroundColor: 'green',
     },
     weekDayItem: {
         alignItems: 'center',
@@ -119,7 +113,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 2,
-        color: '#333',
     },
 });
 
