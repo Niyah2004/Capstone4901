@@ -326,7 +326,7 @@ export default function ChildHome({ navigation, route }) {
                             style={[styles.greetingBubble, { borderWidth: 2, borderColor: "#FFF", marginTop: 10 }]}
                         >
                             <Text style={[styles.greetingText, { textShadowColor: "rgba(0,0,0,0.3)", textShadowRadius: 3, textShadowOffset: { width: 1, height: 2 } }]}>
-                                ✨ Hello {(childPreferredName && childPreferredName.trim()) ? childPreferredName : (childName || "there")}! ✨
+                                Hello {(childPreferredName && childPreferredName.trim()) ? childPreferredName : (childName || "there")}!
                             </Text>
                         </LinearGradient>
                     </Animated.View>

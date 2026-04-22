@@ -95,7 +95,7 @@ export default function ParentReward({navigation, route}) {
     await addDoc(collection(db, "rewards"), {
       parentId: auth.currentUser?.uid,
       ownerId: auth.currentUser?.uid,
-      childId: activeChildId || null,
+      childId: activeChildId,
       rewardName: rewardName,
       name: rewardName,
       description: description,

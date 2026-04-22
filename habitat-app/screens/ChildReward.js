@@ -107,11 +107,12 @@ export default function ChildReward( {route}) {
 
     // Fetch rewards in real-time (instant updates!)
     useEffect(() => {
-        if (!parentId) return;
+        if (!parentId || !activeChildId) return;
 
         const q = query(
             collection(db, "rewards"),
-            where("parentId", "==", parentId)
+            where("parentId", "==", parentId),
+            where("childId", "==", activeChildId)
             // orderBy("createdAt", "desc") temporarily disabled - needs Firebase index
         );
 
@@ -141,7 +142,7 @@ export default function ChildReward( {route}) {
         });
 
         return () => unsubscribe();
-    }, [parentId]);
+    }, [parentId, activeChildId]);
 
     // Track which rewards the child has already claimed (pending or fulfilled)
     useEffect(() => {
