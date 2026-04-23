@@ -15,6 +15,7 @@ import { useRoute } from "@react-navigation/native";
 
 // --- Screen Imports ---
 import SignUpScreen from "./screens/SignUpScreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
 import ChildProfileSetupScreen from "./screens/ChildProfileSetupScreen";
 import LoginScreen from "./screens/LoginScreen";
 import AvatarSelection from "./screens/AvatarSelection";
@@ -247,8 +248,9 @@ function AppNavigator() {
     <ParentLockProvider>
       <NavigationContainer theme = {theme}>
         <Stack.Navigator initialRouteName="SignUp" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="OnboardingScreen" component={OnboardingScreen} />
+          <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
           <Stack.Screen name="ChildSelection" component={ChildSelection} />
           <Stack.Screen name="ChildProfileSetup" component={ChildProfileSetupScreen} />

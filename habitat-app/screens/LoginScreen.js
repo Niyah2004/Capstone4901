@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
-import { signIn } from "../auth"; 
+import { signIn } from "../auth";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -22,47 +22,47 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
- const handleLogin = async () => {
-  if (!email || !password) {
-    Alert.alert("Missing Information", "Please enter both email and password.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const user = await signIn(email.trim(), password);
-    if (!user) return;
-
-    const auth = getAuth();
-    const userId = auth.currentUser?.uid;
-
-    if (!userId) {
-      Alert.alert("Error", "No logged-in parent user found.");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Missing Information", "Please enter both email and password.");
       return;
     }
 
-    const q = query(collection(db, "children"), where("userId", "==", userId));
-    const snap = await getDocs(q);
+    try {
+      setLoading(true);
 
-    const childIds = snap.docs.map((d) => d.id);
+      const user = await signIn(email.trim(), password);
+      if (!user) return;
 
-    Alert.alert("Welcome Back!", "You have successfully logged in.");
+      const auth = getAuth();
+      const userId = auth.currentUser?.uid;
 
-    if (childIds.length === 0) {
-      navigation.replace("ChildProfileSetup");
-    } else if (childIds.length === 1) {
-      navigation.replace("ChildTabs", { childId: childIds[0] });
-    } else {
-      navigation.replace("ChildSelection", { childIds });
+      if (!userId) {
+        Alert.alert("Error", "No logged-in parent user found.");
+        return;
+      }
+
+      const q = query(collection(db, "children"), where("userId", "==", userId));
+      const snap = await getDocs(q);
+
+      const childIds = snap.docs.map((d) => d.id);
+
+      Alert.alert("Welcome Back!", "You have successfully logged in.");
+
+      if (childIds.length === 0) {
+        navigation.replace("ChildProfileSetup");
+      } else if (childIds.length === 1) {
+        navigation.replace("ChildTabs", { childId: childIds[0] });
+      } else {
+        navigation.replace("ChildSelection", { childIds });
+      }
+    } catch (error) {
+      //console.error("Login error:", error.message);
+      Alert.alert("Login Failed", "Incorrect Password or Email");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Login error:", error.message);
-    Alert.alert("Login Failed", error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -104,15 +104,15 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.buttonText}>Log In</Text>
           )}
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           onPress={() => navigation.navigate("ForgotPassword")}
         >
-        <Text style={styles.forgotText}>
-          Forgot Password?
+          <Text style={styles.forgotText}>
+            Forgot Password?
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
           <Text style={styles.loginText}>Don’t have an account? Sign Up</Text>
         </TouchableOpacity>
@@ -183,10 +183,10 @@ const styles = StyleSheet.create({
   },
 
   forgotText: {
-  color: "#4CAF50",
-  textAlign: "center",
-  marginBottom: 10,
-  fontWeight: "500",
-},
+    color: "#4CAF50",
+    textAlign: "center",
+    marginBottom: 10,
+    fontWeight: "500",
+  },
 
 });

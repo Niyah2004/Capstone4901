@@ -132,7 +132,7 @@ for (const child of childrenToSave) {
      // console.log("Parent pin saved with Parent Id:", parentRef.id);
      // console.log("Navigating to AvatarSelection with childId:", docRef.id);
     //  navigation.navigate("AvatarSelection", { childId: docRef.id });
-    navigation.replace("ChildSelection");
+    navigation.replace("OnboardingScreen");
     } catch (e) {
       console.log("Error adding document: ", e);
       Alert.alert("Error", "Could not save profile.");

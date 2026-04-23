@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
-import {signUp} from "../auth";
+import { signUp } from "../auth";
 import { Ionicons } from "@expo/vector-icons";
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -14,7 +14,7 @@ export default function SignUpScreen({ navigation }) {
 
 
   const handleSignUp = async () => {
-    if(!email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       Alert.alert("Missing info", "Please enter both email and password.");
       return;
     }
@@ -24,23 +24,23 @@ export default function SignUpScreen({ navigation }) {
     }
     //basic password validation
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if(!passwordRegex.test(password)) {
+    if (!passwordRegex.test(password)) {
       Alert.alert("Weak Password", "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.");
       return;
-    } 
+    }
 
-      try{
-        setLoading(true);
-        const user = await signUp(email, password);
-        console.log("User signed up:", user);
-        Alert.alert("Success", "Account created! Please set up your child's profile.");
-        navigation.navigate("ChildProfileSetup");
-      } catch (error) {
-        console.error("Error signing up:", error);
-        Alert.alert("Sign Up Failed", "Please try again later.");
-      } finally {
-        setLoading(false);
-      }
+    try {
+      setLoading(true);
+      const user = await signUp(email, password);
+      console.log("User signed up:", user);
+      Alert.alert("Success", "Account created! Please set up your child's profile.");
+      navigation.navigate("ChildProfileSetup");
+    } catch (error) {
+      //console.error("Error signing up:", error);
+      Alert.alert("Sign Up Failed", "Please use valid email address.");
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -64,20 +64,20 @@ export default function SignUpScreen({ navigation }) {
             placeholder="Create your password"
             secureTextEntry={!showPassword}
             value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity
-          onPress={() => setShowPassword(!showPassword)}
-          style={styles.eyeButton}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeButton}
           >
             <Ionicons
               name={showPassword ? "eye-off" : "eye"}
               size={22}
-              color= "#555"
+              color="#555"
             />
           </TouchableOpacity>
         </View>
-       <View style={styles.passwordContainer}>
+        <View style={styles.passwordContainer}>
           <TextInput
             style={[styles.input, { flex: 1 }]}
             placeholder="Confirm your password"
@@ -107,7 +107,7 @@ export default function SignUpScreen({ navigation }) {
           onPress={handleSignUp}
           disabled={loading}
         >
-          {loading? (
+          {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>Sign Up</Text>
