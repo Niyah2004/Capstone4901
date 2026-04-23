@@ -95,6 +95,13 @@ export const AVATARS = {
                 position: { top: -50, left: 54, size: 200 },
             },
         },
+        backgrounds: {
+            space: {
+                image: require("../assets/SpaceBackground.png"),
+                cost: 150,
+                position: { top: -80, left: -50, size: 400 },
+            },
+        },
         shoes: {
             sneakers: {
                 image: require("../assets/dino/shoes/dinoSkates.png"),
