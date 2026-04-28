@@ -8,12 +8,13 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { updateDoc } from "firebase/firestore";
 import { useParentLock } from "../ParentLockContext";
 import { useTheme } from "../theme/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
 
 
 const ParentPinScreen = ({ navigation,route  }) => {
   const [pin, setPin] = useState("");
   const { unlockParent } = useParentLock();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
   const colors = theme.colors;
   const styles = createStyles(colors);
 
@@ -72,9 +73,22 @@ const ParentPinScreen = ({ navigation,route  }) => {
           maxLength={4}
         />
 
-      <TouchableOpacity style={styles.button} onPress={correctPin}>
-        <Text style={styles.buttonText}>Submit PIN</Text>
-      </TouchableOpacity>
+      {mode === "colorful" ? (
+        <TouchableOpacity onPress={correctPin}>
+          <LinearGradient
+            colors={["#ADFF2F", "#32CD32", "#00FA9A", "#00FF7F"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>Submit PIN</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.button} onPress={correctPin}>
+          <Text style={styles.buttonText}>Submit PIN</Text>
+        </TouchableOpacity>
+      )}
 
        <TouchableOpacity
         style={styles.forgotButton}

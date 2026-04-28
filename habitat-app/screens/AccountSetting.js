@@ -278,7 +278,7 @@ export default function AccountSetting({navigation}) {
               <Text style={[styles.label, { color: colors.text }]}>Appearance</Text>
             </View>
             <View style={styles.themeRow}>
-              {["system", "light", "dark"].map((opt) => (
+              {["system", "light", "dark", "colorful"].map((opt) => (
                 <TouchableOpacity
                   key={opt}
                   style={[
@@ -294,7 +294,7 @@ export default function AccountSetting({navigation}) {
                       { color: mode === opt ? "#fff" : colors.text },
                     ]}
                   >
-                    {opt === "system" ? "System" : opt === "light" ? "Light" : "Dark"}
+                    {opt === "system" ? "System" : opt === "light" ? "Light" : opt === "dark" ? "Dark" : "Colorful"}
                   </Text>
                 </TouchableOpacity>
               ))}

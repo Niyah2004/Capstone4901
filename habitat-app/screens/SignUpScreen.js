@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import { signUp } from "../auth";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { useTheme } from "../theme/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -11,6 +13,7 @@ export default function SignUpScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { mode } = useTheme();
 
 
   const handleSignUp = async () => {
@@ -102,17 +105,34 @@ export default function SignUpScreen({ navigation }) {
         <Text style={styles.requirements}>• At least one number</Text>
         <Text style={styles.requirements}>• At least one special character</Text>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSignUp}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Sign Up</Text>
-          )}
-        </TouchableOpacity>
+        {mode === "colorful" ? (
+          <TouchableOpacity onPress={handleSignUp} disabled={loading}>
+            <LinearGradient
+              colors={["#ADFF2F", "#32CD32", "#00FA9A", "#00FF7F"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.button}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Sign Up</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSignUp}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Sign Up</Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity onPress={() => navigation.navigate("LoginScreen")}>
           <Text style={styles.loginText}>Already have an account? Log In</Text>

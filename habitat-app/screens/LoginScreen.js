@@ -15,12 +15,15 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { signIn } from "../auth";
+import { useTheme } from "../theme/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { mode } = useTheme();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -97,13 +100,30 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Log In</Text>
-          )}
-        </TouchableOpacity>
+        {mode === "colorful" ? (
+          <TouchableOpacity onPress={handleLogin} disabled={loading}>
+            <LinearGradient
+              colors={["#ADFF2F", "#32CD32", "#00FA9A", "#00FF7F"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.button}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Log In</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Log In</Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           onPress={() => navigation.navigate("ForgotPassword")}

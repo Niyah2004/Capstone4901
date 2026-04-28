@@ -31,6 +31,21 @@ const DarkColors = {
   shadow: "#fdf5c9",
 };
 
+const ColorfulColors = {
+  primary: "#32CD32",
+  background: "#E1F5FE",
+  card: "#FFFFFF",
+  cardAlt: "#B3E5FC",
+  text: "#0D47A1",
+  border: "#81D4FA",
+  notification: "#FF4081",
+  muted: "#1565C0",
+  tabBar: "#E3F2FD",
+  accent: "#4FC3F7",
+  highlight: "#B3E5FC",
+  shadow: "#0277BD",
+};
+
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
@@ -42,7 +57,7 @@ export function ThemeProvider({ children }) {
     const load = async () => {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored === "light" || stored === "dark" || stored === "system") {
+        if (stored === "light" || stored === "dark" || stored === "system" || stored === "colorful") {
           setModeState(stored);
         }
       } catch { }
@@ -60,7 +75,7 @@ export function ThemeProvider({ children }) {
 
   const resolvedScheme = mode === "system" ? systemScheme : mode;
   const isDark = resolvedScheme === "dark";
-  const colors = isDark ? DarkColors : LightColors;
+  const colors = mode === "colorful" ? ColorfulColors : isDark ? DarkColors : LightColors;
 
   const baseTheme = (isDark ? DarkTheme : DefaultTheme) || {};
   const baseThemeColors = baseTheme.colors || {};
