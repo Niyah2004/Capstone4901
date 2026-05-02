@@ -11,8 +11,10 @@ import { useTheme } from "../theme/ThemeContext";
 import { AVATARS } from "../data/avatars";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelectedChild } from "../SelectedChildContext";
+import { useMusic } from "../MusicContext";
 
 export default function ChildHome({ navigation, route }) {
+    const { isMusicPlaying, toggleMusic } = useMusic();
     const [childName, setChildName] = useState("");
     const [childPreferredName, setChildPreferredName] = useState("");
     const [avatar, setAvatar] = useState("panda"); // default avatar
@@ -307,7 +309,10 @@ export default function ChildHome({ navigation, route }) {
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Top Section: Greeting and Progress Bar */}
-                <View style={styles.topSection}>
+                <View style={[styles.topSection, { position: "relative", zIndex: 1, elevation: 1 }]}>
+                    <TouchableOpacity onPress={toggleMusic} style={{ position: "absolute", top: -10, right: -5, zIndex: 15, elevation: 15, padding: 15 }}>
+                        <Ionicons name={isMusicPlaying ? "volume-high" : "volume-mute"} size={32} color="#FFD700" />
+                    </TouchableOpacity>
                     <Animated.View style={{
                         transform: [
                             { scale: greetingScale },

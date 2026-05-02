@@ -38,6 +38,7 @@ import GenericTaskLibrary from "./screens/GenericTaskLibrary";
 
 import { ParentLockProvider, useParentLock } from "./ParentLockContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
+import { MusicProvider } from "./MusicContext";
 import { SelectedChildProvider } from "./SelectedChildContext";
 
 const Stack = createNativeStackNavigator();
@@ -285,9 +286,11 @@ export default function AppWithProviders() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <SelectedChildProvider>
-          <AppNavigator />
-        </SelectedChildProvider>
+        <MusicProvider>
+          <SelectedChildProvider>
+            <AppNavigator />
+          </SelectedChildProvider>
+        </MusicProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
